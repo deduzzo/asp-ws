@@ -46,6 +46,7 @@
 ################################################
 
 config/local.js
+config/nar_ts_config.json
 
 
 ################################################
@@ -124,6 +125,7 @@ nbproject
 .vscode
 .node_history
 dump.rdb
+swagger/swagger.json
 
 npm-debug.log
 lib-cov
