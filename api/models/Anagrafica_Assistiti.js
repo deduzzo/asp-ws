@@ -179,13 +179,6 @@ module.exports = {
       description: 'Timestamp Unix della data del decesso'
     },
 
-    fulltextSearch: {
-      type: 'string',
-      columnName: 'fulltext_search',
-      allowNull: true,
-      description: 'Colonna generata dal DB per il fulltext search.'
-    },
-
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
     //  ╚═╝╩ ╩╚═╝╚═╝═╩╝╚═╝
@@ -196,6 +189,34 @@ module.exports = {
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
   },
+  /**
+   * Esegue una ricerca FULLTEXT su assistiti in base a un termine.
+   *
+   * @param {string} term - Testo/termine da cercare
+   * @returns {Promise<Array>} Array di record corrispondenti
+   */
+  ricercaFulltext: async function(term) {
+    // Ottieni il datastore associato al modello
+    const db = this.getDatastore();
+    term = this.formatSearchQuery(term);
 
+    // Esegui la query native per la ricerca FULLTEXT
+    const result = await db.sendNativeQuery(`MATCH (fulltext_search) AGAINST ($1 IN BOOLEAN MODE)`, term);
+
+    // Ritorna i record (rows)
+    return result.rows;
+  },
+
+  /**
+   * Formatta una stringa di input per una query di ricerca FULLTEXT.
+   *
+   * @param {string} inputString - La stringa di input da formattare
+   * @returns {string} La stringa formattata per la ricerca FULLTEXT
+   */
+  formatSearchQuery: function(inputString) {
+    const words = inputString.split(" ");
+    const formattedWords = words.filter(word => word.length >= 4).map(word => `+"${word}"`);
+    return formattedWords.join(" ");
+  }
 };
 

@@ -89,6 +89,18 @@ ALTER TABLE assistiti
 create unique index assistiti_cf_uindex
   on assistiti (cf);`);
 */
+  const cfData = await AssistitoService.getAssistitoFromCf("DDMRRT86A03F158E");
+  if (cfData.ok) {
+    const data = cfData.dati();
+    try {
+      await Anagrafica_Assistiti.create(cfData.dati());
+    }
+    catch (err) {
+      console.log(err)
+    }
+    let res = await Anagrafica_Assistiti.ricercaFulltext("domen rob");
+    console.log(res)
+  }
 
 
   let bearerTest = JwtService.generateToken({
