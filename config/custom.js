@@ -8,9 +8,11 @@
  * https://sailsjs.com/config/custom
  */
 
+const jwtConfig = require('./private_jwt_config.json');
+
 module.exports.custom = {
   baseUrl: 'http://localhost:1337',
-  jwtSecret: "fmIZp4,]g4@e!s?W52(\\_5",
+  jwtSecret: jwtConfig.jwtSecret,
   jwtExpiresIn: '1h',
   jwtRefreshTokenExpiresIn: '1d',
   /***************************************************************************
