@@ -77,6 +77,7 @@ module.exports.bootstrap = async function () {
           foreign key (scopo) references scopi (id);`);
   }
 
+
   /*  await anagraficaDataStore.sendNativeQuery(`ALTER TABLE assistiti
       ADD COLUMN fulltext_search VARCHAR(255)
           AS (
@@ -95,56 +96,58 @@ module.exports.bootstrap = async function () {
     on assistiti (cf);`);*/
 
 
-  const client = MeilisearchService.getClient();
+  //const client = MeilisearchService.getClient();
 
-  try {
-    // Creazione (o recupero) dell'indice "assistiti_index"
-    // remove index 'assistiti_index'
-    //await client.deleteIndex('assistiti_index');
-    const index = await client.getIndex('assistiti_index').catch(async (err) => {
-      if (err.message.toLowerCase().includes('not found')) {
-        return await client.createIndex('assistiti_index', {primaryKey: 'id'});
-      }
-      throw err;
-    });
+  //try {
+  // Creazione (o recupero) dell'indice "assistiti_index"
+  // remove index 'assistiti_index'
+  //await client.deleteIndex('assistiti_index');
+  /*    const index = await client.getIndex('assistiti_index').catch(async (err) => {
+        if (err.message.toLowerCase().includes('not found')) {
+          return await client.createIndex('assistiti_index', {primaryKey: 'id'});
+        }
+        throw err;
+      });
 
-    // Imposta i campi di ricerca, se necessario
-    // Esempio: attributi su cui fare la ricerca testuale
-    await index.updateSearchableAttributes([
-      'id',
-      'cf',
-      'nome',
-      'cognome',
-      'dataNascita'
-      // aggiungi attributi a seconda delle esigenze
-    ]);
+      // Imposta i campi di ricerca, se necessario
+      // Esempio: attributi su cui fare la ricerca testuale
+      await index.updateSearchableAttributes([
+        'id',
+        'cf',
+        'nome',
+        'cognome',
+        'dataNascita'
+        // aggiungi attributi a seconda delle esigenze
+      ]);*/
 
-    // Altre impostazioni di rilevanza, filtri, ecc.
-
-    sails.log.info('Indice Meilisearch "assistiti_index" pronto.');
-  } catch (error) {
-    sails.log.error('Errore durante la configurazione di Meilisearch:', error);
-  }
-
-
-  const cfData = await AssistitoService.getAssistitoFromCf("DDMRRT86A03F158E");
-  if (cfData.ok) {
-    const data = cfData.dati();
-    try {
-      await Anagrafica_Assistiti.create(cfData.dati());
-    } catch (err) {
-      console.log(err)
+  // Altre impostazioni di rilevanza, filtri, ecc.
+  /*
+      sails.log.info('Indice Meilisearch "assistiti_index" pronto.');
+    } catch (error) {
+      sails.log.error('Errore durante la configurazione di Meilisearch:', error);
     }
 
 
-  }
+    const cfData = await AssistitoService.getAssistitoFromCf("DDMRRT86A03F158E");
+    if (cfData.ok) {
+      const data = cfData.dati();
+      try {
+        await Anagrafica_Assistiti.create(cfData.dati());
+      } catch (err) {
+        console.log(err)
+      }
 
 
-  let bearerTest = JwtService.generateToken({
-    username: 'roberto.dedomenico',
-    scopi: ['asp5-anagrafica'],
-    ambito: 'api',
-  });
-  let testtoken = await JwtService.verifyToken(bearerTest, Auth_Livelli.LIVELLO_USER);
-  console.log("ciao")
-};
+    }
+
+
+    let bearerTest = JwtService.generateToken({
+      username: 'roberto.dedomenico',
+      scopi: ['asp5-anagrafica'],
+      ambito: 'api',
+    });
+    let testtoken = await JwtService.verifyToken(bearerTest, Auth_Livelli.LIVELLO_USER);
+    console.log("ciao")
+  };*/
+
+}

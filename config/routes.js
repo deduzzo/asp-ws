@@ -26,6 +26,7 @@ module.exports.routes = {
   'GET /csrfToken':                          { action: 'security/grant-csrf-token' },
   'POST /api/v1/login/get-token':            { action: 'login/get-token' },
   'POST /api/v1/anagrafica/assistito':       { action: 'anagrafica/assistito' },
+  'POST /api/v1/anagrafica/nuovo-assistito': { action: 'anagrafica/nuovo-assistito' },
 
 
 

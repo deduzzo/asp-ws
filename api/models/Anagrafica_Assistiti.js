@@ -5,6 +5,7 @@
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
 
+
 module.exports = {
   datastore: 'anagrafica',
   tableName: 'assistiti',
@@ -179,15 +180,11 @@ module.exports = {
       description: 'Timestamp Unix della data del decesso'
     },
 
-    toSearchData: () => {
-      return {
-        id: this.id,
-        cf: this.cf,
-        cognome: this.cognome,
-        nome: this.nome,
-        dataNascita: this.dataNascita
-      };
-    }
+    md5: {
+      type: 'string',
+      allowNull: false,
+      description: 'MD5 dei valori per verifica eventuali aggiornamenti'
+    },
 
     //  ╔═╗╔╦╗╔╗ ╔═╗╔╦╗╔═╗
     //  ║╣ ║║║╠╩╗║╣  ║║╚═╗
