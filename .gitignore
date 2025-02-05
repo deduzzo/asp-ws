@@ -134,5 +134,5 @@ lib-cov
 *.out
 *.pid
 
-/pnpm-lock.yaml
-/package-lock.json
+pnpm-lock.yaml
+package-lock.json
