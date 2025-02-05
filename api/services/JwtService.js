@@ -1,11 +1,19 @@
 // api/services/JwtService.js
 const jwt = require('jsonwebtoken');
 
-module.exports = {
-  // Configurazione
-  SECRET: sails.config.custom.jwtSecret,
-  TOKEN_EXPIRY: sails.config.custom.jwtExpiresIn,
-  REFRESH_TOKEN_EXPIRY: sails.config.custom.jwtRefreshTokenExpiresIn,
+const JwtService = {
+  // Funzioni di utilità per accedere alla configurazione
+  getSecret: () => {
+    return sails.config.custom.jwtSecret;
+  },
+
+  getTokenExpiry: () => {
+    return sails.config.custom.jwtExpiresIn;
+  },
+
+  getRefreshTokenExpiry: () => {
+    return sails.config.custom.jwtRefreshTokenExpiresIn;
+  },
 
   /**
    * Genera un token JWT per l'utente.
@@ -16,29 +24,29 @@ module.exports = {
    * @param {string} userData.ambito - L'ambito dell'utente.
    * @returns {string} - Il token JWT generato.
    */
-  generateToken: function (userData) {
+  generateToken: (userData) => {
     const payload = {
       username: userData.username,
       scopi: userData.scopi,
       ambito: userData.ambito
     };
-    return jwt.sign(payload, this.SECRET, {expiresIn: this.TOKEN_EXPIRY});
+    return jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
   },
 
   // Genera refresh token
-  generateRefreshToken: function (userData) {
+  generateRefreshToken: (userData) => {
     const payload = {
       username: userData.username,
       type: 'refresh'
     };
-    return jwt.sign(payload, this.SECRET, {expiresIn: this.REFRESH_TOKEN_EXPIRY});
+    return jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getRefreshTokenExpiry()});
   },
 
   // Verifica token
-  verifyToken: async function (token,livelloRichiesto) {
+  verifyToken: async (token, livelloRichiesto) => {
     try {
-      const decoded = jwt.verify(token, this.SECRET);
-      const isValid = await this.verificaPermessi(decoded,livelloRichiesto);
+      const decoded = jwt.verify(token, JwtService.getSecret());
+      const isValid = await JwtService.verificaPermessi(decoded, livelloRichiesto);
       return isValid ? {valid: true, decoded, error: null} : {valid: false, decoded: null, error: null};
     } catch (err) {
       return {valid: false, decoded: null, error: err};
@@ -46,46 +54,50 @@ module.exports = {
   },
 
   // Rinnova token usando refresh token
-  refreshToken: async function (refreshToken) {
+  refreshToken: async (refreshToken) => {
     try {
-      const decoded = jwt.verify(refreshToken, this.SECRET);
+      const decoded = jwt.verify(refreshToken, JwtService.getSecret());
       if (decoded.type !== 'refresh') {
         return false;
       }
 
-      const userData = await this.getUser(decoded.username);
-      if (!userData || await this.isTokenRevoked(refreshToken)) {
+      const userData = await JwtService.getUser(decoded.username);
+      if (!userData || await JwtService.isTokenRevoked(refreshToken)) {
         return false;
       }
 
-      return this.generateToken(userData);
+      return JwtService.generateToken(userData);
     } catch (err) {
       return false;
     }
   },
 
   // Funzioni da implementare per la verifica nel DB
-  verificaPermessi: async function (decoded, livelloRichiesto) {
-    if (!decoded.hasOwnProperty('username') || !decoded.hasOwnProperty('scopi') || !decoded.hasOwnProperty('ambito'))
+  verificaPermessi: async (decoded, livelloRichiesto) => {
+    if (!decoded.hasOwnProperty('username') || !decoded.hasOwnProperty('scopi') || !decoded.hasOwnProperty('ambito')) {
       return false;
+    }
     let {username, scopi, ambito} = decoded;
     console.log('Verifica permessi per:', username);
     const user = await auth_Utenti.findOne({username: username}).populate('ambito').populate('livello').populate('scopi');
     // if user not contains the decoded scopi, user.scopi is an array of object
     const haveScopi = user.scopi.some(s => scopi.includes(s.scopo));
-    if (!user || !user.attivo || !haveScopi || !user.ambito || user.ambito.ambito !== ambito || user.livello.id< livelloRichiesto)
+    if (!user || !user.attivo || !haveScopi || !user.ambito || user.ambito.ambito !== ambito || user.livello.id < livelloRichiesto) {
       return false;
+    }
 
     return true;
   },
 
-  getUser: async function (username) {
+  getUser: async (username) => {
     // Recupera dati utente dal DB
     return null;
   },
 
-  isTokenRevoked: async function (token) {
+  isTokenRevoked: async (token) => {
     // Verifica se il token è stato revocato
     return false;
   }
 };
+
+module.exports = JwtService;

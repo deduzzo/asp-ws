@@ -46,7 +46,7 @@
 ################################################
 
 config/local.js
-config/private_*.json
+config/custom/private_*.json
 
 
 ################################################
@@ -134,3 +134,4 @@ lib-cov
 *.out
 *.pid
 
+/pnpm-lock.yaml

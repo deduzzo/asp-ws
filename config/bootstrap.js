@@ -9,7 +9,10 @@
  * https://sailsjs.com/config/bootstrap
  */
 
-const MeilisearchService = require('../api/services/MeilisearchService');
+const {generateToken, verifyToken} = require('../api/services/JwtService');
+const {utils} = require('aziendasanitaria-utils/src/Utils');
+const {Assistito} = require('aziendasanitaria-utils/src/classi/Assistito');
+const meilisearchService = require('../api/services/MeilisearchService');
 
 module.exports.bootstrap = async function () {
 
@@ -96,58 +99,85 @@ module.exports.bootstrap = async function () {
     on assistiti (cf);`);*/
 
 
-  //const client = MeilisearchService.getClient();
 
-  //try {
-  // Creazione (o recupero) dell'indice "assistiti_index"
-  // remove index 'assistiti_index'
-  //await client.deleteIndex('assistiti_index');
-  /*    const index = await client.getIndex('assistiti_index').catch(async (err) => {
-        if (err.message.toLowerCase().includes('not found')) {
-          return await client.createIndex('assistiti_index', {primaryKey: 'id'});
+/*  //await meilisearchService.deleteIndex(meilisearchService.ASSISTITI_INDEX);
+  let res = await meilisearchService.search('ZTIMML30');
+  //await Procedure.creaFileJsonAssistitiCompletoDaFilesZip("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127")
+
+  let data = await utils.leggiOggettoMP("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127/assistiti.db");
+  const tot = Object.values(data).length;
+  let i = 0;
+  let values = Object.values(data);*/
+  // remove the first 7170 elements from values
+  //values = values.splice(0, 4170);
+
+/*  for (let assistito of values) {
+    let tempAssistito = new Assistito();
+    console.log("Verificando assistito " + assistito.cf);
+    const created2 = await Anagrafica_Assistiti.createOrUpdate(tempAssistito.dati({fromAssistitoObject: assistito,dateToUnix:true}));
+    //const created = await Anagrafica_Assistiti.create( tempAssistito.dati({fromAssistitoObject: assistito,dateToUnix:true})).fetch();
+    console.log((++i / tot * 100).toFixed(4) + "% " + i + "/" + tot + " " + assistito.cf + " " + created2.message);
+  }*/
+
+  // invert values
+/*
+  const BATCH_SIZE = 50;
+  const DELAY_BETWEEN_BATCHES = 50;
+  const processInBatches = async (values) => {
+    const tot = values.length;
+    let i = 77800;
+
+    // Dividiamo l'array in batch
+    for (let index = i; index < values.length; index += BATCH_SIZE) {
+      const batch = values.slice(index, index + BATCH_SIZE);
+
+      // Creiamo un array di promises per il batch corrente
+      const promises = batch.map(async assistito => {
+        let tempAssistito = new Assistito();
+        //console.log("Verificando assistito " + assistito.cf);
+
+        try {
+          const created2 = await Anagrafica_Assistiti.createOrUpdate(
+            tempAssistito.dati({fromAssistitoObject: assistito, dateToUnix: true})
+          );
+
+          i++;
+          console.log(
+            `${(i / tot * 100).toFixed(4)}% ${i}/${tot} ${assistito.cf} ${created2.message}`
+          );
+
+          return created2;
+        } catch (error) {
+          console.error(`Errore per assistito ${assistito.cf}:`, error);
+          throw error;
         }
-        throw err;
       });
 
-      // Imposta i campi di ricerca, se necessario
-      // Esempio: attributi su cui fare la ricerca testuale
-      await index.updateSearchableAttributes([
-        'id',
-        'cf',
-        'nome',
-        'cognome',
-        'dataNascita'
-        // aggiungi attributi a seconda delle esigenze
-      ]);*/
-
-  // Altre impostazioni di rilevanza, filtri, ecc.
-  /*
-      sails.log.info('Indice Meilisearch "assistiti_index" pronto.');
-    } catch (error) {
-      sails.log.error('Errore durante la configurazione di Meilisearch:', error);
-    }
-
-
-    const cfData = await AssistitoService.getAssistitoFromCf("DDMRRT86A03F158E");
-    if (cfData.ok) {
-      const data = cfData.dati();
-      try {
-        await Anagrafica_Assistiti.create(cfData.dati());
-      } catch (err) {
-        console.log(err)
+      // Eseguiamo tutte le promises del batch in parallelo
+      await Promise.all(promises);
+      // Aggiungiamo un delay tra i batch
+      if (index + BATCH_SIZE < values.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
-
-
     }
+  }
 
+  // Utilizzo
+  try {
+    await processInBatches(values);
+    console.log('Elaborazione completata');
+  } catch (error) {
+    console.error('Errore durante l\'elaborazione:', error);
+  }
 
-    let bearerTest = JwtService.generateToken({
-      username: 'roberto.dedomenico',
-      scopi: ['asp5-anagrafica'],
-      ambito: 'api',
-    });
-    let testtoken = await JwtService.verifyToken(bearerTest, Auth_Livelli.LIVELLO_USER);
-    console.log("ciao")
-  };*/
+*/
 
-}
+  let bearerTest = generateToken({
+    username: 'roberto.dedomenico',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+  });
+  let testtoken = await verifyToken(bearerTest, Auth_Livelli.LIVELLO_USER);
+  console.log('ciao');
+
+};

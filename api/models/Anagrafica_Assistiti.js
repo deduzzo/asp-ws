@@ -4,7 +4,15 @@
  * @description :: A model definition represents a database table/collection.
  * @docs        :: https://sailsjs.com/docs/concepts/models-and-orm/models
  */
+const meilisearchService = require('../services/MeilisearchService');
+const {utils} = require('aziendasanitaria-utils/src/Utils');
+const toRemove = ['createdAt', 'updatedAt', 'md5', 'eta', 'id', 'inVita'];
 
+
+const getMd5FromDataAssistito = (assistito) => {
+  const objRemoved = _.omit(assistito, toRemove);
+  return utils.calcolaMD5daStringa(JSON.stringify(objRemoved));
+};
 
 module.exports = {
   datastore: 'anagrafica',
@@ -24,7 +32,6 @@ module.exports = {
 
     cfNormalizzato: {
       type: 'string',
-      unique: true,
       allowNull: true
     },
 
@@ -196,6 +203,143 @@ module.exports = {
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
   },
+  getMd5FromDataAssistito,
+
+  beforeCreate: async function (newRecord, proceed) {
+    newRecord.md5 = getMd5FromDataAssistito(newRecord);
+    return proceed();
+  },
+  beforeUpdate: async function (updatedRecord, proceed) {
+    updatedRecord.md5 = getMd5FromDataAssistito(updatedRecord);
+    return proceed();
+  },
+  // Lifecycle Callbacks
+  afterCreate: async function (newlyCreatedRecord, proceed) {
+    try {
+      let record = {
+        id: newlyCreatedRecord.id,
+        cf: newlyCreatedRecord.cf,
+        nome: newlyCreatedRecord.nome,
+        cognome: newlyCreatedRecord.cognome,
+        dataNascita: utils.convertFromUnixSeconds(newlyCreatedRecord.dataNascita),
+        md5: newlyCreatedRecord.md5
+      };
+      record.fullText = module.exports.generateFullText(record);
+      await meilisearchService.addDocument(record);
+      return proceed();
+    } catch (err) {
+      sails.log.error('Errore nell\'indicizzazione del nuovo record:', err);
+      return proceed(err);
+    }
+  },
+
+  afterUpdate: async function (updatedRecord, proceed) {
+    try {
+      let record = {
+        id: updatedRecord.id,
+        cf: updatedRecord.cf,
+        nome: updatedRecord.nome,
+        cognome: updatedRecord.cognome,
+        dataNascita: updatedRecord.dataNascita,
+        md5: updatedRecord.md5
+      };
+      record.fullText = module.exports.generateFullText(record);
+      await meilisearchService.updateDocument(record);
+      return proceed();
+    } catch (err) {
+      sails.log.error('Errore nell\'aggiornamento dell\'indice:', err);
+      return proceed(err);
+    }
+  },
+
+  beforeDestroy: async function (criteria, proceed) {
+    try {
+      // Recupera l'ID del record che sta per essere eliminato
+      const recordToDelete = await Anagrafica_Assistiti.findOne(criteria);
+      if (recordToDelete) {
+        await meilisearchService.deleteDocument(recordToDelete.cf);
+      }
+      return proceed();
+    } catch (err) {
+      sails.log.error('Errore nella rimozione del documento dall\'indice:', err);
+      return proceed(err);
+    }
+  },
+  createOrUpdate: async function (assistito) {
+    let exist = await meilisearchService.findFromCf(assistito.cf);
+    if (exist.length === 1) {
+      const md5 = getMd5FromDataAssistito(assistito);
+      if (exist[0].md5 === md5) {
+        return {cf: assistito.cf, id: exist[0].id, message: 'Assistito già presente'};
+      } else {
+        const updated = await Anagrafica_Assistiti.update({cf: assistito.cf}, assistito).fetch();
+        return {cf: assistito.cf, id: updated.id, message: 'Assistito aggiornato'};
+      }
+    } else if (exist.length === 0) {
+      let created = null;
+      try {
+        created = await Anagrafica_Assistiti.create(assistito).fetch();
+      } catch (err) {
+        // try to catch from db
+        if (err.code === 'E_UNIQUE') {
+          console.log(err);
+          created = await Anagrafica_Assistiti.findOne({cf: assistito.cf});
+          // create the meilisearch document
+          let assistitoData = {
+            id: created.id,
+            cf: created.cf,
+            nome: created.nome,
+            cognome: created.cognome,
+            dataNascita: utils.convertFromUnixSeconds(created.dataNascita),
+            md5: created.md5
+          };
+          assistitoData.fullText = module.exports.generateFullText(assistitoData);
+          await meilisearchService.addDocument(assistitoData);
+          return {cf: created.cf, id: created.id, message: 'Assistito non creato, ma mancava indice. Aggiunto.'};
+        } else {
+          throw err;
+        }
+      }
+      return {cf: created.cf, id: created.id, message: 'Assistito creato'};
+    } else {
+      return {cf: assistito.cf, message: 'Assistito duplicato'};
+    }
+  },
+  generateFullText(assistito) {
+    // Aggiungiamo più varianti per nome e cognome
+    const createVariants = (str) => {
+      const variants = [];
+      // Convertiamo tutto in maiuscolo (o minuscolo) per standardizzare
+      str = str.toUpperCase(); // o toLowerCase()
+
+      // Aggiungiamo il testo originale
+      variants.push(str);
+      // Aggiungiamo prefissi di varie lunghezze
+      for (let i = 3; i <= str.length; i++) {
+        variants.push(str.substring(0, i));
+      }
+      return variants;
+    };
+
+    const nameVariants = createVariants(assistito.nome);
+    const surnameVariants = createVariants(assistito.cognome);
+
+    // Varianti della data
+    const dataParts = assistito.dataNascita.split('/');
+    const dataVariants = [
+      assistito.dataNascita,
+      dataParts[2],  // 1994
+    ];
+
+    return [
+      ...nameVariants,
+      ...surnameVariants,
+      assistito.cf,
+      ...dataVariants,
+      `${assistito.nome} ${assistito.cognome}`,
+      `${assistito.cognome} ${assistito.nome}`
+    ].join(' ');
+  }
 
 };
 

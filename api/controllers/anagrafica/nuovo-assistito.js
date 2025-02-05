@@ -1,3 +1,5 @@
+const {utils} = require("aziendasanitaria-utils/src/Utils");
+
 module.exports = {
   friendlyName: 'Nuovo assistito',
   description: 'Crea un nuovo assistito nel sistema',
@@ -28,6 +30,14 @@ module.exports = {
   fn: async function (inputs, exits) {
     let assistitoCreato = null;
     try {
+      // remove if exists from inputs.assistito the fields: id, createdAt, updatedAt, md5
+      const toDelete = ['id', 'createdAt', 'updatedAt', 'md5','eta'];
+      toDelete.forEach(field => {
+        if (inputs.assistito[field]) {
+          delete inputs.assistito[field];
+        }
+      });
+      inputs.assistito['md5'] = utils.calcolaMD5daStringa(JSON.stringify(inputs.assistito));
       assistitoCreato = await Anagrafica_Assistiti.create(inputs.assistito)
         .fetch();
     } catch (err) {
