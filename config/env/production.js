@@ -20,7 +20,6 @@
  */
 
 module.exports = {
-  baseUrl: 'https://exart26-iota.app.robertodedomenico.it',
 
   /**************************************************************************
   *                                                                         *
@@ -46,32 +45,13 @@ module.exports = {
     *    (See https://sailsjs.com/config/datastores for help.)                 *
     *                                                                          *
     ***************************************************************************/
-    default: {
-      // adapter: 'sails-mysql',
-      // url: 'mysql://user:password@host:port/database',
-      //--------------------------------------------------------------------------
-      //  /\   To avoid checking it in to version control, you might opt to set
-      //  ||   sensitive credentials like `url` using an environment variable.
-      //
-      //  For example:
-      //  ```
-      //  sails_datastores__default__url=mysql://admin:myc00lpAssw2D@db.example.com:3306/my_prod_db
-      //  ```
-      //--------------------------------------------------------------------------
-
-      /****************************************************************************
-      *                                                                           *
-      * More adapter-specific options                                             *
-      *                                                                           *
-      * > For example, for some hosted PostgreSQL providers (like Heroku), the    *
-      * > extra `ssl` object with a `rejectUnauthorized` option must be provided. *
-      *                                                                           *
-      * More info:                                                                *
-      * https://sailsjs.com/config/datastores                                     *
-      *                                                                           *
-      ****************************************************************************/
-      // ssl: { rejectUnauthorized: true },
-
+    auth: {
+      adapter: 'sails-mysql',
+      url: process.env.AUTH_DB_URL,
+    },
+    anagrafica: {
+      adapter: 'sails-mysql',
+      url: process.env.ANAGRAFICA_DB_URL,
     },
 
   },
@@ -90,7 +70,7 @@ module.exports = {
     * https://sailsjs.com/docs/concepts/models-and-orm/model-settings#?migrate *
     *                                                                          *
     ***************************************************************************/
-    migrate: 'drop',
+    migrate: 'safe',
 
     /***************************************************************************
     *                                                                          *
@@ -355,7 +335,7 @@ module.exports = {
   * this, just try deploying without setting it and see if it works.)       *
   *                                                                         *
   ***************************************************************************/
-  // port: 80,
+  port: 80,
 
 
 
@@ -389,8 +369,8 @@ module.exports = {
   *                                                                         *
   ***************************************************************************/
   custom: {
-    baseUrl: 'https://example.com',
-    internalEmailAddress: 'support@example.com',
+    baseUrl: process.env.BASE_URL,
+    internalEmailAddress: process.env.MAIL_ADDRESS,
 
     // sendgridSecret: 'SG.fake.3e0Bn0qSQVnwb1E4qNPz9JZP5vLZYqjh7sn8S93oSHU',
     // stripeSecret: 'sk_prod__fake_Nfgh82401348jaDa3lkZ0d9Hm',
