@@ -47,11 +47,11 @@ module.exports = {
     ***************************************************************************/
     auth: {
       adapter: 'sails-mysql',
-      url: process.env.AUTH_DB_URL,
+      url: "mysql://asp_anagrafica:9xz0?X44p@localhost:3306/asp_auth"
     },
     anagrafica: {
       adapter: 'sails-mysql',
-      url: process.env.ANAGRAFICA_DB_URL,
+      url: "mysql://asp_anagrafica:9xz0?X44p@localhost:3306/asp_anagrafica"
     },
 
   },
@@ -216,7 +216,7 @@ module.exports = {
     *                                                                          *
     ***************************************************************************/
     cookie: {
-      // secure: true,
+      secure: true,
       maxAge: 24 * 60 * 60 * 1000,  // 24 hours
     },
 
