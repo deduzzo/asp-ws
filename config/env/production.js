@@ -47,11 +47,11 @@ module.exports = {
     ***************************************************************************/
     auth: {
       adapter: 'sails-mysql',
-      url: "mysql://"
+      url: "mysql://asp_anagrafica:9xz0%3FX44p@127.0.0.1:3306/asp_auth"
     },
     anagrafica: {
       adapter: 'sails-mysql',
-      url: "mysql://"
+      url: "mysql://asp_anagrafica:9xz0%3FX44p@127.0.0.1:3306/asp_anagrafica"
     },
 
   },
