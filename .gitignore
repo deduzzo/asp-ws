@@ -136,3 +136,4 @@ lib-cov
 
 pnpm-lock.yaml
 package-lock.json
+deploy.log
