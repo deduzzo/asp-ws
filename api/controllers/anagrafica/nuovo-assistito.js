@@ -1,8 +1,23 @@
+/**
+ * @swagger
+ *
+ * /nuovo-assistito:
+ *   tags:
+ *     - Auth
+ * tags:
+ *   - name: Auth
+ *     description: API di autenticazione
+ */
+
+
+
+
 const {utils} = require("aziendasanitaria-utils/src/Utils");
 
 module.exports = {
   friendlyName: 'Nuovo assistito',
   description: 'Crea un nuovo assistito nel sistema',
+
 
   inputs: {
     assistito: {

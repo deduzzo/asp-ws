@@ -1,3 +1,14 @@
+/**
+ * @swagger
+ *
+ * /assistito:
+ *   tags:
+ *     - Ricerca
+ * tags:
+ *   - name: Ricerca
+ *     description: Interrogazione del database degli assistiti
+ */
+
 const moment = require('moment');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const AssistitoService = require('../../services/AssistitoService');

@@ -13,6 +13,9 @@ const {generateToken, verifyToken} = require('../api/services/JwtService');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const {Assistito} = require('aziendasanitaria-utils/src/classi/Assistito');
 const meilisearchService = require('../api/services/MeilisearchService');
+const fs = require('fs');
+const path = require('path');
+
 
 module.exports.bootstrap = async function () {
 
@@ -79,6 +82,7 @@ module.exports.bootstrap = async function () {
         add constraint utenti_scopi_scopi_id_fk
           foreign key (scopo) references scopi (id);`);
   }
+
 
 
   /*  await anagraficaDataStore.sendNativeQuery(`ALTER TABLE assistiti

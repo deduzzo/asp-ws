@@ -5,7 +5,7 @@ module.exports['swagger-generator'] = {
     openapi: '3.0.0',
     info: {
       title: 'ASP-ws Doc',
-      description: 'Documentazione delle API del progetto ASP-ws',
+      description: 'Documentazione delle API del progetto ASP-ws\n\n Numero totale assistiti nel database: <b>{{TOTAL_ASSISTITI}}</b>\n\nUltimo aggiornamento: <b>{{LAST_UPDATE}}</b>\n',
       termsOfService: 'http://example.com/terms',
       contact: {
         name: 'Roberto De Domenico',
@@ -30,7 +30,7 @@ module.exports['swagger-generator'] = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT'
-        }
+        },
       }
     },
     // -- Definisci la security a livello globale

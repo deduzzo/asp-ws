@@ -1,3 +1,14 @@
+/**
+ * @swagger
+ *
+ * /get-token:
+ *   tags:
+ *     - Auth
+ */
+
+
+
+
 module.exports = {
 
   friendlyName: 'GetToken',

@@ -15,6 +15,7 @@ module.exports.custom = {
   jwtSecret: jwtConfig.JWT_SECRET,
   jwtExpiresIn: '1h',
   jwtRefreshTokenExpiresIn: '1d',
+  total_assistiti: 0,
   /***************************************************************************
   *                                                                          *
   * Any other custom config this Sails app should use during development.    *
