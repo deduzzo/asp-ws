@@ -1,35 +1,41 @@
 #!/bin/bash
 
-# Directory del progetto
+# Se su Plesk hai Node 22 in /opt/plesk/node/22/bin, imposta il PATH di conseguenza
+export PATH=/opt/plesk/node/22/bin:$PATH
+
+# Directory del progetto (quella in cui risiede app.js)
 APP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LOG_FILE="$APP_DIR/deploy.log"
 
 # Funzione di logging
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> $LOG_FILE
-    echo "$1"
+  # Scrive sia sullo stdout che sul file di log con timestamp
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
 # Gestione errori
 handle_error() {
-    log "ERRORE: $1"
-    exit 1
+  log "ERRORE: $1"
+  exit 1
 }
 
-cd $APP_DIR || handle_error "Impossibile accedere a $APP_DIR"
+# Entra nella cartella del progetto
+cd "$APP_DIR" || handle_error "Impossibile accedere a $APP_DIR"
 
-# Installazione dipendenze
+# Installazione dipendenze in produzione
 log "Installazione dipendenze npm..."
-./node_modules/.bin/npm install --production || handle_error "Installazione dipendenze fallita"
+npm install --production || handle_error "Installazione dipendenze fallita"
 
-# Riavvio PM2 se usato
-if ./node_modules/.bin/pm2 list | grep -q "sails-app"; then
+# Controlla se l'app sails-app è già in esecuzione
+./node_modules/.bin/pm2 show sails-app &>/dev/null
+if [ $? -eq 0 ]; then
+    # Processo trovato: ricarico
     log "Riavvio applicazione con PM2..."
-    ./node_modules/.bin/pm2 reload sails-app || handle_error "Riavvio PM2 fallito"
+    ./node_modules/.bin/pm2 reload sails-app --update-env || handle_error "Riavvio PM2 fallito"
 else
-    # Prima installazione PM2
+    # Processo non trovato: avvio per la prima volta
     log "Configurazione iniziale PM2..."
-    ./node_modules/.bin/pm2 start app.js --name "sails-app" || handle_error "Avvio PM2 fallito"
+    ./node_modules/.bin/pm2 start app.js --name "sails-app" --update-env || handle_error "Avvio PM2 fallito"
     ./node_modules/.bin/pm2 save || handle_error "Salvataggio configurazione PM2 fallito"
 fi
 
