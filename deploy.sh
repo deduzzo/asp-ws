@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Se su Plesk hai Node 22 in /opt/plesk/node/22/bin, imposta il PATH di conseguenza
-export PATH=/opt/plesk/node/22/bin:$PATH
-
 # Directory del progetto (quella in cui risiede app.js)
 APP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LOG_FILE="$APP_DIR/deploy.log"
