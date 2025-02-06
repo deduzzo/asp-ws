@@ -18,6 +18,7 @@ handle_error() {
 
 # Entra nella cartella del progetto
 cd "$APP_DIR" || handle_error "Impossibile accedere a $APP_DIR"
+log "$APP_DIR"
 
 # Installazione dipendenze in produzione
 log "Installazione dipendenze npm..."
