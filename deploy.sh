@@ -20,7 +20,7 @@ cd $APP_DIR || handle_error "Impossibile accedere a $APP_DIR"
 
 # Installazione dipendenze
 log "Installazione dipendenze npm..."
-npm install --production || handle_error "Installazione dipendenze fallita"
+./node_modules/.bin/npm install --production || handle_error "Installazione dipendenze fallita"
 
 # Riavvio PM2 se usato
 if ./node_modules/.bin/pm2 list | grep -q "sails-app"; then
