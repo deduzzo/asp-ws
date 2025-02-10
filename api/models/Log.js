@@ -7,6 +7,9 @@ module.exports = {
       required: true,
       isIn: ['info', 'warn', 'error', 'debug']
     },
+    tag: {
+      type: 'string',
+    },
     message: {
       type: 'string',
       required: true
@@ -29,5 +32,9 @@ module.exports = {
       type: 'number',
       autoCreatedAt: true
     }
+  },
+  TAGS: {
+    TOKEN_VERIFY_OK: 'TOKEN_VERIFY_OK',
+    TOKEN_VERIFY_KO: 'TOKEN_VERIFY_KO',
   }
 };

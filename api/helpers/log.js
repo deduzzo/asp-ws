@@ -1,4 +1,5 @@
 // api/helpers/log.js
+const {TAGS} = require('../models/Log');
 module.exports = {
   friendlyName: 'Log to database',
 
@@ -8,6 +9,11 @@ module.exports = {
       description: 'Livello di log',
       required: true,
       isIn: ['info', 'warn', 'error', 'debug']
+    },
+    tag: {
+      type: 'string',
+      description: 'Tag associato al log',
+      isIn: [...Object.keys(TAGS)]
     },
     message: {
       type: 'string',

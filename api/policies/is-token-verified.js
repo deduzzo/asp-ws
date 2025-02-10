@@ -1,5 +1,6 @@
 const {verifyToken} = require('../services/JwtService');
 const {ERROR_TYPES} = require('../responses/ApiResponse');
+const {TAGS} = require('../models/Log');
 
 module.exports = async function (req, res, proceed) {
   try {
@@ -11,6 +12,7 @@ module.exports = async function (req, res, proceed) {
     //log
     await sails.helpers.log.with({
       level: "info",
+      tag: TAGS.TOKEN_VERIFY_OK,
       message: `Token verificato: ${tokenData.valid}`,
       action: req.options.action,
       ipAddress: req.ip,
@@ -28,6 +30,7 @@ module.exports = async function (req, res, proceed) {
       // log
       await sails.helpers.log.with({
         level: "warn",
+        tag: TAGS.TOKEN_VERIFY_KO,
         message: `Token non valido: ${tokenData.error.name}`,
         action: req.options.action,
         ipAddress: req.ip,
@@ -50,6 +53,7 @@ module.exports = async function (req, res, proceed) {
     // log
     await sails.helpers.log.with({
       level: "error",
+      tag: TAGS.TOKEN_VERIFY_KO,
       message: `Errore durante la verifica del token: ${err.name}`,
       action: req.options.action,
       ipAddress: req.ip,

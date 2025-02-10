@@ -1,5 +1,5 @@
 module.exports = async function (req, res, proceed) {
-  await sails.helpers.log({
+  await sails.helpers.log.with({
     level: 'info',
     message: `Action chiamata: ${req.options.action}`,
     action: req.options.action,
