@@ -90,18 +90,21 @@ async function ApiResponse(data) {
   res.status(statusCode);
 
 
-  await sails.helpers.log.with({
-    level: data.errType ? "error" : "info",
+  let logData = {
+    level: data.errType ? 'error' : 'info',
     tag: data.errType ? TAGS.API_RESPONSE_KO : TAGS.API_RESPONSE_OK,
     message: `Risposta API: ${statusCode}`,
     action: req.options.action,
-    user: req.user || null,
     ipAddress: req.ip,
     context: {
       params: req.allParams(),
       error: data.errType ? {code: data.errType, msg: data.errMsg} : null,
     }
-  });
+  };
+  if (req.user) {
+    logData.user = req.user;
+  }
+  await sails.helpers.log.with(logData);
   // Costruisce e restituisce l'oggetto di risposta
   if (data.errType) {
     return res.json({
