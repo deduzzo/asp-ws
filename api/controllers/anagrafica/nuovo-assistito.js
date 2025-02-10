@@ -9,10 +9,8 @@
  *     description: API di autenticazione
  */
 
-
-
-
-const {utils} = require("aziendasanitaria-utils/src/Utils");
+const {utils} = require('aziendasanitaria-utils/src/Utils');
+const {ERROR_TYPES} = require('../../responses/ApiResponse');
 
 module.exports = {
   friendlyName: 'Nuovo assistito',
@@ -23,30 +21,20 @@ module.exports = {
     assistito: {
       type: 'ref',
       model: 'anagrafica_assistiti',
-      description: 'Dati dell\'assistito da inserire',
-      meta: {
-        swagger: {
-          in: 'body',
-        }
-      },
+      description: 'Dati dell\'assistito da inserire (omettere id, createdAt, updatedAt, ed md5)',
+      // omit id, createdAt, updatedAt, md5
+      required: true,
     },
   },
 
-  exits: {
-    success: {
-      description: 'Assistito creato con successo'
-    },
-    badRequest: {
-      description: 'I dati forniti non sono validi',
-      responseType: 'badRequest'
-    }
-  },
+  exits: {},
 
   fn: async function (inputs, exits) {
     let assistitoCreato = null;
+    const res = this.res;
     try {
       // remove if exists from inputs.assistito the fields: id, createdAt, updatedAt, md5
-      const toDelete = ['id', 'createdAt', 'updatedAt', 'md5','eta'];
+      const toDelete = ['id', 'createdAt', 'updatedAt', 'md5', 'eta'];
       toDelete.forEach(field => {
         if (inputs.assistito[field]) {
           delete inputs.assistito[field];
@@ -56,13 +44,13 @@ module.exports = {
       assistitoCreato = await Anagrafica_Assistiti.create(inputs.assistito)
         .fetch();
     } catch (err) {
-      return exits.badRequest({
-        message: 'I dati forniti non sono conformi al modello',
+      return res.ApiResponse({
+        errType: ERROR_TYPES.BAD_REQUEST,
+        errMsg: 'I dati forniti non sono conformi al modello',
         details: err.details
       });
     }
-    return exits.success({
-      message: 'Assistito creato con successo',
+    return res.ApiResponse({
       data: assistitoCreato
     });
   }

@@ -12,6 +12,9 @@
 const moment = require('moment');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const AssistitoService = require('../../services/AssistitoService');
+const {ERROR_TYPES} = require('../../responses/ApiResponse');
+
+const maxResults = 100;
 
 module.exports = {
 
@@ -43,26 +46,16 @@ module.exports = {
       description: 'La data di nascita dell\'assistito'
     }
   },
-
   exits: {
-    success: {
-      description: 'Assistiti trovati',
-      responseType: 'ok'
-    },
-    notFound: {
-      description: 'Assistiti non trovati',
-      responseType: 'notFound'
-    },
-    badRequest: {
-      description: 'Parametri di ricerca non validi',
-      responseType: 'badRequest'
-    }
   },
-
-  fn: async function (inputs, exits) {
+  fn: async function (inputs,exits) {
+    const res = this.res;
     // Verifica che sia stato fornito almeno un parametro di ricerca
     if (!inputs.codiceFiscale && !inputs.nome && !inputs.cognome && !inputs.dataNascita) {
-      throw 'badRequest';
+      return res.ApiResponse({
+        errType: ERROR_TYPES.BAD_REQUEST,
+        errMsg: 'Inserire almeno un parametro di ricerca'
+      });
     }
 
     // Inizializza i criteri di ricerca
@@ -73,26 +66,35 @@ module.exports = {
       if (inputs.codiceFiscale.length < 5) {
         // Se il codice fiscale è presente ma non raggiunge i 5 caratteri, si controlla che siano presenti almeno altri 2 parametri
         let count = 0;
-        if (inputs.nome) count++;
-        if (inputs.cognome) count++;
-        if (inputs.dataNascita) count++;
+        if (inputs.nome) {
+          count++;
+        }
+        if (inputs.cognome) {
+          count++;
+        }
+        if (inputs.dataNascita) {
+          count++;
+        }
         if (count < 2) {
-          throw 'badRequest';
+          return res.ApiResponse({
+            errType: ERROR_TYPES.BAD_REQUEST,
+            errMsg: 'Inserire almeno un parametro di ricerca'
+          });
         }
       } else {
         // Filtraggio per codice fiscale (ricerca parziale)
-        criteria.cf = { like: `%${inputs.codiceFiscale}%` };
+        criteria.cf = {like: `%${inputs.codiceFiscale}%`};
       }
     }
 
     // Aggiungi il filtro per il nome, se presente (ricerca parziale)
     if (inputs.nome) {
-      criteria.nome = { like: `%${inputs.nome}%` };
+      criteria.nome = {like: `%${inputs.nome}%`};
     }
 
     // Aggiungi il filtro per il cognome, se presente (ricerca parziale)
     if (inputs.cognome) {
-      criteria.cognome = { like: `%${inputs.cognome}%` };
+      criteria.cognome = {like: `%${inputs.cognome}%`};
     }
 
     // Aggiungi il filtro per la data di nascita, se presente (ricerca parziale)
@@ -102,23 +104,32 @@ module.exports = {
     if (inputs.dataNascita && moment(inputs.dataNascita, 'DD/MM/YYYY', true).isValid()) {
       //convert to unix timestamp
       const dataNascita = utils.convertToUnixSeconds(inputs.dataNascita);
-      criteria.dataNascita = dataNascita ;
+      criteria.dataNascita = dataNascita;
     }
     //  verifichiamo che la stringa sia un anno, in questo caso impostiamo la query in modo che vengano cercati tutti gli assistiti nati in quell'anno
     else if (inputs.dataNascita && moment(inputs.dataNascita, 'YYYY', true).isValid()) {
       const start = utils.convertToUnixSeconds(moment(inputs.dataNascita, 'YYYY').startOf('year').format('DD/MM/YYYY'));
       const end = utils.convertToUnixSeconds(moment(inputs.dataNascita, 'YYYY').endOf('year').format('DD/MM/YYYY'));
-      criteria.dataNascita = { '>=': start, '<=': end };
+      criteria.dataNascita = {'>=': start, '<=': end};
     }
 
     // Se non è stato fornito un codice fiscale valido, assicuriamoci che siano presenti almeno due tra nome, cognome e dataNascita
     if (!criteria.cf) {
       let count = 0;
-      if (inputs.nome) count++;
-      if (inputs.cognome) count++;
-      if (inputs.dataNascita) count++;
+      if (inputs.nome) {
+        count++;
+      }
+      if (inputs.cognome) {
+        count++;
+      }
+      if (inputs.dataNascita) {
+        count++;
+      }
       if (count < 2) {
-        throw 'badRequest';
+        return res.ApiResponse({
+          errType: ERROR_TYPES.BAD_REQUEST,
+          errMsg: 'Inserire almeno un parametro di ricerca'
+        });
       }
     }
 
@@ -141,13 +152,31 @@ module.exports = {
       }
 
       if (!assistiti || assistiti.length === 0) {
-        throw 'notFound';
+        return res.ApiResponse({
+          errType: ERROR_TYPES.NOT_FOUND,
+          errMsg: 'Nessun assistito trovato'
+        });
       }
 
-      return exits.success(assistiti);
+      let outData =  {
+        totalCount: assistiti.length,
+      };
+      if (outData.totalCount >maxResults) {
+        outData.realCount = maxResults;
+        outData.message = 'Troppi risultati, si prega di affinare la ricerca. Verranno mostrati solo i primi 100 elementi;';
+        outData.assistiti = assistiti.slice(0, maxResults);
+      }
+      else
+        outData.assistiti = assistiti;
+      return res.ApiResponse({
+        data: outData
+      });
     } catch (err) {
       // Propaga l'errore (che verrà gestito dai rispettivi responseType)
-      throw err;
+      return res.ApiResponse({
+        errType: ERROR_TYPES.ERRORE_DEL_SERVER,
+        errMsg: err.message
+      });
     }
   }
 };

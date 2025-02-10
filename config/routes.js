@@ -12,7 +12,66 @@ const path = require('path');
 const fs = require('fs');
 const moment = require('moment');
 const csfr = false;
+const JwtService = require('../api/services/JwtService');
 
+
+const getDocs = async (req, res) => {
+  const path = require('path');
+  const fs = require('fs');
+  const filePath = path.resolve('node_modules/swagger-ui-dist/index.html');
+  const apiurl = sails.config.custom.baseUrl + '/swagger.json';
+  // csrf
+  let csrfToken = '';
+  if (req.csrfToken) {
+    csrfToken = req.csrfToken();
+  }
+  try {
+    const total_assistiti = await Anagrafica_Assistiti.count();
+    // last update è il più alto updatedAt della tabella assistiti
+    const lastAssitito = await Anagrafica_Assistiti.find({
+      sort: 'updatedAt DESC',
+      limit: 1
+    });
+
+    const swaggerPath = path.resolve(__dirname, '../swagger/swagger.json');
+
+    if (fs.existsSync(swaggerPath)) {
+      let swaggerDoc = fs.readFileSync(swaggerPath, {encoding: 'utf8'});
+      swaggerDoc = swaggerDoc.replace('{{TOTAL_ASSISTITI}}', total_assistiti.toLocaleString('it-IT'))
+        .replace('{{LAST_UPDATE}}', moment(lastAssitito[0].updatedAt).format('DD/MM/YYYY HH:mm:ss'));
+      await fs.promises.writeFile(swaggerPath, swaggerDoc, {encoding: 'utf8'});
+    }
+  } catch (error) {
+    sails.log.error('Errore nel bootstrap per il conteggio assistiti:', error);
+  }
+  fs.readFile(filePath, 'utf8', function (err, data) {
+    if (err) {
+      return res.serverError(err);
+    }
+    data = data.replace(' src="./swagger-initializer.js" charset="UTF-8"> ',
+      '> let csrfToken= "' + csrfToken + '"; window.onload = function() {' +
+      'window.ui = SwaggerUIBundle({' +
+      '  url: "' + apiurl + '",' +
+      '  dom_id: "#swagger-ui",' +
+      '  deepLinking: true,' +
+      '  presets: [' +
+      '    SwaggerUIBundle.presets.apis,' +
+      '    SwaggerUIStandalonePreset' +
+      '  ],' +
+      '  plugins: [' +
+      '    SwaggerUIBundle.plugins.DownloadUrl' +
+      '  ],' +
+      '  layout: "StandaloneLayout"' + (csrfToken !== '' ?
+        '  ,requestInterceptor: function(req) {' +
+        '    req.headers["X-CSRF-Token"] = csrfToken;' +
+        '    return req;' +
+        '  }' : '') +
+      '});' +
+      '};');
+
+    res.send(data);
+  });
+};
 let routes = {
 
   /***************************************************************************
@@ -24,11 +83,23 @@ let routes = {
    *                                                                          *
    ***************************************************************************/
 
-  '/': {view: 'pages/homepage'},
+  '/': getDocs,
 
-  'POST /api/v1/login/get-token': {action: 'login/get-token'},
-  'POST /api/v1/anagrafica/assistito': {action: 'anagrafica/assistito'},
-  'POST /api/v1/anagrafica/nuovo-assistito': {action: 'anagrafica/nuovo-assistito'},
+  'POST /api/v1/login/get-token': {
+    action: 'login/get-token',
+  },
+  'POST /api/v1/anagrafica/assistito': {
+    action: 'anagrafica/assistito',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/anagrafica/nuovo-assistito': {
+    action: 'anagrafica/nuovo-assistito',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 
 
   /***************************************************************************
@@ -58,63 +129,7 @@ let routes = {
       .send(swaggerJson);
   },
 
-  'GET /docs': async (req, res) => {
-    var path = require('path');
-    var fs = require('fs');
-    var filePath = path.resolve('node_modules/swagger-ui-dist/index.html');
-    var apiurl = sails.config.custom.baseUrl + '/swagger.json';
-    // csrf
-    var csrfToken = '';
-    if (req.csrfToken) {
-      csrfToken = req.csrfToken();
-    }
-    try {
-      const total_assistiti = await Anagrafica_Assistiti.count();
-      // last update è il più alto updatedAt della tabella assistiti
-      const lastAssitito = await Anagrafica_Assistiti.find({
-        sort: 'updatedAt DESC',
-        limit: 1
-      });
-
-      const swaggerPath = path.resolve(__dirname, '../swagger/swagger.json');
-
-      if (fs.existsSync(swaggerPath)) {
-        let swaggerDoc = fs.readFileSync(swaggerPath, {encoding: 'utf8'});
-        swaggerDoc = swaggerDoc.replace('{{TOTAL_ASSISTITI}}', total_assistiti.toLocaleString('it-IT'))
-          .replace('{{LAST_UPDATE}}', moment(lastAssitito[0].updatedAt).format('DD/MM/YYYY HH:mm:ss'));
-        await fs.promises.writeFile(swaggerPath, swaggerDoc, { encoding: 'utf8' });
-      }
-    } catch (error) {
-      sails.log.error('Errore nel bootstrap per il conteggio assistiti:', error);
-    }
-    fs.readFile(filePath, 'utf8', function (err, data) {
-      if (err) {
-        return res.serverError(err);
-      }
-      data = data.replace(' src="./swagger-initializer.js" charset="UTF-8"> ',
-        '> let csrfToken= "' + csrfToken + '"; window.onload = function() {' +
-        'window.ui = SwaggerUIBundle({' +
-        '  url: "' + apiurl + '",' +
-        '  dom_id: "#swagger-ui",' +
-        '  deepLinking: true,' +
-        '  presets: [' +
-        '    SwaggerUIBundle.presets.apis,' +
-        '    SwaggerUIStandalonePreset' +
-        '  ],' +
-        '  plugins: [' +
-        '    SwaggerUIBundle.plugins.DownloadUrl' +
-        '  ],' +
-        '  layout: "StandaloneLayout"' + (csrfToken !== '' ?
-          '  ,requestInterceptor: function(req) {' +
-          '    req.headers["X-CSRF-Token"] = csrfToken;' +
-          '    return req;' +
-          '  }' : '') +
-        '});' +
-        '};');
-
-      res.send(data);
-    });
-  }
+  'GET /docs': getDocs,
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato

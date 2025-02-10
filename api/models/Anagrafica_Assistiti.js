@@ -203,6 +203,25 @@ module.exports = {
     //  ╩ ╩╚═╝╚═╝╚═╝╚═╝╩╩ ╩ ╩ ╩╚═╝╝╚╝╚═╝
 
   },
+  customToJSON: function() {
+    // ritorna l'oggetto con i campi dataNascita e dataDecesso convertiti in stringhe usando utils.convertUnixSecondsToDate
+    const obj = this;
+    if (obj.dataNascita)
+      obj.dataNascita = utils.convertUnixTimestamp(obj.dataNascita);
+    if (obj.dataDecesso)
+      obj.dataDecesso = utils.convertUnixTimestamp(obj.dataDecesso);
+    if (obj.ssnInizioAssistenza)
+      obj.ssnInizioAssistenza = utils.convertUnixTimestamp(obj.ssnInizioAssistenza);
+    if (obj.ssnFineAssistenza)
+      obj.ssnFineAssistenza = utils.convertUnixTimestamp(obj.ssnFineAssistenza);
+    if (obj.MMGDataScelta)
+      obj.MMGDataScelta = utils.convertUnixTimestamp(obj.MMGDataScelta);
+    if (obj.MMGDataRevoca)
+      obj.MMGDataRevoca = utils.convertUnixTimestamp(obj.MMGDataRevoca);
+    obj.createdAt = utils.convertUnixTimestamp(obj.createdAt,'Europe/Rome', 'DD/MM/YYYY HH:mm:ss');
+    obj.updatedAt = utils.convertUnixTimestamp(obj.updatedAt,'Europe/Rome', 'DD/MM/YYYY HH:mm:ss');
+    return _.omit(this, ['id'])
+  },
   getMd5FromDataAssistito,
 
   beforeCreate: async function (newRecord, proceed) {

@@ -22,82 +22,55 @@ const JwtService = {
    * @param {string} userData.username - Il nome utente dell'utente.
    * @param {Array} userData.scopi - Gli scopi associati all'utente.
    * @param {string} userData.ambito - L'ambito dell'utente.
-   * @returns {string} - Il token JWT generato.
+   * @param {number} userData.livello - Il livello di accesso dell'utente.
+   * @returns {string|null} - Il token JWT generato.
    */
   generateToken: (userData) => {
     const payload = {
       username: userData.username,
       scopi: userData.scopi,
-      ambito: userData.ambito
+      ambito: userData.ambito,
+      livello: userData.livello
     };
-    return jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
-  },
-
-  // Genera refresh token
-  generateRefreshToken: (userData) => {
-    const payload = {
-      username: userData.username,
-      type: 'refresh'
-    };
-    return jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getRefreshTokenExpiry()});
+    try {
+      return jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
+    } catch (err) {
+      return null;
+    }
   },
 
   // Verifica token
-  verifyToken: async (token, livelloRichiesto) => {
+  verifyToken: async (token, livelloRichiesto, scopoRichiesto, ambitoRichiesto) => {
     try {
       const decoded = jwt.verify(token, JwtService.getSecret());
-      const isValid = await JwtService.verificaPermessi(decoded, livelloRichiesto);
+      const isValid = await JwtService.verificaPermessi(decoded, livelloRichiesto, scopoRichiesto, ambitoRichiesto);
       return isValid ? {valid: true, decoded, error: null} : {valid: false, decoded: null, error: null};
     } catch (err) {
       return {valid: false, decoded: null, error: err};
     }
   },
-
-  // Rinnova token usando refresh token
-  refreshToken: async (refreshToken) => {
-    try {
-      const decoded = jwt.verify(refreshToken, JwtService.getSecret());
-      if (decoded.type !== 'refresh') {
-        return false;
-      }
-
-      const userData = await JwtService.getUser(decoded.username);
-      if (!userData || await JwtService.isTokenRevoked(refreshToken)) {
-        return false;
-      }
-
-      return JwtService.generateToken(userData);
-    } catch (err) {
+  verificaPermessi: async (decoded, livelloRichiesto, scopoRichiesto, ambitoRichiesto) => {
+    if (!decoded.hasOwnProperty('username') || !decoded.hasOwnProperty('scopi') || !decoded.hasOwnProperty('ambito') || !decoded.hasOwnProperty('livello')) {
       return false;
     }
-  },
-
-  // Funzioni da implementare per la verifica nel DB
-  verificaPermessi: async (decoded, livelloRichiesto) => {
-    if (!decoded.hasOwnProperty('username') || !decoded.hasOwnProperty('scopi') || !decoded.hasOwnProperty('ambito')) {
-      return false;
-    }
-    let {username, scopi, ambito} = decoded;
+    let {username, scopi, ambito, livello} = decoded;
     console.log('Verifica permessi per:', username);
-    const user = await auth_Utenti.findOne({username: username}).populate('ambito').populate('livello').populate('scopi');
-    // if user not contains the decoded scopi, user.scopi is an array of object
-    const haveScopi = user.scopi.some(s => scopi.includes(s.scopo));
-    if (!user || !user.attivo || !haveScopi || !user.ambito || user.ambito.ambito !== ambito || user.livello.id < livelloRichiesto) {
+    const utente = await Auth_Utenti.findOne({username: username}).populate('ambito').populate('scopi');
+    const scopiUtenteAttivi = utente.scopi.filter(s => s.attivo).map(s => s.scopo);
+    const utenteHaAutorizzazioneAScopoToken = scopi.every(s => scopiUtenteAttivi.includes(s));
+    const utenteHaAutorizzazioneAScopiRichiesti = scopoRichiesto.every(s => scopiUtenteAttivi.includes(s));
+    if (!utente || !utente.attivo || !utenteHaAutorizzazioneAScopoToken || !utenteHaAutorizzazioneAScopiRichiesti || !utente.ambito
+      || utente.ambito.ambito !== ambito || ambito !== ambitoRichiesto || utente.livello < livelloRichiesto || livello !== utente.livello) {
       return false;
     }
 
     return true;
   },
-
-  getUser: async (username) => {
-    // Recupera dati utente dal DB
-    return null;
-  },
-
-  isTokenRevoked: async (token) => {
-    // Verifica se il token è stato revocato
-    return false;
+  LOGIN_LEVEL: {
+    guest: 0,
+    user: 1,
+    admin: 2,
+    superAdmin: 99
   }
 };
-
 module.exports = JwtService;

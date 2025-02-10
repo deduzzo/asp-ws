@@ -46,13 +46,124 @@ module.exports['swagger-generator'] = {
   defaults: {
     responses: {
       '200': {
-        description: 'The requested resource'
+        description: 'OK',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: true},
+                err: {type: 'null', example: null},
+                data: {type: 'object', example: {chiave: 'valore', chiave2: 'valore2'}}
+              }
+            }
+          }
+        }
+      },
+      '400': {
+        description: 'Bad Request',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'BAD_REQUEST'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
+      },
+      '401': {
+        description: 'Non autorizzato',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'NON_AUTORIZZATO | TOKEN_SCADUTO | TOKEN_NON_VALIDO'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
       },
       '404': {
-        description: 'Resource not found'
+        description: 'Non trovato',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'NOT_FOUND'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
       },
       '500': {
-        description: 'Internal server error'
+        description: 'Errore del server',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'ERRORE_DEL_SERVER || ERRORE_GENERICO'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
+      },
+      '503': {
+        description: 'Servizio momentaneamente non disponibile',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'SERVIZIO_NON_DISPONIBILE'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
       }
     }
   },
