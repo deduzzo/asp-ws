@@ -54,4 +54,8 @@ module.exports.datastores = {
     adapter: 'sails-mysql',
     url: 'mysql://root:root@localhost:3306/asp_anagrafica',
   },
+  log: {
+    adapter: 'sails-mysql',
+    url: 'mysql://root:root@localhost:3306/asp_log',
+  },
 };

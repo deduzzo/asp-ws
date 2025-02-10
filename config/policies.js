@@ -17,7 +17,6 @@ module.exports.policies = {
   *                                                                          *
   ***************************************************************************/
 
-  // '*': true,
-  "anagrafica/*": "is-token-verified",
-
+    "anagrafica/*": ["is-token-verified"],
+    //'*': ['logger'],
 };
