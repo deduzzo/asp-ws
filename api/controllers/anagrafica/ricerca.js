@@ -1,12 +1,12 @@
 /**
  * @swagger
  *
- * /assistito:
+ * /ricerca:
  *   tags:
- *     - Ricerca
+ *     - Anagrafica
  * tags:
- *   - name: Ricerca
- *     description: Interrogazione del database degli assistiti
+ *   - name: Anagrafica
+ *     description: Gestione degli assistiti, ricerca e gestione
  */
 
 const moment = require('moment');
@@ -18,37 +18,48 @@ const maxResults = 100;
 
 module.exports = {
 
-  friendlyName: 'Ricerca Assistito',
+  friendlyName: 'Ricerca Assistito su database locale',
 
   description:
-    'Ricerca assistito tramite parametri. Restituisce un array di assistiti. ' +
-    'E\' necessario inserire almeno 5 caratteri del codice fiscale oppure 2 tra nome, cognome e data di nascita',
+    'Ricerca assistito tramite parametri. Restituisce un array di assistiti ed altre informazioni.<br />' +
+    'Se la ricerca produce più di 100 risultati, verranno restituiti solo i primi 100.<br />' +
+    'E\' necessario inserire almeno 5 caratteri del codice fiscale oppure 2 parametri a scelta tra nome, cognome e data di nascita (questi ultimi devono contenere almeno 3 caratteri, 4 per la data di nascita per garantire la ricerca per anno)<br />' +
+    'Se il codice fiscale risulta valido e non vengono trovati risultati, viene effettuata una ricerca nel sistema TS e lo aggiunge al database locale',
 
   inputs: {
     codiceFiscale: {
       type: 'string',
       required: false,
-      description: 'Il codice fiscale dell\'assistito'
+      minLength: 3,
+      description: 'Il codice fiscale dell\'assistito (minimo 3 caratteri, se i caratteri sono da 3 a 5 devono essere presenti almeno altri 2 parametri di ricerca)'
     },
     nome: {
       type: 'string',
       required: false,
-      description: 'Il nome dell\'assistito'
+      minLength: 3,
+      description: 'Il nome dell\'assistito (o parte di esso, minimo 3 caratteri)'
     },
     cognome: {
       type: 'string',
       required: false,
-      description: 'Il cognome dell\'assistito'
+      minLength: 3,
+      description: 'Il cognome dell\'assistito (o parte di esso, minimo 3 caratteri)'
     },
     dataNascita: {
       type: 'string',
       required: false,
-      description: 'La data di nascita dell\'assistito'
-    }
+      minLength: 4,
+      description: 'La data di nascita dell\'assistito (o l\'anno di nascita)'
+    },
+    // parametro forzaAggiornamentoSuTs
+    forzaAggiornamentoTs: {
+      type: 'boolean',
+      required: false,
+      description: 'Se selezionato e il codice fiscale è corretto, forza l\'aggiornamento dei dati da TS'
+    },
   },
-  exits: {
-  },
-  fn: async function (inputs,exits) {
+  exits: {},
+  fn: async function (inputs, exits) {
     const res = this.res;
     // Verifica che sia stato fornito almeno un parametro di ricerca
     if (!inputs.codiceFiscale && !inputs.nome && !inputs.cognome && !inputs.dataNascita) {
@@ -139,15 +150,17 @@ module.exports = {
         where: criteria
       });
 
-      if (!assistiti || assistiti.length === 0) {
+      if (inputs.codiceFiscale && inputs.codiceFiscale.length >= 16 && (!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs) {
         // se il codice fiscale è completo, facciamo un ulteriore tentativo di verifica nel sistema ts
-        if (inputs.codiceFiscale && inputs.codiceFiscale.length >= 16) {
-          const assistito = await AssistitoService.getAssistitoFromCf(inputs.codiceFiscale);
-          if (assistito) {
-            // add assistito to db
-            const created = await Anagrafica_Assistiti.create(assistito).fetch();
-            assistiti = [created];
-          }
+        const assistito = await AssistitoService.getAssistitoFromCf(inputs.codiceFiscale);
+        if (assistito && assistiti.length === 0) {
+          // add assistito to db
+          const created = await Anagrafica_Assistiti.create(assistito).fetch();
+          assistiti = [created];
+        } else if (assistiti.length === 1) {
+          // update assistito in db
+          const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito).fetch();
+
         }
       }
 
@@ -158,16 +171,16 @@ module.exports = {
         });
       }
 
-      let outData =  {
+      let outData = {
         totalCount: assistiti.length,
       };
-      if (outData.totalCount >maxResults) {
+      if (outData.totalCount > maxResults) {
         outData.realCount = maxResults;
         outData.message = 'Troppi risultati, si prega di affinare la ricerca. Verranno mostrati solo i primi 100 elementi;';
         outData.assistiti = assistiti.slice(0, maxResults);
-      }
-      else
+      } else {
         outData.assistiti = assistiti;
+      }
       return res.ApiResponse({
         data: outData
       });

@@ -72,6 +72,7 @@ const getDocs = async (req, res) => {
     res.send(data);
   });
 };
+
 let routes = {
 
   /***************************************************************************
@@ -88,8 +89,8 @@ let routes = {
   'POST /api/v1/login/get-token': {
     action: 'login/get-token',
   },
-  'POST /api/v1/anagrafica/assistito': {
-    action: 'anagrafica/assistito',
+  'POST /api/v1/anagrafica/ricerca': {
+    action: 'anagrafica/ricerca',
     scopi: ['asp5-anagrafica'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.user

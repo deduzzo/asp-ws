@@ -13,8 +13,8 @@ const jwtConfig = require('./custom/private_jwt_config.json');
 module.exports.custom = {
   baseUrl: 'http://localhost:1337',
   jwtSecret: jwtConfig.JWT_SECRET,
-  jwtExpiresIn: '1h',
-  jwtRefreshTokenExpiresIn: '1d',
+  jwtExpiresIn: '1d',
+  jwtRefreshTokenExpiresIn: '1w',
   total_assistiti: 0,
   /***************************************************************************
   *                                                                          *

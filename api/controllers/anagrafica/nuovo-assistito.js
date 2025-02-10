@@ -3,10 +3,7 @@
  *
  * /nuovo-assistito:
  *   tags:
- *     - Auth
- * tags:
- *   - name: Auth
- *     description: API di autenticazione
+ *     - Anagrafica
  */
 
 const {utils} = require('aziendasanitaria-utils/src/Utils');
@@ -14,9 +11,7 @@ const {ERROR_TYPES} = require('../../responses/ApiResponse');
 
 module.exports = {
   friendlyName: 'Nuovo assistito',
-  description: 'Crea un nuovo assistito nel sistema',
-
-
+  description: 'Crea un nuovo assistito nel sistema. E\' richiesto livello di autorizzazione admin.',
   inputs: {
     assistito: {
       type: 'ref',

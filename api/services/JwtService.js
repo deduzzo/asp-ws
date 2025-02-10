@@ -1,5 +1,6 @@
 // api/services/JwtService.js
 const jwt = require('jsonwebtoken');
+const {utils} = require('aziendasanitaria-utils/src/Utils');
 
 const JwtService = {
   // Funzioni di utilità per accedere alla configurazione
@@ -23,7 +24,7 @@ const JwtService = {
    * @param {Array} userData.scopi - Gli scopi associati all'utente.
    * @param {string} userData.ambito - L'ambito dell'utente.
    * @param {number} userData.livello - Il livello di accesso dell'utente.
-   * @returns {string|null} - Il token JWT generato.
+   * @returns {{token: *, expiresIn: *}|null} - Il token JWT generato e la data di scadenza, o null in caso di errore.
    */
   generateToken: (userData) => {
     const payload = {
@@ -33,7 +34,12 @@ const JwtService = {
       livello: userData.livello
     };
     try {
-      return jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
+      const token = jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
+      const verify = jwt.verify(token, JwtService.getSecret());
+      return {
+        token: token,
+        expireDate: utils.convertUnixTimestamp(verify.exp,'Europe/Rome', 'DD/MM/YYYY HH:mm:ss')
+      };
     } catch (err) {
       return null;
     }

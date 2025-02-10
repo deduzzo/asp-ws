@@ -4,6 +4,9 @@
  * /get-token:
  *   tags:
  *     - Auth
+ * tags:
+ *   - name: Auth
+ *     description: Gestione autenticazione e autorizzazione
  */
 
 const { generateToken } = require('../../services/JwtService');
@@ -112,9 +115,7 @@ module.exports = {
 
       // Restituisce il token generato con exit success
       return res.ApiResponse({
-        data: {
-          token: token
-        }
+        data: token
       });
     } catch (err) {
       // if is incorrect

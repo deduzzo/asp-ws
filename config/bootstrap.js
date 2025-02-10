@@ -54,7 +54,7 @@ module.exports.bootstrap = async function () {
     const livelloSuperAdmin = await Auth_Livelli.findOne({livello: 'superAdmin'});
     const superAdmin = await Auth_Utenti.create({
       username: 'roberto.dedomenico',
-      password: await sails.helpers.passwords.hashPassword('Era@@1234.'),
+      password: await sails.helpers.passwords.hashPassword(''),
       attivo: true,
       ambito: ambitoApi.id,
       livello: livelloSuperAdmin.id,
@@ -83,6 +83,22 @@ module.exports.bootstrap = async function () {
           foreign key (scopo) references scopi (id);`);
   }
 
+  // ADD NEW USER
+/*
+const password= "";
+  const newUser = await Auth_Utenti.create({
+    username: 'icaro.maggioli',
+    password: await sails.helpers.passwords.hashPassword(password),
+    attivo: true,
+    ambito: (await Auth_Ambiti.findOne({ambito: 'api'})).id,
+    livello: (await Auth_Livelli.findOne({livello: 'user'})).id,
+  }).fetch();
+  // scopi of SuperAdmin scopoAnagrafica
+  await Auth_Utenti.addToCollection(newUser.id, 'scopi', (await Auth_Scopi.findOne({scopo: 'asp5-anagrafica'})).id);
+*/
+
+  const pass = await sails.helpers.passwords.hashPassword("a[5!TEC9oYQo");
+  console.log("ciao")
 
 
   /*  await anagraficaDataStore.sendNativeQuery(`ALTER TABLE assistiti
@@ -175,13 +191,5 @@ module.exports.bootstrap = async function () {
   }
 
 */
-
-  let bearerTest = generateToken({
-    username: 'roberto.dedomenico',
-    scopi: ['asp5-anagrafica'],
-    ambito: 'api',
-  });
-  let testtoken = await verifyToken(bearerTest, Auth_Livelli.LIVELLO_USER);
-  console.log('ciao');
 
 };
