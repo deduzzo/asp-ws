@@ -28,10 +28,6 @@ module.exports = {
       type: 'string',
       allowNull: true
     },
-    timestamp: {
-      type: 'number',
-      autoCreatedAt: true
-    }
   },
   TAGS: {
     TOKEN_VERIFY_OK: 'TOKEN_VERIFY_OK',
