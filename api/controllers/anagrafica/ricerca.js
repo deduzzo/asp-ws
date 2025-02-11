@@ -157,10 +157,10 @@ module.exports = {
           // add assistito to db
           const created = await Anagrafica_Assistiti.create(assistito).fetch();
           assistiti = [created];
-        } else if (assistiti.length === 1) {
+        } else if (assistito && assistiti.length === 1) {
           // update assistito in db
           const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito).fetch();
-
+          assistiti = [updated];
         }
       }
 
