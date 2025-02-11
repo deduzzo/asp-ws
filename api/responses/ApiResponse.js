@@ -82,7 +82,7 @@ async function ApiResponse(data) {
     case ApiResponse.ERROR_TYPES.SERVIZIO_NON_DISPONIBILE:
       statusCode = 503;
       break;
-    case ApiResponse.TIMEOUT:
+    case ApiResponse.ERROR_TYPES.TIMEOUT:
       statusCode = 504;
       break;
     default:
