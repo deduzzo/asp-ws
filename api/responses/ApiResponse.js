@@ -82,6 +82,9 @@ async function ApiResponse(data) {
     case ApiResponse.ERROR_TYPES.SERVIZIO_NON_DISPONIBILE:
       statusCode = 503;
       break;
+    case ApiResponse.TIMEOUT:
+      statusCode = 504;
+      break;
     default:
       statusCode = 500;
       break;
@@ -133,7 +136,8 @@ ApiResponse.ERROR_TYPES = {
   NOT_FOUND: 'NOT_FOUND',
   TOKEN_SCADUTO: 'TOKEN_SCADUTO',
   TOKEN_NON_VALIDO: 'TOKEN_NON_VALIDO',
-  SERVIZIO_NON_DISPONIBILE: 'SERVIZIO_NON_DISPONIBILE'
+  SERVIZIO_NON_DISPONIBILE: 'SERVIZIO_NON_DISPONIBILE',
+  TIMEOUT: 'TIMEOUT'
 };
 
 module.exports = ApiResponse;

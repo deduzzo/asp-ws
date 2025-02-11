@@ -152,7 +152,22 @@ module.exports = {
 
       if (inputs.codiceFiscale && inputs.codiceFiscale.length >= 16 && (!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs) {
         // se il codice fiscale è completo, facciamo un ulteriore tentativo di verifica nel sistema ts
-        const assistito = await AssistitoService.getAssistitoFromCf(inputs.codiceFiscale);
+        let timeout = false;
+        const assistito = await Promise.race([
+          AssistitoService.getAssistitoFromCf(inputs.codiceFiscale),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca su TS')), 10000))
+        ]).catch(err => {
+          timeout = true;
+          return null;
+        });
+
+        if (timeout) {
+          return res.ApiResponse({
+            errType: ERROR_TYPES.TIMEOUT,
+            errMsg: 'Nessun assistito presente nel database. Il tentativo di richiesta su TS ha prodotto Timeout, probabilmente il codice fiscale non è valido'
+          });
+        }
+
         if (assistito && assistiti.length === 0) {
           // add assistito to db
           const created = await Anagrafica_Assistiti.create(assistito).fetch();

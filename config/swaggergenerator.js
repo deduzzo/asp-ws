@@ -164,6 +164,27 @@ module.exports['swagger-generator'] = {
             }
           }
         }
+      },
+      '504': {
+        description: 'Timeout',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'TIMEOUT'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
       }
     }
   },
