@@ -150,7 +150,7 @@ module.exports = {
         where: criteria
       });
 
-      if (inputs.codiceFiscale && inputs.codiceFiscale.length >= 16 && (!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs) {
+      if (inputs.codiceFiscale && utils.codiceFiscaleValido(inputs.codiceFiscale) && (!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs) {
         // se il codice fiscale è completo, facciamo un ulteriore tentativo di verifica nel sistema ts
         let timeout = false;
         const assistito = await Promise.race([

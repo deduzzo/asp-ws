@@ -7,7 +7,7 @@ module.exports = {
     const {Nar2} = await import('aziendasanitaria-utils/src/narTsServices/Nar2.js');
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
     let nar2 = new Nar2(impostazioniServizi);
-    let data = await nar2.getDatiAssistitoCompleti(cf);
+    let data = await nar2.getDatiAssistitoCompleti(cf,{fallback:true});
     if (data.ok)
       return data.dati({dateToUnix:true});
     else
