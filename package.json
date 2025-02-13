@@ -8,7 +8,7 @@
     "@sailshq/connect-redis": "^6.1.3",
     "@sailshq/lodash": "^3.10.6",
     "@sailshq/socket.io-redis": "^6.1.2",
-    "aziendasanitaria-utils": "^1.2.22",
+    "aziendasanitaria-utils": "^1.2.25",
     "crypto": "^1.0.1",
     "grunt": "1.0.4",
     "jsonwebtoken": "^9.0.2",
