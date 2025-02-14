@@ -344,7 +344,7 @@ module.exports = {
     const surnameVariants = createVariants(assistito.cognome);
 
     // Varianti della data
-    const dataNormale = utils.dataFromUnixToString(assistito.dataNascita);
+    const dataNormale = utils.convertFromUnixSeconds(assistito.dataNascita);
     const dataParts = dataNormale.split('/');
     const dataVariants = [
       dataNormale,
