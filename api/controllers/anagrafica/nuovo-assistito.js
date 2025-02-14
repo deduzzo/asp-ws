@@ -36,6 +36,25 @@ module.exports = {
         }
       });
       inputs.assistito['md5'] = utils.calcolaMD5daStringa(JSON.stringify(inputs.assistito));
+      // verify that exist assistito with cf and md5
+      const assistitoEsistente = await Anagrafica_Assistiti.findOne({
+        cf: inputs.assistito.cf,
+      });
+      if (assistitoEsistente) {
+        if (assistitoEsistente.md5 === inputs.assistito.md5) {
+          return res.ApiResponse({
+            errType: ERROR_TYPES.BAD_REQUEST,
+            errMsg: 'L\'assistito esiste già nel sistema e contiene già i dati aggiornati forniti',
+          });
+        }
+        //update the existing assistito
+        await Anagrafica_Assistiti.updateOne({
+          id: assistitoEsistente.id,
+        }).set(inputs.assistito);
+        return res.ApiResponse({
+          data: "Assistito " + assistitoEsistente.cf + " aggiornato con successo con nuovo md5: " + inputs.assistito.md5,
+        });
+      }
       assistitoCreato = await Anagrafica_Assistiti.create(inputs.assistito)
         .fetch();
     } catch (err) {
