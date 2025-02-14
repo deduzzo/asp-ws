@@ -41,7 +41,11 @@ module.exports = {
         cf: inputs.assistito.cf,
       });
       if (assistitoEsistente) {
+        assistitoEsistente.lastCheck = new Date();
         if (assistitoEsistente.md5 === inputs.assistito.md5) {
+          await Anagrafica_Assistiti.updateOne({
+            id: assistitoEsistente.id,
+          }).set(assistitoEsistente);
           return res.ApiResponse({
             errType: ERROR_TYPES.ALREADY_EXISTS,
             errMsg: 'L\'assistito esiste già nel sistema e contiene già i dati aggiornati forniti',
