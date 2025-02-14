@@ -29,7 +29,7 @@ module.exports = {
     const res = this.res;
     try {
       // remove if exists from inputs.assistito the fields: id, createdAt, updatedAt, md5
-      const toDelete = ['id', 'createdAt', 'updatedAt', 'md5', 'eta'];
+      const toDelete = ['id', 'createdAt', 'updatedAt', 'md5', 'eta','lastCheck'];
       toDelete.forEach(field => {
         if (inputs.assistito[field]) {
           delete inputs.assistito[field];
@@ -37,7 +37,7 @@ module.exports = {
       });
       inputs.assistito['md5'] = utils.calcolaMD5daStringa(JSON.stringify(inputs.assistito));
       // verify that exist assistito with cf and md5
-      const assistitoEsistente = await Anagrafica_Assistiti.findOne({
+      let assistitoEsistente = await Anagrafica_Assistiti.findOne({
         cf: inputs.assistito.cf,
       });
       if (assistitoEsistente) {
@@ -67,7 +67,7 @@ module.exports = {
     } catch (err) {
       return res.ApiResponse({
         errType: ERROR_TYPES.BAD_REQUEST,
-        errMsg: 'I dati forniti non sono conformi al modello' + err.message,
+        errMsg: 'I dati forniti non sono conformi al modello: ' + err.message,
         details: err.details
       });
     }
