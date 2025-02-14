@@ -85,6 +85,8 @@ async function ApiResponse(data) {
     case ApiResponse.ERROR_TYPES.TIMEOUT:
       statusCode = 504;
       break;
+      case ApiResponse.ERROR_TYPES.ALREADY_EXISTS:
+      statusCode = 409;
     default:
       statusCode = 500;
       break;
@@ -134,6 +136,7 @@ ApiResponse.ERROR_TYPES = {
   ERRORE_GENERICO: 'ERRORE_GENERICO',
   ERRORE_DEL_SERVER: 'ERRORE_DEL_SERVER',
   NOT_FOUND: 'NOT_FOUND',
+  ALREADY_EXISTS: 'ALREADY_EXISTS',
   TOKEN_SCADUTO: 'TOKEN_SCADUTO',
   TOKEN_NON_VALIDO: 'TOKEN_NON_VALIDO',
   SERVIZIO_NON_DISPONIBILE: 'SERVIZIO_NON_DISPONIBILE',

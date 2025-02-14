@@ -123,6 +123,27 @@ module.exports['swagger-generator'] = {
           }
         }
       },
+      '409': {
+        description: 'Dato in conflitto con un dato già presente',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'ALREADY_EXISTS'},
+                    msg: {type: 'string', example: 'Messaggio di errore'}
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
+      },
       '500': {
         description: 'Errore del server',
         content: {
