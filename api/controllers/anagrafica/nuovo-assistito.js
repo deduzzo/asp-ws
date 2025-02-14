@@ -41,7 +41,7 @@ module.exports = {
     } catch (err) {
       return res.ApiResponse({
         errType: ERROR_TYPES.BAD_REQUEST,
-        errMsg: 'I dati forniti non sono conformi al modello',
+        errMsg: 'I dati forniti non sono conformi al modello' + err.message,
         details: err.details
       });
     }
