@@ -52,7 +52,10 @@ module.exports = {
           id: assistitoEsistente.id,
         }).set(inputs.assistito);
         return res.ApiResponse({
-          data: "Assistito " + assistitoEsistente.cf + " aggiornato con successo con nuovo md5: " + inputs.assistito.md5,
+          data: {
+            op: 'UPDATE',
+            msg: 'Assistito ' +assistitoEsistente.cf + ' aggiornato con successo con nuovo md5: ' + inputs.assistito.md5
+          }
         });
       }
       assistitoCreato = await Anagrafica_Assistiti.create(inputs.assistito)
@@ -65,7 +68,10 @@ module.exports = {
       });
     }
     return res.ApiResponse({
-      data: assistitoCreato
+      data: {
+        op: 'CREATE',
+        msg: 'Assistito ' + assistitoCreato.cf + ' creato con successo con md5: ' + assistitoCreato.md5,
+      }
     });
   }
 };
