@@ -174,6 +174,7 @@ module.exports = {
           assistiti = [created];
         } else if (assistito && assistiti.length === 1) {
           // update assistito in db
+          assistito.lastCheck = new Date();
           const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito).fetch();
           assistiti = [updated];
         }
