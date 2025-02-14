@@ -43,7 +43,7 @@ module.exports = {
       if (assistitoEsistente) {
         if (assistitoEsistente.md5 === inputs.assistito.md5) {
           return res.ApiResponse({
-            errType: ERROR_TYPES.BAD_REQUEST,
+            errType: ERROR_TYPES.ALREADY_EXISTS,
             errMsg: 'L\'assistito esiste già nel sistema e contiene già i dati aggiornati forniti',
           });
         }
