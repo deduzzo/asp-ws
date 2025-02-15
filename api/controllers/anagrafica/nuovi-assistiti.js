@@ -8,6 +8,7 @@
 
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
+const maxAssistiti = 1000;
 
 module.exports = {
   friendlyName: 'Nuovi assistiti',
@@ -15,7 +16,7 @@ module.exports = {
   inputs: {
     assistiti: {
       type: 'ref',
-      description: 'Array di assistiti da inserire (omettere id, createdAt, updatedAt e md5)',
+      description: 'Array di assistiti da inserire (omettere id, createdAt, updatedAt e md5), Max: ' + maxAssistiti,
       required: true,
       example: {
         array: [
@@ -90,7 +91,7 @@ module.exports = {
       custom: (value) => {
         return Array.isArray(value) &&
           value.length > 0 &&
-          value.length < 100 &&
+          value.length <= maxAssistiti &&
           value.every(async item => {
             return await sails.helpers.isValidModel.with({
               item: item,
