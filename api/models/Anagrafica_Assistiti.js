@@ -6,7 +6,7 @@
  */
 const meilisearchService = require('../services/MeilisearchService');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
-const toRemove = ['createdAt', 'updatedAt', 'md5', 'eta', 'id', 'inVita'];
+const toRemove = ['createdAt', 'updatedAt', 'md5', 'eta', 'id', 'inVita', 'lastCheck'];
 
 
 const getMd5FromDataAssistito = (assistito) => {

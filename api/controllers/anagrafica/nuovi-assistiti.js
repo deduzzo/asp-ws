@@ -109,75 +109,74 @@ module.exports = {
     let someError = false;
 
     for (let assistito of inputs.assistiti) {
+      let currentResponse = null;
       if (!assistito.cf) {
-        responses.push({
+        currentResponse = {
           assistito: assistito,
           statusCode: 400,
           errType: ERROR_TYPES.BAD_REQUEST,
           errMsg: 'Il codice fiscale è obbligatorio',
-        });
+        };
         someError = true;
-        break;
-      }
+      } else {
+        try {
+          toDelete.forEach(field => {
+            if (assistito[field]) {
+              delete assistito[field];
+            }
+          });
+          assistito['md5'] = utils.calcolaMD5daStringa(JSON.stringify(assistito));
 
-      try {
-        toDelete.forEach(field => {
-          if (assistito[field]) {
-            delete assistito[field];
-          }
-        });
-        assistito['md5'] = utils.calcolaMD5daStringa(JSON.stringify(assistito));
+          let assistitoEsistente = await Anagrafica_Assistiti.findOne({
+            cf: assistito.cf,
+          });
 
-        let assistitoEsistente = await Anagrafica_Assistiti.findOne({
-          cf: assistito.cf,
-        });
+          if (assistitoEsistente) {
+            assistito.lastCheck = utils.nowToUnixDate();
+            if (assistitoEsistente.md5 === assistito.md5) {
+              currentResponse = {
+                assistito: assistito.cf,
+                statusCode: 409,
+                errType: ERROR_TYPES.ALREADY_EXISTS,
+                errMsg: 'L\'assistito esiste già nel sistema e contiene già i dati aggiornati forniti',
+              };
+            }
 
-        if (assistitoEsistente) {
-          assistito.lastCheck = new Date();
-          if (assistitoEsistente.md5 === assistito.md5) {
             await Anagrafica_Assistiti.updateOne({
               id: assistitoEsistente.id,
             }).set(assistito);
-            responses.push({
-              assistito: assistito.cf,
-              statusCode: 409,
-              errType: ERROR_TYPES.ALREADY_EXISTS,
-              errMsg: 'L\'assistito esiste già nel sistema e contiene già i dati aggiornati forniti',
-            });
-            break;
+            if (currentResponse === null) {
+              currentResponse = {
+                assistito: assistito.cf,
+                statusCode: 200,
+                op: 'UPDATE',
+                msg: 'Assistito ' + assistitoEsistente.cf + ' aggiornato con successo con nuovo md5: ' + assistito.md5,
+              };
+            }
+          } else {
+            assistitoCreato = await Anagrafica_Assistiti.create(assistito).fetch();
           }
-
-          await Anagrafica_Assistiti.updateOne({
-            id: assistitoEsistente.id,
-          }).set(assistito);
-          responses.push({
-            assistito: assistito.cf,
-            statusCode: 200,
-            op: 'UPDATE',
-            msg: 'Assistito ' + assistitoEsistente.cf + ' aggiornato con successo con nuovo md5: ' + assistito.md5,
-          });
-          break;
+        } catch (err) {
+          currentResponse = {
+            assistito: assistito,
+            statusCode: 400,
+            errType: ERROR_TYPES.BAD_REQUEST,
+            errMsg: 'I dati forniti non sono conformi al modello: ' + err.message,
+            details: err.details
+          };
+          someError = true;
         }
 
-        assistitoCreato = await Anagrafica_Assistiti.create(assistito).fetch();
-      } catch (err) {
-        responses.push({
-          assistito: assistito,
-          statusCode: 400,
-          errType: ERROR_TYPES.BAD_REQUEST,
-          errMsg: 'I dati forniti non sono conformi al modello: ' + err.message,
-          details: err.details
-        });
-        someError = true;
-        break;
+        if (currentResponse === null) {
+          currentResponse = {
+            assistito: assistito.cf,
+            statusCode: 200,
+            op: 'CREATE',
+            msg: 'Assistito ' + assistitoCreato.cf + ' creato con successo con md5: ' + assistitoCreato.md5,
+          };
+        }
       }
-
-      responses.push({
-        assistito: assistito.cf,
-        statusCode: 200,
-        op: 'CREATE',
-        msg: 'Assistito ' + assistitoCreato.cf + ' creato con successo con md5: ' + assistitoCreato.md5,
-      });
+      responses.push(currentResponse);
     }
 
     if (someError) {
@@ -195,4 +194,4 @@ module.exports = {
       });
     }
   }
-};
+}
