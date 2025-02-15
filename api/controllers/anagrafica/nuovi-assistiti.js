@@ -114,8 +114,10 @@ module.exports = {
         currentResponse = {
           assistito: assistito,
           statusCode: 400,
-          errType: ERROR_TYPES.BAD_REQUEST,
-          errMsg: 'Il codice fiscale è obbligatorio',
+          err: {
+            code: ERROR_TYPES.BAD_REQUEST,
+            msg: 'Il codice fiscale è obbligatorio'
+          },
         };
         someError = true;
       } else {
@@ -137,8 +139,10 @@ module.exports = {
               currentResponse = {
                 assistito: assistito.cf,
                 statusCode: 409,
-                errType: ERROR_TYPES.ALREADY_EXISTS,
-                errMsg: 'L\'assistito esiste già nel sistema e contiene già i dati aggiornati forniti',
+                err: {
+                  code: ERROR_TYPES.ALREADY_EXISTS,
+                  msg: 'L\'assistito esiste già nel sistema e contiene già i dati forniti',
+                },
               };
             }
 
@@ -160,8 +164,10 @@ module.exports = {
           currentResponse = {
             assistito: assistito,
             statusCode: 400,
-            errType: ERROR_TYPES.BAD_REQUEST,
-            errMsg: 'I dati forniti non sono conformi al modello: ' + err.message,
+            err: {
+              code: ERROR_TYPES.BAD_REQUEST,
+              msg: 'I dati forniti non sono conformi al modello: ' + err.message,
+            },
             details: err.details
           };
           someError = true;
