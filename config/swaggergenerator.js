@@ -165,6 +165,29 @@ module.exports['swagger-generator'] = {
           }
         }
       },
+      '300': {
+        description: 'Richieste multiple',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                ok: {type: 'boolean', example: false},
+                err: {
+                  type: 'object',
+                  properties: {
+                    code: {type: 'string', example: 'MULTIPLE_RESULTS'},
+                    responses: [
+                      {type: 'array', example: 'Array di response'},
+                    ]
+                  }
+                },
+                data: {type: 'null', example: null}
+              }
+            }
+          }
+        }
+      },
       '503': {
         description: 'Servizio momentaneamente non disponibile',
         content: {

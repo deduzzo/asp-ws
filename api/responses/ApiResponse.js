@@ -24,6 +24,11 @@
  *   - NON_AUTORIZZATO -> 401
  *   - NON TROVATO -> 404
  *   - ERRORE_DEL_SERVER -> 500
+ *   - SERVIZIO_NON_DISPONIBILE -> 503
+ *   - TIMEOUT -> 504
+ *   - ALREADY_EXISTS -> 409
+ *   - MULTIPLE_ERRORS -> 300
+ *   - altri -> 500
  *
  * Esempio di utilizzo:
  *   return res.ApiResponse({
@@ -88,6 +93,9 @@ async function ApiResponse(data) {
     case ApiResponse.ERROR_TYPES.ALREADY_EXISTS:
       statusCode = 409;
       break;
+    case ApiResponse.MULTIPLE_ERRORS:
+      statusCode = 300;
+      break;
     default:
       statusCode = 500;
       break;
@@ -141,7 +149,8 @@ ApiResponse.ERROR_TYPES = {
   TOKEN_SCADUTO: 'TOKEN_SCADUTO',
   TOKEN_NON_VALIDO: 'TOKEN_NON_VALIDO',
   SERVIZIO_NON_DISPONIBILE: 'SERVIZIO_NON_DISPONIBILE',
-  TIMEOUT: 'TIMEOUT'
+  TIMEOUT: 'TIMEOUT',
+  MULTIPLE_ERRORS: 'MULTIPLE_ERRORS'
 };
 
 module.exports = ApiResponse;

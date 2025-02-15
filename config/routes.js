@@ -95,8 +95,8 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
-  'POST /api/v1/anagrafica/nuovo-assistito': {
-    action: 'anagrafica/nuovo-assistito',
+  'POST /api/v1/anagrafica/nuovi-assistiti': {
+    action: 'anagrafica/nuovi-assistiti',
     scopi: ['asp5-anagrafica'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
