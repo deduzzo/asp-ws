@@ -274,7 +274,7 @@ module.exports = {
         cf: updatedRecord.cf,
         nome: updatedRecord.nome,
         cognome: updatedRecord.cognome,
-        dataNascita: updatedRecord.dataNascita,
+        dataNascita: utils.convertFromUnixSeconds(updatedRecord.dataNascita),
         md5: updatedRecord.md5
       };
       record.fullText = module.exports.generateFullText(record);

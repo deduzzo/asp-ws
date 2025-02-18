@@ -120,11 +120,12 @@ const password= "";
 
 
 
-/*  //await meilisearchService.deleteIndex(meilisearchService.ASSISTITI_INDEX);
-  let res = await meilisearchService.search('ZTIMML30');
+//await meilisearchService.deleteIndex(meilisearchService.ASSISTITI_INDEX);
+  let res = await meilisearchService.search('morganti 1986');
+  console.log("ciao");
   //await Procedure.creaFileJsonAssistitiCompletoDaFilesZip("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127")
 
-  let data = await utils.leggiOggettoMP("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127/assistiti.db");
+/*  let data = await utils.leggiOggettoMP("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127/assistiti.db");
   const tot = Object.values(data).length;
   let i = 0;
   let values = Object.values(data);*/

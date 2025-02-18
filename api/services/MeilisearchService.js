@@ -9,50 +9,54 @@ const client = new MeiliSearch({
 
 module.exports = {
   ASSISTITI_INDEX: 'assistiti_index',
-  SEARCH_FILTER_ATTRIBUTES: ['cf', 'nome', 'cognome', 'dataNascita','fullText'],
+  SEARCH_FILTER_ATTRIBUTES: ['cf', 'nome', 'cognome', 'dataNascita', 'fullText'],
   SORTABLE_ATTRIBUTES: ['cf', 'nome', 'cognome'],
-  getOrCreateIndex: async () => {
+  getOrCreateIndex: async (updateSettings = false) => {
+    let error = false;
     try {
       const index = await client.getIndex(module.exports.ASSISTITI_INDEX);
+      if (updateSettings) {
+        await module.exports.updateSettings();
+      }
       return index;
     } catch (err) {
       if (err.message.toLowerCase().includes('not found')) {
         await client.createIndex(module.exports.ASSISTITI_INDEX, {
           primaryKey: 'cf'
         });
-
-        // Configurazione avanzata dell'indice
-        await client.index(module.exports.ASSISTITI_INDEX).updateSettings({
-          searchableAttributes: module.exports.SEARCH_FILTER_ATTRIBUTES,
-          filterableAttributes: module.exports.SEARCH_FILTER_ATTRIBUTES,
-          sortableAttributes: module.exports.SORTABLE_ATTRIBUTES,
-          // Permettere la ricerca con typo
-          typoTolerance: {
-            enabled: true,
-            minWordSizeForTypos: {
-              oneTypo: 2,  // Permetti un typo per parole >=3 caratteri
-              twoTypos: 5  // Permetti due typo per parole >=6 caratteri
-            }
-          },
-          rankingRules: [
-            'words',
-            'typo',
-            'proximity',
-            'attribute',
-            'sort',
-            'exactness'
-          ]
-        });
-
+        await this.updateSettings();
         return await client.getIndex(module.exports.ASSISTITI_INDEX);
       }
       throw err;
     }
   },
 
+  updateSettings: async (settings) => {
+    await client.index(module.exports.ASSISTITI_INDEX).updateSettings({
+      searchableAttributes: module.exports.SEARCH_FILTER_ATTRIBUTES,
+      filterableAttributes: module.exports.SEARCH_FILTER_ATTRIBUTES,
+      sortableAttributes: module.exports.SORTABLE_ATTRIBUTES,
+      typoTolerance: {
+        enabled: false,
+        minWordSizeForTypos: {
+          oneTypo: 5,  // Permetti un typo per parole >=3 caratteri
+          twoTypos: 8  // Permetti due typo per parole >=6 caratteri
+        }
+      },
+      rankingRules: [
+        'exactness',   // Dai priorità ai match esatti
+        'words',
+        'typo',
+        'proximity',
+        'attribute',
+        'sort'
+      ]
+    });
+  },
+
   addDocument: async (document) => {
     try {
-      const index = await module.exports.getOrCreateIndex(module.exports.ASSISTITI_INDEX);
+      const index = await module.exports.getOrCreateIndex();
       await index.addDocuments([document]);
       return true;
     } catch (err) {
@@ -63,7 +67,7 @@ module.exports = {
 
   updateDocument: async (document) => {
     try {
-      const index = await module.exports.getOrCreateIndex(module.exports.ASSISTITI_INDEX);
+      const index = await module.exports.getOrCreateIndex();
       await index.updateDocuments([document]);
       return true;
     } catch (err) {
@@ -74,7 +78,7 @@ module.exports = {
 
   deleteDocument: async (documentId) => {
     try {
-      const index = await module.exports.getOrCreateIndex(module.exports.ASSISTITI_INDEX);
+      const index = await module.exports.getOrCreateIndex();
       await index.deleteDocument(documentId);
       return true;
     } catch (err) {
@@ -95,7 +99,7 @@ module.exports = {
   // Metodo di utilità per cercare per CF esatto
   findFromCf: async (cf) => {
     try {
-      const index = await module.exports.getOrCreateIndex(module.exports.ASSISTITI_INDEX);
+      const index = await module.exports.getOrCreateIndex();
       const results = await index.search(cf, {
         filter: [`cf = "${cf}"`],
         limit: 1
@@ -110,10 +114,10 @@ module.exports = {
     try {
       const index = await module.exports.getOrCreateIndex();
 
-      const results = await index.search(query ,{
-        sort: options.sort || ['cognome:asc', 'nome:asc'],
-        matchingStrategy: 'all',
-        limit: 20
+      const results = await index.search(query, {
+          sort: options.sort || ['cognome:asc', 'nome:asc'],
+          matchingStrategy: 'all',
+          limit: 20
         }
       );
 
