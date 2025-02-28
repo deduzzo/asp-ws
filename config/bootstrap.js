@@ -35,6 +35,14 @@ module.exports.bootstrap = async function () {
   // ]);
   // ```
 
+  if (sails.config['swagger-generator'] && sails.config['swagger-generator'].swagger) {
+    sails.config['swagger-generator'].swagger.servers = [
+      {
+        url: sails.config.custom.baseUrl
+      }
+    ];
+  }
+
   const drop = false;
   if (drop) {
     await Auth_Livelli.destroy({});
