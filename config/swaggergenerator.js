@@ -5,7 +5,7 @@ module.exports['swagger-generator'] = {
     openapi: '3.0.0',
     info: {
       title: 'ASP-ws Doc',
-      description: 'Documentazione delle API del progetto ASP-WS v.1\n\n Numero assistiti: <b>{{TOTAL_ASSISTITI}}</b>\n\nUltimo aggiornamento: <b>{{LAST_UPDATE}}</b>\n',
+      description: 'Documentazione delle API del progetto ASP-WS v.1\n\n Numero assistiti: <b>{{TOTAL_ASSISTITI}}</b>\n\nUltimo record aggiornato il: <b>{{LAST_UPDATE}}</b>\n\n Percentuale di geolocalizzazione: <b>{{GEO_PERC}}</b>\n',
       termsOfService: 'http://example.com/terms',
       contact: {
         name: 'Roberto De Domenico',

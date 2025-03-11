@@ -32,13 +32,17 @@ const getDocs = async (req, res) => {
       sort: 'updatedAt DESC',
       limit: 1
     });
+    const geoCount = await Anagrafica_Assistiti.count({
+      lat: {'!=': null},
+    });
 
     const swaggerPath = path.resolve(__dirname, '../swagger/swagger.json');
 
     if (fs.existsSync(swaggerPath)) {
       let swaggerDoc = fs.readFileSync(swaggerPath, {encoding: 'utf8'});
       swaggerDoc = swaggerDoc.replace('{{TOTAL_ASSISTITI}}', total_assistiti.toLocaleString('it-IT'))
-        .replace('{{LAST_UPDATE}}', moment(lastAssitito[0].updatedAt).format('DD/MM/YYYY HH:mm:ss'));
+        .replace('{{LAST_UPDATE}}', moment(lastAssitito[0].updatedAt).format('DD/MM/YYYY HH:mm:ss'))
+        .replace('{{GEO_PERC}}', ((geoCount / total_assistiti) * 100).toFixed(2) + '%');
       await fs.promises.writeFile(swaggerPath, swaggerDoc, {encoding: 'utf8'});
     }
   } catch (error) {
