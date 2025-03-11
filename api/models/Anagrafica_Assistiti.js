@@ -6,7 +6,7 @@
  */
 const meilisearchService = require('../services/MeilisearchService');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
-const toRemove = ['createdAt', 'updatedAt', 'md5', 'eta', 'id', 'inVita', 'lastCheck'];
+const toRemove = ['createdAt', 'updatedAt', 'md5', 'eta', 'id', 'inVita', 'lastCheck','lat','long','geolocPrecise'];
 
 
 const getMd5FromDataAssistito = (assistito) => {
@@ -187,6 +187,24 @@ module.exports = {
       description: 'Timestamp Unix della data del decesso'
     },
 
+    lat: {
+      type: 'number',
+      allowNull: true,
+      description: 'Latitudine della posizione geografica'
+    },
+
+    long: {
+      type: 'number',
+      allowNull: true,
+      description: 'Longitudine della posizione geografica'
+    },
+
+    geolocPrecise: {
+      type: 'boolean',
+      allowNull: true,
+      description: 'Tipo di geolocalizzazione'
+    },
+
     md5: {
       type: 'string',
       allowNull: false,
@@ -255,7 +273,7 @@ module.exports = {
         cf: newlyCreatedRecord.cf,
         nome: newlyCreatedRecord.nome,
         cognome: newlyCreatedRecord.cognome,
-        dataNascita: utils.convertFromUnixSeconds(newlyCreatedRecord.dataNascita),
+        dataNascita: utils.convertUnixTimestamp(newlyCreatedRecord.dataNascita),
         md5: newlyCreatedRecord.md5
       };
       record.fullText = module.exports.generateFullText(record);
@@ -274,7 +292,7 @@ module.exports = {
         cf: updatedRecord.cf,
         nome: updatedRecord.nome,
         cognome: updatedRecord.cognome,
-        dataNascita: utils.convertFromUnixSeconds(updatedRecord.dataNascita),
+        dataNascita: utils.convertUnixTimestamp(updatedRecord.dataNascita),
         md5: updatedRecord.md5
       };
       record.fullText = module.exports.generateFullText(record);
@@ -304,7 +322,7 @@ module.exports = {
     if (exist.length === 1) {
       const md5 = getMd5FromDataAssistito(assistito);
       if (exist[0].md5 === md5) {
-        assistito.lastCheck = Date.now();
+        assistito.lastCheck = utils.nowToUnixDate();
         await Anagrafica_Assistiti.update({cf: assistito.cf}, assistito);
         return {cf: assistito.cf, id: exist[0].id, message: 'Assistito già presente'};
       } else {
@@ -326,7 +344,7 @@ module.exports = {
             cf: created.cf,
             nome: created.nome,
             cognome: created.cognome,
-            dataNascita: utils.convertFromUnixSeconds(created.dataNascita),
+            dataNascita: utils.convertUnixTimestamp(created.dataNascita),
             md5: created.md5
           };
           assistitoData.fullText = module.exports.generateFullText(assistitoData);
@@ -361,7 +379,7 @@ module.exports = {
     const surnameVariants = createVariants(assistito.cognome);
 
     // Varianti della data
-    const dataNormale = utils.convertFromUnixSeconds(assistito.dataNascita);
+    const dataNormale = utils.convertUnixTimestamp(assistito.dataNascita);
     const dataParts = dataNormale.split('/');
     const dataVariants = [
       dataNormale,

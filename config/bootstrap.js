@@ -15,6 +15,7 @@ const {Assistito} = require('aziendasanitaria-utils/src/classi/Assistito');
 const meilisearchService = require('../api/services/MeilisearchService');
 const fs = require('fs');
 const path = require('path');
+const AssistitoService = require('../api/services/AssistitoService');
 
 
 module.exports.bootstrap = async function () {
@@ -92,18 +93,18 @@ module.exports.bootstrap = async function () {
   }
 
   // ADD NEW USER
-/*
-const password= "";
-  const newUser = await Auth_Utenti.create({
-    username: 'icaro.maggioli',
-    password: await sails.helpers.passwords.hashPassword(password),
-    attivo: true,
-    ambito: (await Auth_Ambiti.findOne({ambito: 'api'})).id,
-    livello: (await Auth_Livelli.findOne({livello: 'user'})).id,
-  }).fetch();
-  // scopi of SuperAdmin scopoAnagrafica
-  await Auth_Utenti.addToCollection(newUser.id, 'scopi', (await Auth_Scopi.findOne({scopo: 'asp5-anagrafica'})).id);
-*/
+  /*
+  const password= "";
+    const newUser = await Auth_Utenti.create({
+      username: 'icaro.maggioli',
+      password: await sails.helpers.passwords.hashPassword(password),
+      attivo: true,
+      ambito: (await Auth_Ambiti.findOne({ambito: 'api'})).id,
+      livello: (await Auth_Livelli.findOne({livello: 'user'})).id,
+    }).fetch();
+    // scopi of SuperAdmin scopoAnagrafica
+    await Auth_Utenti.addToCollection(newUser.id, 'scopi', (await Auth_Scopi.findOne({scopo: 'asp5-anagrafica'})).id);
+  */
 
   const pass = await sails.helpers.passwords.hashPassword("a[5!TEC9oYQo");
   console.log("ciao")
@@ -127,78 +128,98 @@ const password= "";
     on assistiti (cf);`);*/
 
 
-
 //await meilisearchService.deleteIndex(meilisearchService.ASSISTITI_INDEX);
   let res = await meilisearchService.search('morganti 1986');
   console.log("ciao");
   //await Procedure.creaFileJsonAssistitiCompletoDaFilesZip("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127")
 
-/*  let data = await utils.leggiOggettoMP("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127/assistiti.db");
-  const tot = Object.values(data).length;
-  let i = 0;
-  let values = Object.values(data);*/
+  /*  let data = await utils.leggiOggettoMP("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127/assistiti.db");
+    const tot = Object.values(data).length;
+    let i = 0;
+    let values = Object.values(data);*/
   // remove the first 7170 elements from values
   //values = values.splice(0, 4170);
 
-/*  for (let assistito of values) {
-    let tempAssistito = new Assistito();
-    console.log("Verificando assistito " + assistito.cf);
-    const created2 = await Anagrafica_Assistiti.createOrUpdate(tempAssistito.dati({fromAssistitoObject: assistito,dateToUnix:true}));
-    //const created = await Anagrafica_Assistiti.create( tempAssistito.dati({fromAssistitoObject: assistito,dateToUnix:true})).fetch();
-    console.log((++i / tot * 100).toFixed(4) + "% " + i + "/" + tot + " " + assistito.cf + " " + created2.message);
-  }*/
+  /*  for (let assistito of values) {
+      let tempAssistito = new Assistito();
+      console.log("Verificando assistito " + assistito.cf);
+      const created2 = await Anagrafica_Assistiti.createOrUpdate(tempAssistito.dati({fromAssistitoObject: assistito,dateToUnix:true}));
+      //const created = await Anagrafica_Assistiti.create( tempAssistito.dati({fromAssistitoObject: assistito,dateToUnix:true})).fetch();
+      console.log((++i / tot * 100).toFixed(4) + "% " + i + "/" + tot + " " + assistito.cf + " " + created2.message);
+    }*/
 
   // invert values
-/*
-  const BATCH_SIZE = 50;
-  const DELAY_BETWEEN_BATCHES = 50;
-  const processInBatches = async (values) => {
-    const tot = values.length;
-    let i = 77800;
+  /*
+    const BATCH_SIZE = 50;
+    const DELAY_BETWEEN_BATCHES = 50;
+    const processInBatches = async (values) => {
+      const tot = values.length;
+      let i = 77800;
 
-    // Dividiamo l'array in batch
-    for (let index = i; index < values.length; index += BATCH_SIZE) {
-      const batch = values.slice(index, index + BATCH_SIZE);
+      // Dividiamo l'array in batch
+      for (let index = i; index < values.length; index += BATCH_SIZE) {
+        const batch = values.slice(index, index + BATCH_SIZE);
 
-      // Creiamo un array di promises per il batch corrente
-      const promises = batch.map(async assistito => {
-        let tempAssistito = new Assistito();
-        //console.log("Verificando assistito " + assistito.cf);
+        // Creiamo un array di promises per il batch corrente
+        const promises = batch.map(async assistito => {
+          let tempAssistito = new Assistito();
+          //console.log("Verificando assistito " + assistito.cf);
 
-        try {
-          const created2 = await Anagrafica_Assistiti.createOrUpdate(
-            tempAssistito.dati({fromAssistitoObject: assistito, dateToUnix: true})
-          );
+          try {
+            const created2 = await Anagrafica_Assistiti.createOrUpdate(
+              tempAssistito.dati({fromAssistitoObject: assistito, dateToUnix: true})
+            );
 
-          i++;
-          console.log(
-            `${(i / tot * 100).toFixed(4)}% ${i}/${tot} ${assistito.cf} ${created2.message}`
-          );
+            i++;
+            console.log(
+              `${(i / tot * 100).toFixed(4)}% ${i}/${tot} ${assistito.cf} ${created2.message}`
+            );
 
-          return created2;
-        } catch (error) {
-          console.error(`Errore per assistito ${assistito.cf}:`, error);
-          throw error;
+            return created2;
+          } catch (error) {
+            console.error(`Errore per assistito ${assistito.cf}:`, error);
+            throw error;
+          }
+        });
+
+        // Eseguiamo tutte le promises del batch in parallelo
+        await Promise.all(promises);
+        // Aggiungiamo un delay tra i batch
+        if (index + BATCH_SIZE < values.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
         }
-      });
-
-      // Eseguiamo tutte le promises del batch in parallelo
-      await Promise.all(promises);
-      // Aggiungiamo un delay tra i batch
-      if (index + BATCH_SIZE < values.length) {
-        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
     }
-  }
 
-  // Utilizzo
-  try {
-    await processInBatches(values);
-    console.log('Elaborazione completata');
-  } catch (error) {
-    console.error('Errore durante l\'elaborazione:', error);
-  }
+    // Utilizzo
+    try {
+      await processInBatches(values);
+      console.log('Elaborazione completata');
+    } catch (error) {
+      console.error('Errore durante l\'elaborazione:', error);
+    }
 
+  */
+
+/*
+  // find first 10.000 assistiti
+  let assistiti = await Anagrafica_Assistiti.find({
+    limit: 10000
+  });
+  let ok = 0;
+  let total = assistiti.length;
+  for (let assistito of assistiti) {
+    // controllo geolocalizzazione
+    const geoloc = await AssistitoService.getGeoAssistito(assistito);
+    if (geoloc) {
+      ok++;
+      console.log("Assistito ok tipo: " +(geoloc.precise === true ? " PRECISO": "approssimato") )
+    }
+    else
+      console.log("Geolocalizzazione non andata a buon fine")
+  }
+  // show stats in %
+  console.log ("% di assistiti geolocalizzati: " + (ok / total * 100).toFixed(2) + "%");
 */
 
-};
+}

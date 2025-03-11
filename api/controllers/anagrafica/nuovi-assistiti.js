@@ -8,6 +8,7 @@
 
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
+const {getGeoAssistito} = require('../../services/AssistitoService');
 const maxAssistiti = 1000;
 
 module.exports = {
@@ -136,6 +137,14 @@ module.exports = {
 
           if (assistitoEsistente) {
             assistito.lastCheck = utils.nowToUnixDate();
+            if (assistitoEsistente.lat === null) {
+              const geoloc = await getGeoAssistito(assistito);
+              if (geoloc) {
+                assistito.lat = geoloc.lat;
+                assistito.long = geoloc.lon;
+                assistito.geolocPrecise = geoloc.precise;
+              }
+            }
             if (assistitoEsistente.md5 === assistito.md5) {
               currentResponse = {
                 assistito: assistito.cf,
