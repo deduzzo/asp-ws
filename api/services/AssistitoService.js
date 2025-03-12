@@ -28,47 +28,52 @@ module.exports = {
   getGeoAssistito: async function (datiAssistito) {
     // axios get q=${indirizzo} format=json
     let indirizzo = datiAssistito.indirizzoResidenza;
-    if (!datiAssistito.asp.toLowerCase().includes('messina')) {
-      indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
-    }
-    const params = new URLSearchParams({
-      q: indirizzo,
-      format: 'json',
-    });
-    const response = await axios.get(`${NOMINATIM_URL}?${params}`);
-    if (response.status === 200 && response.data.length > 0) {
-      const data = response.data;
-      if (data.length > 0) {
-        return {
-          lat: data[0].lat,
-          lon: data[0].lon,
-          precise: true
-        };
-      } else {
-        return null; // Nessun risultato trovato
+    if (indirizzo && indirizzo.trim().length > 0) {
+      if (!datiAssistito.asp.toLowerCase().includes('messina')) {
+        indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
       }
-    } else if (response.data.length === 0) {
-      // fallback
-      const indirizzo1 = indirizzo.split(',')[1];
-      const params1 = new URLSearchParams({
-        q: indirizzo1,
+      const params = new URLSearchParams({
+        q: indirizzo,
+        format: 'json',
       });
-      const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
-      if (response1.status === 200 && response1.data.length > 0) {
-        const data = response1.data;
+      const response = await axios.get(`${NOMINATIM_URL}?${params}`);
+      if (response.status === 200 && response.data.length > 0) {
+        const data = response.data;
         if (data.length > 0) {
           return {
             lat: data[0].lat,
             lon: data[0].lon,
-            precise: false
+            precise: true
           };
         } else {
           return null; // Nessun risultato trovato
         }
-      } else {
-        return null; // Errore nella richiesta
+      } else if (response.data.length === 0) {
+        // fallback
+        const indirizzo1 = indirizzo.split(',')[1];
+        if (indirizzo1 && indirizzo1.trim().length > 0) {
+          const params1 = new URLSearchParams({
+            q: indirizzo1,
+          });
+          const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
+          if (response1.status === 200 && response1.data.length > 0) {
+            const data = response1.data;
+            if (data.length > 0) {
+              return {
+                lat: data[0].lat,
+                lon: data[0].lon,
+                precise: false
+              };
+            } else {
+              return null; // Nessun risultato trovato
+            }
+          } else return null;
+        } else {
+          return null; // Errore nella richiesta
+        }
       }
+    } else {
+      return null;
     }
-
   }
 }

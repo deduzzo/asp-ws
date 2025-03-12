@@ -379,12 +379,11 @@ module.exports = {
     const surnameVariants = createVariants(assistito.cognome);
 
     // Varianti della data
-    const dataNormale = utils.convertUnixTimestamp(assistito.dataNascita);
-    const dataParts = dataNormale.split('/');
-    const dataVariants = [
-      dataNormale,
+    const dataParts = assistito.dataNascita ? assistito.dataNascita.split('/') : null;
+    const dataVariants = dataParts ? [
+      assistito.dataNascita,
       dataParts[2],  // 1994
-    ];
+    ] : [];
 
     return [
       ...nameVariants,
