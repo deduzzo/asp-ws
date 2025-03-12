@@ -38,8 +38,9 @@ module.exports = {
       codComuneResidenza: inputs.codComuneResidenza,
       lat: {'!=': null},
     }).select(['cf', 'lat', 'long', 'geolocPrecise']);
+    const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
     return res.ApiResponse({
-      data: data
+      data: cleanedData
     });
   }
 
