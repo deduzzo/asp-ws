@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /nuovi-assistiti:
+ * /get-geo-data:
  *   tags:
  *     - Anagrafica
  */
