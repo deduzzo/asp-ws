@@ -37,7 +37,7 @@ module.exports = {
     if (inputs.onlyGeoloc === true)
       criteria.lat = {'!=': null};
     if (inputs.onlyGeolocationPrecise === true)
-      criteria = {...criteria, onlyGeolocationPrecise: true};
+      criteria = {...criteria, geolocPrecise: true};
     if (Object.keys(criteria).length === 0) { // indirizzoResidenza not null OR cap not null
       criteria = {
         lat: null,
@@ -52,7 +52,7 @@ module.exports = {
       ...criteria
     }).select(campi);
     const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
-    if (data.length === 0)
+    if (cleanedData.length === 0)
       return res.ApiResponse({
         errType: ERROR_TYPES.NOT_FOUND,
         errMsg: 'Nessun assistito trovato'
