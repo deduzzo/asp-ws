@@ -265,7 +265,7 @@ module.exports = {
         let quartiere = null;
         if (assistito.indirizzoResidenza) {
           try {
-            if (assistito.lat && assistito.capResidenza !== "98100") {
+            if (assistito.lat) {
               quartiere = verificatore.verificaPuntoMappa(assistito.lat, assistito.long);
             }
           } catch (e) {
