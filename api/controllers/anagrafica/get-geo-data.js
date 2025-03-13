@@ -35,21 +35,31 @@ module.exports = {
     let criteria = {};
     let campi = ['cf', 'capResidenza', 'indirizzoResidenza', 'lat', 'long', 'geolocPrecise'];
     if (inputs.onlyGeoloc === true)
-      criteria.lat = {'!=': null};
+      criteria = {
+        codComuneResidenza: inputs.codComuneResidenza,
+        lat: {'!=': null}
+      };
     if (inputs.onlyGeolocationPrecise === true)
       criteria = {...criteria, geolocPrecise: true};
-    if (Object.keys(criteria).length === 0) { // indirizzoResidenza not null OR cap not null
+    if (Object.keys(criteria).length === 0
+    ) { // indirizzoResidenza not null OR cap not null
       criteria = {
-        lat: null,
-        or: [
-          {indirizzoResidenza: {'!=': null}},
-          {capResidenza: {'!=': null}}
+        and: [
+          {
+            lat: null,
+            codComuneResidenza: inputs.codComuneResidenza,
+          },
+          {
+            or: [
+              {indirizzoResidenza: {'!=': null}},
+              {capResidenza: {'!=': null}}
+            ]
+          }
         ]
       };
     }
     let data = await Anagrafica_Assistiti.find({
-      codComuneResidenza: inputs.codComuneResidenza,
-      ...criteria
+      where: criteria
     }).select(campi);
     const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
     if (cleanedData.length === 0)
@@ -62,4 +72,5 @@ module.exports = {
         data: cleanedData
       });
   }
-};
+}
+;
