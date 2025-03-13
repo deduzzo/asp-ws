@@ -8,7 +8,7 @@
 
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
 module.exports = {
-  friendlyName: 'Ottieni i dati geografici degli assistiti per comune di residenza',
+  friendlyName: 'Assistiti in base ai dati geografici per comune di residenza',
   description: 'Ottieni i dati geografici degli assistiti per comune di residenza',
   inputs: {
     // codComuneResidenza
