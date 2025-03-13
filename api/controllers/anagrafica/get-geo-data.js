@@ -40,6 +40,7 @@ module.exports = {
       criteria = {...criteria, onlyGeolocationPrecise: true};
     if (Object.keys(criteria).length === 0) { // indirizzoResidenza not null OR cap not null
       criteria = {
+        lat: null,
         or: [
           {indirizzoResidenza: {'!=': null}},
           {capResidenza: {'!=': null}}
