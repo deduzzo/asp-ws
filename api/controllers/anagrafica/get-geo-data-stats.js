@@ -265,15 +265,19 @@ module.exports = {
         let quartiere = null;
         if (assistito.indirizzoResidenza) {
           try {
-            cap = assistito.indirizzoResidenza.split(',')[1].trim().split(' ')[0];
-            if (cap.length !== 5 || cap === '98100') {
-              throw new Error('Cap non valido');
-            }
-            quartiere = jsonMap.hasOwnProperty(cap) ? jsonMap[cap].circoscrizione : 'ALTRO';
-          } catch (e) {
-            if (assistito.lat) {
+            if (assistito.lat && assistito.capResidenza !== "98100") {
               quartiere = verificatore.verificaPuntoMappa(assistito.lat, assistito.long);
             }
+          } catch (e) {
+            cap = assistito.indirizzoResidenza.split(',')[1].trim().split(' ')[0];
+            if (cap.length !== 5 || cap === '98100') {
+              if (assistito.capResidenza !== "98100") {
+                cap = assistito.capResidenza;
+              }
+              else
+                throw new Error('Cap non valido');
+            }
+            quartiere = jsonMap.hasOwnProperty(cap) ? jsonMap[cap].circoscrizione : 'ALTRO';
           }
           if (!quartiere) {
             quartiere = 'ALTRO';
