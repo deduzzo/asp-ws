@@ -6,7 +6,7 @@
  *     - Anagrafica
  */
 
-const {ERROR_TYPES} = require("../../responses/ApiResponse");
+const {ERROR_TYPES} = require('../../responses/ApiResponse');
 module.exports = {
   friendlyName: 'Ottieni i dati geografici degli assistiti per comune di residenza',
   description: 'Ottieni i dati geografici degli assistiti per comune di residenza',
@@ -32,45 +32,44 @@ module.exports = {
 
   fn: async function (inputs) {
     const res = this.res;
+    let data = null;
     let criteria = {};
     let campi = ['cf', 'capResidenza', 'indirizzoResidenza', 'lat', 'long', 'geolocPrecise'];
-    if (inputs.onlyGeoloc === true)
+    if (inputs.onlyGeoloc === true) {
       criteria = {
         codComuneResidenza: inputs.codComuneResidenza,
         lat: {'!=': null}
       };
-    if (inputs.onlyGeolocationPrecise === true)
-      criteria = {...criteria, geolocPrecise: true};
-    if (Object.keys(criteria).length === 0
-    ) { // indirizzoResidenza not null OR cap not null
-      criteria = {
-        and: [
-          {
-            lat: null,
-            codComuneResidenza: inputs.codComuneResidenza,
-          },
-          {
-            or: [
-              {indirizzoResidenza: {'!=': null}},
-              {capResidenza: {'!=': null}}
-            ]
-          }
-        ]
-      };
     }
-    let data = await Anagrafica_Assistiti.find({
-      where: criteria
-    }).select(campi);
+    if (inputs.onlyGeolocationPrecise === true) {
+      criteria = {...criteria, geolocPrecise: true};
+    }
+    if (Object.keys(criteria).length !== 0)  // indirizzoResidenza not null OR cap not null
+      data = await Anagrafica_Assistiti.find({
+        select: campi,
+        where: criteria
+      });
+    else {
+
+      let query = ` select \`cf\`, \`capResidenza\`, \`indirizzoResidenza\`, \`lat\`, \`long\`, \`geolocPrecise\`
+                    FROM ${Anagrafica_Assistiti.tableName}
+                    WHERE lat IS NULL
+                      AND codComuneResidenza = $1
+                      AND (indirizzoResidenza IS NOT NULL OR capResidenza IS NOT NULL)`;
+      let rawResult = await Anagrafica_Assistiti.getDatastore().sendNativeQuery(query, [inputs.codComuneResidenza]);
+      data = rawResult.rows;
+    }
     const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
-    if (cleanedData.length === 0)
+    if (cleanedData.length === 0) {
       return res.ApiResponse({
         errType: ERROR_TYPES.NOT_FOUND,
         errMsg: 'Nessun assistito trovato'
       });
-    else
+    } else {
       return res.ApiResponse({
         data: cleanedData
       });
+    }
   }
 }
 ;
