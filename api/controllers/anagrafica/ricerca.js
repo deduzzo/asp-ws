@@ -155,7 +155,7 @@ module.exports = {
         let timeout = false;
         const assistito = await Promise.race([
           AssistitoService.getAssistitoFromCf(inputs.codiceFiscale),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca su TS')), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca su TS')), 20000))
         ]).catch(err => {
           timeout = true;
           return null;
