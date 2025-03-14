@@ -2,6 +2,7 @@ const axios = require('axios');
 const configData = require('../../config/custom/private_nar_ts_config.json');
 const keys = require('../../config/custom/private_encrypt_key.json');
 const NOMINATIM_URL = 'https://nominatim.app.robertodedomenico.it/search.php';
+const NOMINATIM_OFFICIAL = "https://nominatim.openstreetmap.org/search.php"
 
 module.exports = {
   getAssistitoFromCf: async function (cf, fallback = true, geoloc = true) {
@@ -51,10 +52,10 @@ module.exports = {
         try {
           const cap = indirizzo.split(',')[1].trim();
           const cap2 = datiAssistito.capResidenza;
-          if (cap2 !== "98100" || cap !== "98100") {
+          if (cap2 !== "98100" && !cap2.includes("98100")) {
             if (cap && cap.trim().length > 0) {
               const params1 = new URLSearchParams({
-                q: cap !== "98100" ? cap : cap2,
+                q: !cap.includes("98100") ? cap : cap2,
               });
               const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
               if (response1.status === 200 && response1.data.length > 0) {
@@ -65,6 +66,24 @@ module.exports = {
                     lon: data[0].lon,
                     precise: false
                   };
+                }
+              }
+              else { // ultimo tentativo con api ufficiali
+                const params2 = new URLSearchParams({
+                  q: (!cap.includes("98100") ? cap : cap2) + `, ${datiAssistito.comuneResidenza}`,
+                });
+                // wait 1 sec
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const response2 = await axios.get(`${NOMINATIM_OFFICIAL}?${params2}&format=jsonv2`);
+                if (response2.status === 200 && response2.data.length > 0) {
+                  const data = response2.data;
+                  if (data.length > 0) {
+                    return {
+                      lat: data[0].lat,
+                      lon: data[0].lon,
+                      precise: false
+                    };
+                  }
                 }
               }
             }

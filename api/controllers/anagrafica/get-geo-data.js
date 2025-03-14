@@ -7,6 +7,7 @@
  */
 const {createJob,updateJob} = require('../../services/JobManager');
 const {getGeoAssistito} = require('../../services/AssistitoService');
+const {utils} = require('aziendasanitaria-utils/src/Utils');
 module.exports = {
   friendlyName: 'Assistiti in base ai dati geografici per comune di residenza',
   description: 'Ottieni i dati geografici degli assistiti per comune di residenza',
@@ -99,7 +100,8 @@ module.exports = {
               await Anagrafica_Assistiti.updateOne({ cf: assistito.cf }).set({
                 lat: geoloc.lat,
                 long: geoloc.lon,
-                geolocPrecise: geoloc.precise
+                geolocPrecise: geoloc.precise,
+                lastCheck: utils.nowToUnixDate()
               });
             } else {
               assistito.lat = null;
@@ -110,7 +112,8 @@ module.exports = {
               await Anagrafica_Assistiti.updateOne({ cf: assistito.cf }).set({
                 lat: null,
                 long: null,
-                geolocPrecise: false
+                geolocPrecise: false,
+                lastCheck: utils.nowToUnixDate()
               });
             }
           }
