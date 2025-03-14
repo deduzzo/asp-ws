@@ -141,8 +141,14 @@ module.exports = {
             cf: assistito.cf,
           });
           if (assistitoEsistente) {
+            let geolocChanged = false;
             assistito.lastCheck = utils.nowToUnixDate();
             if (assistitoEsistente.lat === null || inputs.forzaAggiornamentoGeolocalizzazione) {
+              const oldGeoloc = {
+                lat: assistitoEsistente.lat,
+                long: assistitoEsistente.long,
+                geolocPrecise: assistitoEsistente.geolocPrecise
+              };
               const geoloc = await getGeoAssistito(assistito);
               if (geoloc) {
                 assistito.lat = geoloc.lat;
@@ -154,6 +160,9 @@ module.exports = {
                 assistito.long = null;
                 assistito.geolocPrecise = false;
               }
+              if (oldGeoloc.lat !== assistito.lat || oldGeoloc.long !== assistito.long) {
+                geolocChanged = true;
+              }
             }
             if (assistitoEsistente.md5 === assistito.md5) {
               currentResponse = {
@@ -161,7 +170,7 @@ module.exports = {
                 statusCode: 409,
                 err: {
                   code: ERROR_TYPES.ALREADY_EXISTS,
-                  msg: 'L\'assistito esiste già nel sistema e contiene già i dati forniti',
+                  msg: 'L\'assistito esiste già nel sistema e contiene già i dati forniti.' + ( geolocChanged ? ' Geolocalizzazione aggiornata.' : ''),
                 },
               };
             }
