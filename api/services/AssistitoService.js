@@ -52,7 +52,7 @@ module.exports = {
         try {
           const cap = indirizzo.split(',')[1].trim();
           const cap2 = datiAssistito.capResidenza;
-          if (cap2 !== "98100" && !cap2.includes("98100")) {
+          if (cap2 !== "98100" || !cap.includes("98100")) {
             if (cap && cap.trim().length > 0) {
               const params1 = new URLSearchParams({
                 q: !cap.includes("98100") ? cap : cap2,
