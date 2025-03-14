@@ -292,7 +292,10 @@ module.exports = {
           quartiereCap = jsonMap.hasOwnProperty(cap) ? jsonMap[cap].circoscrizione : null;
         }
         if (!inputs.preferisciCap) {
-          quartiere = quartiereCoordinate ? quartiereCoordinate : quartiereCap;
+          quartiere = quartiereCoordinate;
+        }
+        if (!quartiere && quartiereCap !== null) {
+          quartiere = quartiereCap;
         }
         if (!quartiere) {
           quartiere = 'N/D';
