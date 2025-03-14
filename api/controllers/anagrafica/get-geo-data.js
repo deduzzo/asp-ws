@@ -7,6 +7,7 @@
  */
 
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
+const {getGeoAssistito} = require('../../services/AssistitoService');
 module.exports = {
   friendlyName: 'Assistiti in base ai dati geografici per comune di residenza',
   description: 'Ottieni i dati geografici degli assistiti per comune di residenza',
@@ -25,6 +26,11 @@ module.exports = {
     onlyGeoloc: {
       type: 'boolean',
       description: 'Se true, ritorna solo i record geolocalizzati',
+      defaultsTo: false
+    },
+    forceUpdate: {
+      type: 'boolean',
+      description: 'Se true, forza l\'aggiornamento dei dati geolocalizzati',
       defaultsTo: false
     }
   },
@@ -50,7 +56,6 @@ module.exports = {
         where: criteria
       });
     else {
-
       let query = ` select \`cf\`, \`capResidenza\`, \`indirizzoResidenza\`, \`lat\`, \`long\`, \`geolocPrecise\`
                     FROM ${Anagrafica_Assistiti.tableName}
                     WHERE lat IS NULL
@@ -58,6 +63,20 @@ module.exports = {
                       AND (indirizzoResidenza IS NOT NULL OR capResidenza IS NOT NULL)`;
       let rawResult = await Anagrafica_Assistiti.getDatastore().sendNativeQuery(query, [inputs.codComuneResidenza]);
       data = rawResult.rows;
+    }
+    if (inputs.forceUpdate) {
+      for (let assistito of data) {
+        let geoloc = await getGeoAssistito(assistito);
+        if (geoloc) {
+          assistito.lat = geoloc.lat;
+          assistito.long = geoloc.lon;
+          assistito.geolocPrecise = geoloc.precise;
+        } else {
+          assistito.lat = null;
+          assistito.long = null;
+          assistito.geolocPrecise = false;
+        }
+      }
     }
     const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
     if (cleanedData.length === 0) {

@@ -29,9 +29,7 @@ module.exports = {
     // axios get q=${indirizzo} format=json
     let indirizzo = datiAssistito.indirizzoResidenza;
     if (indirizzo && indirizzo.trim().length > 0) {
-      if (!datiAssistito.asp.toLowerCase().includes('messina')) {
         indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
-      }
       const params = new URLSearchParams({
         q: indirizzo,
         format: 'json',
@@ -50,30 +48,31 @@ module.exports = {
         }
       } else if (response.data.length === 0) {
         // fallback
-        const indirizzo1 = indirizzo.split(',')[1];
-        if (indirizzo1 && indirizzo1.trim().length > 0) {
-          const params1 = new URLSearchParams({
-            q: indirizzo1,
-          });
-          const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
-          if (response1.status === 200 && response1.data.length > 0) {
-            const data = response1.data;
-            if (data.length > 0) {
-              return {
-                lat: data[0].lat,
-                lon: data[0].lon,
-                precise: false
-              };
-            } else {
-              return null; // Nessun risultato trovato
+        try {
+          const cap = indirizzo.split(',')[1].trim();
+          const cap2 = datiAssistito.capResidenza;
+          if (cap2 !== "98100" || cap !== "98100") {
+            if (cap && cap.trim().length > 0) {
+              const params1 = new URLSearchParams({
+                q: cap !== "98100" ? cap : cap2,
+              });
+              const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
+              if (response1.status === 200 && response1.data.length > 0) {
+                const data = response1.data;
+                if (data.length > 0) {
+                  return {
+                    lat: data[0].lat,
+                    lon: data[0].lon,
+                    precise: false
+                  };
+                }
+              }
             }
-          } else return null;
-        } else {
-          return null; // Errore nella richiesta
+          }
+        } catch (error) {
         }
       }
-    } else {
-      return null;
     }
+    return null; // Nessun risultato trovato
   }
 }

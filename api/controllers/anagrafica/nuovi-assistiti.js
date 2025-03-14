@@ -144,6 +144,11 @@ module.exports = {
                 assistito.long = geoloc.lon;
                 assistito.geolocPrecise = geoloc.precise;
               }
+              else {
+                assistito.lat = null;
+                assistito.long = null;
+                assistito.geolocPrecise = false;
+              }
             }
             if (assistitoEsistente.md5 === assistito.md5) {
               currentResponse = {
