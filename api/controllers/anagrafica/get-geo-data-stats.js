@@ -283,7 +283,7 @@ module.exports = {
         } catch (e) {
           // procediamo con la verifica per cap
         }
-        if (capIndirizzo !== '98100' && capIndirizzo.length === 5) {
+        if (capIndirizzo && capIndirizzo !== '98100' && capIndirizzo.length === 5) {
           cap = capIndirizzo;
         } else if (assistito.capResidenza && assistito.capResidenza.length === 5 && assistito.capResidenza !== '98100') {
           cap = assistito.capResidenza;
