@@ -25,6 +25,11 @@ module.exports = {
       description: 'Se true, ritorna solo gli assistiti in vita',
       defaultsTo: true
     },
+    preferisciCap: {
+      type: 'boolean',
+      description: 'Se true, preferisci il cap per la ricerca del quartiere',
+      defaultsTo: true
+    },
     jsonMap: {
       type: 'json',
       required: false,
@@ -263,36 +268,44 @@ module.exports = {
       let jsonMap = JSON.parse(inputs.jsonMap);
       for (let assistito of data) {
         let cap = null;
+        let capIndirizzo = null;
+        let quartiereCoordinate = null;
+        let quartiereCap = null;
         let quartiere = null;
-        if (assistito.indirizzoResidenza) {
-          try {
-            if (assistito.lat) {
-              quartiere = verificatore.verificaPuntoMappa(assistito.lat, assistito.long);
-            }
-          } catch (e) {
-            cap = assistito.indirizzoResidenza.split(',')[1].trim().split(' ')[0];
-            if (cap.length !== 5 || cap === '98100') {
-              if (assistito.capResidenza !== "98100") {
-                cap = assistito.capResidenza;
-              }
-              else
-                throw new Error('Cap non valido');
-            }
-            quartiere = jsonMap.hasOwnProperty(cap) ? jsonMap[cap].circoscrizione : 'ALTRO';
-          }
-          if (!quartiere) {
-            quartiere = 'ALTRO';
-          }
-          if (!result.perQuartiere[quartiere]) {
-            result.perQuartiere[quartiere] = 0;
-          }
-          result.perQuartiere[quartiere]++;
-          result.totale++;
+        try {
+          capIndirizzo = assistito.indirizzoResidenza.split(',')[1].trim().split(' ')[0].trim();
+        } catch (ex) {
         }
+        try {
+          if (assistito.lat) {
+            quartiereCoordinate = verificatore.verificaPuntoMappa(assistito.lat, assistito.long);
+          }
+        } catch (e) {
+          // procediamo con la verifica per cap
+        }
+        if (capIndirizzo !== '98100' && capIndirizzo.length === 5) {
+          cap = capIndirizzo;
+        } else if (assistito.capResidenza && assistito.capResidenza.length === 5 && assistito.capResidenza !== '98100') {
+          cap = assistito.capResidenza;
+        }
+        if (cap) {
+          quartiereCap = jsonMap.hasOwnProperty(cap) ? jsonMap[cap].circoscrizione : null;
+        }
+        if (!inputs.preferisciCap) {
+          quartiere = quartiereCoordinate ? quartiereCoordinate : quartiereCap;
+        }
+        if (!quartiere) {
+          quartiere = 'N/D';
+        }
+        if (!result.perQuartiere[quartiere]) {
+          result.perQuartiere[quartiere] = 0;
+        }
+        result.perQuartiere[quartiere]++;
+        result.totale++;
       }
-      return res.ApiResponse({
-        data: result
-      });
     }
+    return res.ApiResponse({
+      data: result
+    });
   }
 };
