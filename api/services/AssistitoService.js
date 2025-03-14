@@ -2,7 +2,8 @@ const axios = require('axios');
 const configData = require('../../config/custom/private_nar_ts_config.json');
 const keys = require('../../config/custom/private_encrypt_key.json');
 const NOMINATIM_URL = 'https://nominatim.app.robertodedomenico.it/search.php';
-const NOMINATIM_OFFICIAL = "https://nominatim.openstreetmap.org/search.php"
+const NOMINATIM_OFFICIAL = 'https://nominatim.openstreetmap.org/search.php';
+let _lastNominatimRequest = 0;
 
 module.exports = {
   getAssistitoFromCf: async function (cf, fallback = true, geoloc = true) {
@@ -30,7 +31,7 @@ module.exports = {
     // axios get q=${indirizzo} format=json
     let indirizzo = datiAssistito.indirizzoResidenza;
     if (indirizzo && indirizzo.trim().length > 0) {
-        indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
+      indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
       const params = new URLSearchParams({
         q: indirizzo,
         format: 'json',
@@ -52,10 +53,10 @@ module.exports = {
         try {
           const cap = indirizzo.split(',')[1].trim();
           const cap2 = datiAssistito.capResidenza;
-          if (cap2 !== "98100" || !cap.includes("98100")) {
+          if (cap2 !== '98100' || !cap.includes('98100')) {
             if (cap && cap.trim().length > 0) {
               const params1 = new URLSearchParams({
-                q: !cap.includes("98100") ? cap : cap2,
+                q: !cap.includes('98100') ? cap : cap2,
               });
               const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
               if (response1.status === 200 && response1.data.length > 0) {
@@ -67,13 +68,18 @@ module.exports = {
                     precise: false
                   };
                 }
-              }
-              else { // ultimo tentativo con api ufficiali
+              } else { // ultimo tentativo con api ufficiali
                 const params2 = new URLSearchParams({
-                  q: (!cap.includes("98100") ? cap : cap2) + `, ${datiAssistito.comuneResidenza}`,
+                  q: (!cap.includes('98100') ? cap : cap2) + `, ${datiAssistito.comuneResidenza}`,
                 });
-                // wait 1 sec
-                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const now = Date.now();
+                const timeToWait = Math.max(0, _lastNominatimRequest + 1000 - now);
+                if (timeToWait > 0) {
+                  await new Promise(resolve => setTimeout(resolve, timeToWait));
+                }
+                _lastNominatimRequest = Date.now();
+
                 const response2 = await axios.get(`${NOMINATIM_OFFICIAL}?${params2}&format=jsonv2`);
                 if (response2.status === 200 && response2.data.length > 0) {
                   const data = response2.data;
@@ -94,4 +100,4 @@ module.exports = {
     }
     return null; // Nessun risultato trovato
   }
-}
+};
