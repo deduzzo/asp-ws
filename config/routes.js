@@ -117,6 +117,12 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+  'GET /api/v1/anagrafica/get-geo-data-status': {
+    action: 'anagrafica/get-geo-data-status',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 
 
 
