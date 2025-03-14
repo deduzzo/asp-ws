@@ -100,6 +100,12 @@ module.exports = {
             });
           });
       }
+    },
+    forzaAggiornamentoGeolocalizzazione : {
+      type: 'boolean',
+      description: 'Aggiorna la geolocalizzazione anche se già presente',
+      defaultsTo: false,
+      required: false
     }
   },
   exits: {},
@@ -134,10 +140,9 @@ module.exports = {
           let assistitoEsistente = await Anagrafica_Assistiti.findOne({
             cf: assistito.cf,
           });
-
           if (assistitoEsistente) {
             assistito.lastCheck = utils.nowToUnixDate();
-            if (assistitoEsistente.lat === null) {
+            if (assistitoEsistente.lat === null || inputs.forzaAggiornamentoGeolocalizzazione) {
               const geoloc = await getGeoAssistito(assistito);
               if (geoloc) {
                 assistito.lat = geoloc.lat;
