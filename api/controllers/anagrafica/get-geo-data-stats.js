@@ -30,6 +30,11 @@ module.exports = {
       description: 'Se true, preferisci il cap per la ricerca del quartiere',
       defaultsTo: true
     },
+    mostraIndirizziNonValidi: {
+      type: 'boolean',
+      description: 'Se true, mostra gli indirizzi non validi (per verifica)',
+      defaultsTo: true
+    },
     jsonMap: {
       type: 'json',
       required: false,
@@ -249,6 +254,7 @@ module.exports = {
 
   fn: async function (inputs) {
     const res = this.res;
+    let indirizziNonValidi = [];
     const verificatore = new VerificaQuartieri('circoscrizioni-messina-2021.geojson');
     let inVita = {};
     if (inputs.soloInVita) {
@@ -299,6 +305,7 @@ module.exports = {
         }
         if (!quartiere) {
           quartiere = 'N/D';
+          indirizziNonValidi.push(assistito.indirizzoResidenza);
         }
         if (!result.perQuartiere[quartiere]) {
           result.perQuartiere[quartiere] = 0;
@@ -308,7 +315,7 @@ module.exports = {
       }
     }
     return res.ApiResponse({
-      data: result
+      data: {statistiche: result, indirizziNonValidi}
     });
   }
 };
