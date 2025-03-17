@@ -164,7 +164,7 @@ module.exports = {
           '98152': {
             'lat': '38.2175104',
             'long': '15.5004589',
-            'circoscrizione': '5'
+            'circoscrizione': '4'
           },
           '98153': {
             'lat': '38.2364187',
