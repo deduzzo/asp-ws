@@ -111,14 +111,20 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
-  'POST /api/v1/anagrafica/get-geo-data-stats': {
-    action: 'anagrafica/get-geo-data-stats',
+  'GET /api/v1/anagrafica/get-geo-data-job': {
+    action: 'anagrafica/get-geo-data-job',
     scopi: ['asp5-anagrafica'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
-  'GET /api/v1/anagrafica/get-geo-data-status': {
-    action: 'anagrafica/get-geo-data-status',
+  'GET /api/v1/anagrafica/get-geo-data-job-status': {
+    action: 'anagrafica/get-geo-data-job-status',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/anagrafica/get-geo-data-stats': {
+    action: 'anagrafica/get-geo-data-stats',
     scopi: ['asp5-anagrafica'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin

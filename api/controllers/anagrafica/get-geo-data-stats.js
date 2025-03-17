@@ -330,7 +330,7 @@ module.exports = {
       }
     }
     return res.ApiResponse({
-      data: {statistiche: result, indirizziNonValidi}
+      data: inputs.mostraIndirizziNonValidi ? {statistiche: result, indirizziNonValidi} : {statistiche: result}
     });
   }
 };

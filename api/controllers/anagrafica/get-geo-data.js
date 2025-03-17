@@ -5,7 +5,7 @@
  *     tags:
  *       - Anagrafica
  */
-const {createJob,updateJob} = require('../../services/JobManager');
+const {createJob, updateJob} = require('../../services/JobManager');
 const {getGeoAssistito} = require('../../services/AssistitoService');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 module.exports = {
@@ -14,7 +14,7 @@ module.exports = {
   inputs: {
     codComuneResidenza: {
       type: 'string',
-      required: true,
+      required: false,
       description: 'Codice del comune di residenza'
     },
     onlyGeolocationPrecise: {
@@ -25,12 +25,7 @@ module.exports = {
     onlyGeoloc: {
       type: 'boolean',
       description: 'Se true, ritorna solo i record geolocalizzati',
-      defaultsTo: false
-    },
-    forceUpdate: {
-      type: 'boolean',
-      description: 'Se true, forza l\'aggiornamento dei dati geolocalizzati',
-      defaultsTo: false
+      defaultsTo: true
     }
   },
   exits: {},
@@ -43,9 +38,11 @@ module.exports = {
 
     if (inputs.onlyGeoloc === true) {
       criteria = {
-        codComuneResidenza: inputs.codComuneResidenza,
         lat: {'!=': null}
       };
+    }
+    if (inputs.codComuneResidenza) {
+      criteria = {...criteria, codComuneResidenza: inputs.codComuneResidenza};
     }
 
     if (inputs.onlyGeolocationPrecise === true) {
@@ -67,7 +64,7 @@ module.exports = {
             errMsg: 'Nessun assistito trovato'
           });
         } else {
-          return res.ApiResponse({ data: cleanedData });
+          return res.ApiResponse({data: cleanedData});
         }
       }
     } else {
@@ -80,65 +77,11 @@ module.exports = {
       data = rawResult.rows;
     }
 
-    // Crea un job asincrono per l'aggiornamento delle geolocalizzazioni
-    const jobId = createJob('geoloc', data.length);
-
-    // Avvia il processo in background
-    setImmediate(async () => {
-      try {
-        let processedItems = 0;
-
-        for (let assistito of data) {
-          if (inputs.forceUpdate) {
-            let geoloc = await getGeoAssistito(assistito);
-            if (geoloc) {
-              assistito.lat = geoloc.lat;
-              assistito.long = geoloc.lon;
-              assistito.geolocPrecise = geoloc.precise;
-
-              // Aggiorna il record nel database
-              await Anagrafica_Assistiti.updateOne({ cf: assistito.cf }).set({
-                lat: geoloc.lat,
-                long: geoloc.lon,
-                geolocPrecise: geoloc.precise,
-                lastCheck: utils.nowToUnixDate()
-              });
-            } else {
-              assistito.lat = null;
-              assistito.long = null;
-              assistito.geolocPrecise = false;
-
-              // Aggiorna il record nel database
-              await Anagrafica_Assistiti.updateOne({ cf: assistito.cf }).set({
-                lat: null,
-                long: null,
-                geolocPrecise: false,
-                lastCheck: utils.nowToUnixDate()
-              });
-            }
-          }
-          processedItems++;
-          console.log(`Processed ${processedItems} of ${data.length} items`);
-          updateJob(jobId, { processedItems });
-        }
-
-        const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
-        updateJob(jobId, {
-          status: 'completed',
-          result: cleanedData
-        });
-      } catch (error) {
-        sails.log.error('Errore nel job di geolocalizzazione:', error);
-        updateJob(jobId, {
-          status: 'error',
-          error: error.message
-        });
-      }
-    });
+    const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
 
     // Restituisci immediatamente l'ID del job
     return res.ApiResponse({
-      data: { jobId }
+      data: cleanedData
     });
   }
 };

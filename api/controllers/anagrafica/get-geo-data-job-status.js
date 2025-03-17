@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /get-geo-data-status:
+ * /get-geo-data-job-status:
  *   tags:
  *     - Anagrafica
  */
