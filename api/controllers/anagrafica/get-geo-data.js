@@ -25,7 +25,7 @@ module.exports = {
     onlyGeoloc: {
       type: 'boolean',
       description: 'Se true, ritorna solo i record geolocalizzati',
-      defaultsTo: true
+      defaultsTo: false
     }
   },
   exits: {},
