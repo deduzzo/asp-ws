@@ -39,7 +39,7 @@ module.exports = {
           '98121': {
             'lat': '38.207365358536585',
             'long': '15.55313112926829',
-            'circoscrizione': '4'
+            'circoscrizione': '5'
           },
           '98122': {
             'lat': '38.18828453795181',
@@ -69,7 +69,7 @@ module.exports = {
           '98127': {
             'lat': '38.17274164285714',
             'long': '15.525965342857143',
-            'circoscrizione': '3'
+            'circoscrizione': '2'
           },
           '98128': {
             'lat': '38.1377291',
@@ -164,7 +164,7 @@ module.exports = {
           '98152': {
             'lat': '38.2175104',
             'long': '15.5004589',
-            'circoscrizione': '6'
+            'circoscrizione': '5'
           },
           '98153': {
             'lat': '38.2364187',
