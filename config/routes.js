@@ -100,7 +100,7 @@ let routes = {
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
   'POST /api/v1/anagrafica/ricerca-massiva': {
-    action: 'anagrafica/ricerca',
+    action: 'anagrafica/ricerca-massiva',
     scopi: ['asp5-anagrafica'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
