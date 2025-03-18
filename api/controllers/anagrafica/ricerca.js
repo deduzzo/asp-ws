@@ -153,11 +153,17 @@ module.exports = {
       if (inputs.codiceFiscale && utils.codiceFiscaleValido(inputs.codiceFiscale) && (!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs) {
         // se il codice fiscale è completo, facciamo un ulteriore tentativo di verifica nel sistema ts
         let timeout = false;
+        let otherError = null;
         const assistito = await Promise.race([
           AssistitoService.getAssistitoFromCf(inputs.codiceFiscale),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca su TS')), 20000))
         ]).catch(err => {
-          timeout = true;
+          // Check if this is a timeout error or another type of error
+          if (err.message === 'Timeout durante la ricerca su TS') {
+            timeout = true;
+          } else {
+            otherError = err;
+          }
           return null;
         });
 
@@ -165,6 +171,13 @@ module.exports = {
           return res.ApiResponse({
             errType: ERROR_TYPES.TIMEOUT,
             errMsg: 'Nessun assistito presente nel database. Il tentativo di richiesta su TS ha prodotto Timeout, probabilmente il codice fiscale non è valido'
+          });
+        }
+
+        if (otherError) {
+          return res.ApiResponse({
+            errType: ERROR_TYPES.ERRORE_DEL_SERVER,
+            errMsg: `Errore durante la ricerca su TS: ${otherError.message}`
           });
         }
 
