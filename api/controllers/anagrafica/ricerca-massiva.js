@@ -29,7 +29,7 @@ module.exports = {
   fn: async function (inputs, exits) {
     const res = this.res;
     // Verifica che sia stato fornito almeno un parametro di ricerca
-    if (!inputs.codiceFiscale && !inputs.nome && !inputs.cognome && !inputs.dataNascita) {
+    if (!inputs.beforeLastUpdate) {
       return res.ApiResponse({
         errType: ERROR_TYPES.BAD_REQUEST,
         errMsg: 'Inserire almeno un parametro di ricerca'
