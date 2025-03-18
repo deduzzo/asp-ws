@@ -335,7 +335,7 @@ module.exports = {
           let keys = Object.keys(jsonMap.custom);
           // verifichiamo se una parte di indirizzo contiene una delle chiavi custom
           for (let key of keys) {
-            if (assistito.indirizzoResidenza.toLowerCase().includes(key)) {
+            if (assistito.indirizzoResidenza && assistito.indirizzoResidenza.toLowerCase().includes(key)) {
               quartiereCap = jsonMap.custom[key].circoscrizione;
               break;
             }
