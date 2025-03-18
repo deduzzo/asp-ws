@@ -62,7 +62,7 @@ module.exports = {
       return res.ApiResponse({
         data: {
           count: assistiti.length,
-          assistiti
+          assistiti : _.map(assistiti, 'cf')
         }
       });
     } catch (err) {
