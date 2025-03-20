@@ -46,7 +46,6 @@ module.exports = {
       type: 'string',
       required: true,
       description: 'Tipo di medico, M = Medico di base, P = Pediatra, T = Tutti',
-      defaultsTo: 'T',
       isIn: ['M', 'P', 'T'],
     },
     jsonMap: {
