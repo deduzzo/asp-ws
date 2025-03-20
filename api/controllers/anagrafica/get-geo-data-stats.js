@@ -25,6 +25,11 @@ module.exports = {
       description: 'Se true, ritorna solo gli assistiti in vita',
       defaultsTo: true
     },
+    divisioneInQuartieri: {
+      type: 'boolean',
+      description: 'Se true, ritorna la divisione in quartieri in base ai dati forniti',
+      defaultsTo: false
+    },
     preferisciCap: {
       type: 'boolean',
       description: 'Se true, preferisci il cap per la ricerca del quartiere',
@@ -33,7 +38,7 @@ module.exports = {
     mostraIndirizziNonValidi: {
       type: 'boolean',
       description: 'Se true, mostra gli indirizzi non validi (per verifica)',
-      defaultsTo: true
+      defaultsTo: false
     },
     jsonMap: {
       type: 'json',
@@ -304,7 +309,7 @@ module.exports = {
       select: ['capResidenza', 'indirizzoResidenza', 'lat', 'long'],
     });
     let result = {totale: 0, perQuartiere: {}};
-    if (inputs.jsonMap) {
+    if (inputs.jsonMap && inputs.divisioneInQuartieri) {
       let jsonMap = JSON.parse(inputs.jsonMap);
       for (let assistito of data) {
         let cap = null;
@@ -357,6 +362,11 @@ module.exports = {
         result.perQuartiere[quartiere]++;
         result.totale++;
       }
+    }
+    else
+    {
+      result.totale = data.length;
+      delete result.perQuartiere;
     }
     return res.ApiResponse({
       data: inputs.mostraIndirizziNonValidi ? {statistiche: result, indirizziNonValidi} : {statistiche: result}
