@@ -40,6 +40,15 @@ module.exports = {
       description: 'Se true, mostra gli indirizzi non validi (per verifica)',
       defaultsTo: false
     },
+    tipoMedico: {
+      // string 1 char default 'M'
+      // possibili valori: "M", "P" oppure "T" (per tutti)
+      type: 'string',
+      required: true,
+      description: 'Tipo di medico, M = Medico di base, P = Pediatra, T = Tutti',
+      defaultsTo: 'T',
+      isIn: ['M', 'P', 'T'],
+    },
     jsonMap: {
       type: 'json',
       required: false,
@@ -295,16 +304,20 @@ module.exports = {
     const res = this.res;
     let indirizziNonValidi = [];
     const verificatore = new VerificaQuartieri('circoscrizioni-messina-2021.geojson');
-    let inVita = {};
+    let criteria = {};
     if (inputs.soloInVita) {
-      inVita = {
+      criteria = {
         dataDecesso: null
       };
+    }
+    // if inputs.tipoMedico is not 'T' we need to filter by medico
+    if (inputs.tipoMedico !== 'T') {
+      criteria.MMGTipo = inputs.tipoMedico;
     }
     let data = await Anagrafica_Assistiti.find({
       where: {
         codComuneResidenza: inputs.codComuneResidenza,
-        ...inVita
+        ...criteria
       },
       select: ['capResidenza', 'indirizzoResidenza', 'lat', 'long'],
     });
