@@ -9,6 +9,7 @@
 
 const VerificaQuartieri = require('../../services/VerificaQuartieri');
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
+const {utils} = require('aziendasanitaria-utils/src/Utils');
 
 module.exports = {
   friendlyName: 'Statistiche per comune di residenza',
@@ -47,6 +48,18 @@ module.exports = {
       required: true,
       description: 'Tipo di medico, M = Medico di base, P = Pediatra, T = Tutti',
       isIn: ['M', 'P', 'T'],
+    },
+    etaIniziale: {
+      type: 'number',
+      required: false,
+      description: 'Età iniziale per la ricerca (inclusa)',
+      example: 14
+    },
+    etaFinale: {
+      type: 'number',
+      required: false,
+      description: 'Età finale per la ricerca',
+      example: 65
     },
     jsonMap: {
       type: 'json',
@@ -312,6 +325,22 @@ module.exports = {
     // if inputs.tipoMedico is not 'T' we need to filter by medico
     if (inputs.tipoMedico !== 'T') {
       criteria.MMGTipo = inputs.tipoMedico;
+    }
+    if (inputs.etaIniziale || inputs.etaFinale) {
+      const range = utils.getUnixRangeFromRangeEta(inputs.etaIniziale, inputs.etaFinale);
+      if (!range) {
+        return res.ApiResponse({
+          errType: ERROR_TYPES.BAD_REQUEST,
+          errMsg: 'Età iniziale deve essere minore di eta finale, oppure sono stati forniti numeri non validi',
+          data: null
+        });
+      }
+      if (range.unixStart) {
+        criteria.dataNascita = {'>=': range.unixStart};
+      }
+      if (range.unixEnd) {
+        criteria.dataNascita = {'<=': range.unixEnd};
+      }
     }
     let data = await Anagrafica_Assistiti.find({
       where: {
