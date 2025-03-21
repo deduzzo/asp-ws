@@ -318,16 +318,14 @@ module.exports = {
     const verificatore = new VerificaQuartieri('circoscrizioni-messina-2021.geojson');
     let criteria = {};
     if (inputs.soloInVita) {
-      criteria = {
-        dataDecesso: null
-      };
+      criteria.dataDecesso = null;
     }
     // if inputs.tipoMedico is not 'T' we need to filter by medico
     if (inputs.tipoMedico !== 'T') {
       criteria.MMGTipo = inputs.tipoMedico;
     }
     if (inputs.etaIniziale || inputs.etaFinale) {
-      const range = utils.getUnixRangeFromRangeEta(inputs.etaIniziale, inputs.etaFinale);
+      const range = utils.getUnixRangeFromRangeEta(inputs.etaIniziale, inputs.etaFinale,false);
       if (!range) {
         return res.ApiResponse({
           errType: ERROR_TYPES.BAD_REQUEST,
@@ -335,11 +333,21 @@ module.exports = {
           data: null
         });
       }
-      if (range.unixStart) {
-        criteria.dataNascita = {'>=': range.unixStart};
-      }
-      if (range.unixEnd) {
-        criteria.dataNascita = {'<=': range.unixEnd};
+      criteria.dataNascita = {};
+      if (range.unixStart || range.unixEnd) {
+        let conditions = [];
+        if (range.unixStart) {
+          conditions.push({dataNascita: {'<=': range.unixStart}});
+        }
+        if (range.unixEnd) {
+          conditions.push({dataNascita: {'>=': range.unixEnd}});
+        }
+        if (conditions.length === 1) {
+          criteria.dataNascita = conditions[0].dataNascita;
+        } else {
+          criteria.and = conditions;
+          delete criteria.dataNascita; // Remove the empty dataNascita field
+        }
       }
     }
     let data = await Anagrafica_Assistiti.find({
@@ -403,9 +411,7 @@ module.exports = {
         result.perQuartiere[quartiere]++;
         result.totale++;
       }
-    }
-    else
-    {
+    } else {
       result.totale = data.length;
       delete result.perQuartiere;
     }
