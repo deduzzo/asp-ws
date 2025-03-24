@@ -30,14 +30,19 @@ module.exports = {
   getGeoAssistito: async function (datiAssistito) {
     // axios get q=${indirizzo} format=json
     let indirizzo = datiAssistito.indirizzoResidenza;
+    let response;
     if (indirizzo && indirizzo.trim().length > 0) {
-      indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
-      const params = new URLSearchParams({
-        q: indirizzo,
-        format: 'json',
-      });
-      const response = await axios.get(`${NOMINATIM_URL}?${params}`);
-      if (response.status === 200 && response.data.length > 0) {
+      try {
+        indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
+        const params = new URLSearchParams({
+          q: indirizzo,
+          format: 'json',
+        });
+        response = await axios.get(`${NOMINATIM_URL}?${params}`);
+      }catch (error) {
+        response = null;
+      }
+      if (response && response.status === 200 && response.data.length > 0) {
         const data = response.data;
         if (data.length > 0) {
           return {
@@ -48,7 +53,7 @@ module.exports = {
         } else {
           return null; // Nessun risultato trovato
         }
-      } else if (response.data.length === 0) {
+      } else if (!response || response.data.length === 0) {
         // fallback
         try {
           const cap = indirizzo.split(',')[1].trim();
