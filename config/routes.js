@@ -14,6 +14,7 @@ const moment = require('moment');
 const csfr = false;
 const JwtService = require('../api/services/JwtService');
 const basicAuth = require('express-basic-auth');
+const indexConfig = require('./custom/private_index.json');
 
 // Function to render the homepage
 const getHomepage = (req, res) => {
@@ -35,9 +36,7 @@ const getDocs = async (req, res) => {
   const fs = require('fs');
   const filePath = path.resolve('node_modules/swagger-ui-dist/index.html');
   // Construct the base URL from the request
-  const protocol = req.protocol;
-  const host = req.get('host');
-  const baseUrl = `${protocol}://${host}`;
+  const baseUrl = indexConfig.BASEURL;
   const apiurl = baseUrl + '/swagger.json';
   // csrf
   let csrfToken = '';

@@ -9,6 +9,7 @@
  */
 
 const jwtConfig = require('./custom/private_jwt_config.json');
+const indexConfig = require('./custom/private_index.json');
 
 module.exports.custom = {
   baseUrl: 'http://localhost:1337',
