@@ -13,13 +13,32 @@ const fs = require('fs');
 const moment = require('moment');
 const csfr = false;
 const JwtService = require('../api/services/JwtService');
+const basicAuth = require('express-basic-auth');
 
+// Function to render the homepage
+const getHomepage = (req, res) => {
+  return res.view('pages/homepage');
+};
+
+// Basic auth middleware using config/auth.js
+const getBasicAuthMiddleware = () => {
+  const authConfig = require('./auth').auth || { users: { 'admin': 'password123' }, challenge: true, realm: 'ASP5Ws Documentation' };
+  return basicAuth({
+    users: authConfig.users,
+    challenge: authConfig.challenge,
+    realm: authConfig.realm
+  });
+};
 
 const getDocs = async (req, res) => {
   const path = require('path');
   const fs = require('fs');
   const filePath = path.resolve('node_modules/swagger-ui-dist/index.html');
-  const apiurl = sails.config.custom.baseUrl + '/swagger.json';
+  // Construct the base URL from the request
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${protocol}://${host}`;
+  const apiurl = baseUrl + '/swagger.json';
   // csrf
   let csrfToken = '';
   if (req.csrfToken) {
@@ -88,7 +107,7 @@ let routes = {
    *                                                                          *
    ***************************************************************************/
 
-  '/': getDocs,
+  '/': getHomepage,
 
   'POST /api/v1/login/get-token': {
     action: 'login/get-token',
@@ -152,21 +171,55 @@ let routes = {
 
 
 
-  'get /swagger.json': (_, res) => {
-    const swaggerJson = require('../swagger/swagger.json');
-    if (!swaggerJson) {
-      res
-        .status(404)
-        .set('content-type', 'application/json')
-        .send({message: 'Cannot find swagger.json, has the server generated it?'});
+  'GET /swagger.json': {
+    fn: function(req, res, next) {
+      // Apply the middleware directly
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) {
+          return res.status(401).send('Unauthorized');
+        }
+        // If authentication passes, serve the swagger.json file
+        const fs = require('fs');
+        const path = require('path');
+        const swaggerPath = path.resolve(__dirname, '../swagger/swagger.json');
+
+        if (!fs.existsSync(swaggerPath)) {
+          return res
+            .status(404)
+            .set('content-type', 'application/json')
+            .send({message: 'Cannot find swagger.json, has the server generated it?'});
+        }
+
+        try {
+          const swaggerJson = JSON.parse(fs.readFileSync(swaggerPath, {encoding: 'utf8'}));
+          return res
+            .status(200)
+            .set('content-type', 'application/json')
+            .send(swaggerJson);
+        } catch (error) {
+          return res
+            .status(500)
+            .set('content-type', 'application/json')
+            .send({message: 'Error reading swagger.json', error: error.message});
+        }
+      });
     }
-    return res
-      .status(200)
-      .set('content-type', 'application/json')
-      .send(swaggerJson);
   },
 
-  'GET /docs': getDocs,
+  'GET /docs': {
+    fn: function(req, res, next) {
+      // Apply the middleware directly
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) {
+          return res.status(401).send('Unauthorized');
+        }
+        // If authentication passes, call the getDocs function
+        getDocs(req, res);
+      });
+    }
+  },
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato
