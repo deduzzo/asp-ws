@@ -21,6 +21,11 @@ module.exports = {
       required: true,
       description: 'Codice del comune di residenza'
     },
+    aspAssistenza: {
+      type: 'string',
+      required: false,
+      description: 'Se valorizzato, mostra solo gli assistiti assistiti nell\'asp (opzionale)',
+    },
     soloInVita: {
       type: 'boolean',
       description: 'Se true, ritorna solo gli assistiti in vita',
@@ -323,6 +328,10 @@ module.exports = {
     // if inputs.tipoMedico is not 'T' we need to filter by medico
     if (inputs.tipoMedico !== 'T') {
       criteria.MMGTipo = inputs.tipoMedico;
+    }
+    if (inputs.aspAssistenza) {
+      // criteria.asp contains inputs.aspAssistenza
+      criteria.aspAssistenza = {like: `%${inputs.aspAssistenza}%`};
     }
     if (inputs.etaIniziale || inputs.etaFinale) {
       const range = utils.getUnixRangeFromRangeEta(inputs.etaIniziale, inputs.etaFinale,false);
