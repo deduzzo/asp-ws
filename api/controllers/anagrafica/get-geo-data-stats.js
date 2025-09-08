@@ -331,7 +331,7 @@ module.exports = {
     }
     if (inputs.aspAssistenza) {
       // criteria.asp contains inputs.aspAssistenza
-      criteria.aspAssistenza = {like: `%${inputs.aspAssistenza}%`};
+      criteria.asp = {like: `%${inputs.aspAssistenza}%`};
     }
     if (inputs.etaIniziale || inputs.etaFinale) {
       const range = utils.getUnixRangeFromRangeEta(inputs.etaIniziale, inputs.etaFinale,false);
