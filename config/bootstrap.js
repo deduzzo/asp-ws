@@ -16,6 +16,7 @@ const meilisearchService = require('../api/services/MeilisearchService');
 const fs = require('fs');
 const path = require('path');
 const AssistitoService = require('../api/services/AssistitoService');
+const {sendMail} = require('../api/services/MailService');
 
 
 module.exports.bootstrap = async function () {
@@ -106,9 +107,23 @@ module.exports.bootstrap = async function () {
     await Auth_Utenti.addToCollection(newUser.id, 'scopi', (await Auth_Scopi.findOne({scopo: 'asp5-anagrafica'})).id);
   */
 
-  const pass = await sails.helpers.passwords.hashPassword("a[5!TEC9oYQo");
-  console.log("ciao")
+  //const pass = await sails.helpers.passwords.hashPassword("a[5!TEC9oYQo");
+  //console.log("ciao")
 
+
+  //testmail
+/*  const TO = 'roberto.dedomenico@asp.messina.it';
+  const SUBJECT = 'Test mail';
+  const HTML = `
+  <div style="font-family:system-ui,Arial,sans-serif">
+    <h1>Ciao!</h1>
+    <p>Questa è una mail <b>di test</b> inviata via <code>nodemailer</code>.</p>
+  </div>
+`;
+
+  sendMail(TO,SUBJECT, HTML)
+    .then(res => console.log("Inviata:", res))
+    .catch(err => console.error("Errore invio:", err));*/
 
   /*  await anagraficaDataStore.sendNativeQuery(`ALTER TABLE assistiti
       ADD COLUMN fulltext_search VARCHAR(255)
@@ -129,8 +144,8 @@ module.exports.bootstrap = async function () {
 
 
 //await meilisearchService.deleteIndex(meilisearchService.ASSISTITI_INDEX);
-  let res = await meilisearchService.search('morganti 1986');
-  console.log("ciao");
+  //let res = await meilisearchService.search('morganti 1986');
+  //console.log("ciao");
   //await Procedure.creaFileJsonAssistitiCompletoDaFilesZip("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127")
 
   /*  let data = await utils.leggiOggettoMP("/Users/deduzzo/Library/CloudStorage/GoogleDrive-info@robertodedomenico.it/Drive condivisi/LAVORO ASP/DB_ASSISTITI/20250127/assistiti.db");

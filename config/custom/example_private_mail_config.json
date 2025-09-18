@@ -1,0 +1,4 @@
+{
+  "from": "xxxxxx <xxxxxx@xxxxxxx>",
+  "uri": "smtp://user:password@server:port?secure=false"
+}

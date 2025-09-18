@@ -6,7 +6,7 @@
  *     - Auth
  * tags:
  *   - name: Auth
- *     description: Gestione autenticazione e autorizzazione
+ *     description: Gestione autenticazione e autorizzazione. Include eventuale richiesta di autenticazione OTP
  */
 
 const { generateToken } = require('../../services/JwtService');
@@ -40,6 +40,17 @@ module.exports = {
       required: false,
       description:
         'Ambito d\'utenza del token. In caso di campo vuoto il valore di default è "generale"'
+    },
+    otp: {
+      type: 'string',
+      required: false,
+      description:
+      'OTP di autenticazione'
+    },
+    is_domain: {
+      type: 'boolean',
+      required: false,
+      description: 'Se true, il token è per un dominio'
     }
   },
 

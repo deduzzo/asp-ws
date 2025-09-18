@@ -1,3 +1,5 @@
 {
-  "MEILILI_MASTER_KEY" : ""
+  "MEILILI_MASTER_KEY" : "",
+  "BASEURL": ""
 }
+
