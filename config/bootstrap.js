@@ -124,6 +124,13 @@ module.exports.bootstrap = async function () {
   sendMail(TO,SUBJECT, HTML)
     .then(res => console.log("Inviata:", res))
     .catch(err => console.error("Errore invio:", err));*/
+  // test domain
+/*  let res = await sails.helpers.domainLogin.with({
+    username: '',
+    password: '',
+    domain: 'asp.messina.it'
+  });
+  console.log(res);*/
 
   /*  await anagraficaDataStore.sendNativeQuery(`ALTER TABLE assistiti
       ADD COLUMN fulltext_search VARCHAR(255)

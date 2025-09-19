@@ -43,7 +43,7 @@ const getDocs = async (req, res) => {
   if (req.csrfToken) {
     csrfToken = req.csrfToken();
   }
-  try {
+/*  try {
     const total_assistiti = await Anagrafica_Assistiti.count();
     // last update è il più alto updatedAt della tabella assistiti
     const lastAssitito = await Anagrafica_Assistiti.find({
@@ -65,7 +65,7 @@ const getDocs = async (req, res) => {
     }
   } catch (error) {
     sails.log.error('Errore nel bootstrap per il conteggio assistiti:', error);
-  }
+  }*/
   fs.readFile(filePath, 'utf8', function (err, data) {
     if (err) {
       return res.serverError(err);
@@ -89,6 +89,38 @@ const getDocs = async (req, res) => {
         '    return req;' +
         '  }' : '') +
       '});' +
+/*      '(function(){' +
+      '  function doReplaceTokens(stats){' +
+      '    try {' +
+      '      var el = document.getElementById("swagger-ui");' +
+      '      if(!el) return;' +
+      '      var html = el.innerHTML;' +
+      '      html = html.replace(/{{TOTAL_ASSISTITI}}/g, (stats && stats.totAssistiti) ? stats.totAssistiti : "");' +
+      '      html = html.replace(/{{LAST_UPDATE}}/g, (stats && stats.lastUpdate) ? stats.lastUpdate : "");' +
+      '      html = html.replace(/{{GEO_PERC}}/g, (stats && stats.geoPerc) ? stats.geoPerc : "");' +
+      '      el.innerHTML = html;' +
+      '    } catch(e) { console.error("Errore nella sostituzione dei token SwaggerUI:", e); }' +
+      '  }' +
+      '  function fetchStatsAndReplace(){' +
+      '    var headers = {};' +
+      '    if (csrfToken) { headers["X-CSRF-Token"] = csrfToken; }' +
+      '    fetch("/api/v1/stats/info", { method: "GET", headers: headers, credentials: "same-origin" })' +
+      '      .then(function(r){ return r.json(); })' +
+      '      .then(function(j){ var data = (j && j.data) ? j.data : j; doReplaceTokens(data); })' +
+      '      .catch(function(err){ console.error("Errore caricando /api/v1/stats/info:", err); });' +
+      '  }' +
+      '  /!* Attendi che SwaggerUI abbia renderizzato il contenuto e poi esegui la sostituzione *!/' +
+      '  var attempts = 0;' +
+      '  var iv = setInterval(function(){' +
+      '    attempts++;' +
+      '    var el = document.getElementById("swagger-ui");' +
+      '    if (el && /{{(TOTAL_ASSISTITI|LAST_UPDATE|GEO_PERC)}}/.test(el.innerHTML)) {' +
+      '      clearInterval(iv);' +
+      '      fetchStatsAndReplace();' +
+      '    }' +
+      '    if (attempts > 50) { clearInterval(iv); }' +
+      '  }, 200);' +
+      '})();' +*/
       '};');
 
     res.send(data);
@@ -154,6 +186,9 @@ let routes = {
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
 
+  'GET /api/v1/stats/info': {
+    action: 'stats/info',
+  },
 
 
 
