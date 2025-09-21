@@ -13,6 +13,7 @@ const {generateToken} = require('../../services/JwtService');
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
 const moment = require('moment');
 const {sendMail} = require('../../services/MailService');
+const {utils} = require("aziendasanitaria-utils/src/Utils");
 const OTP_MIN_OTHER_REQUEST= 2;
 const OTP_EXPIRE_MINUTES = 10;
 
@@ -128,10 +129,10 @@ module.exports = {
                 if (!utente.otp || (utente.otp_exp && moment().isAfter(moment(utente.otp_exp).subtract(OTP_EXPIRE_MINUTES - OTP_MIN_OTHER_REQUEST, 'minutes')))) {
                   // invia l'otp
                   // genera un numero casuale di 6 cifre
-                  const otp = Math.floor(100000 + Math.random() * 900000);
+                  const otp = Math.floor(100000 + Math.random() * 900000).toString();
                   const otpExpire = moment().add(OTP_EXPIRE_MINUTES, 'minute').valueOf();
                   // salva l'otp nel database
-                  await Auth_Utenti.updateOne({id: utente.id}).set({otp: otp,otp_exp: otpExpire});
+                  await Auth_Utenti.updateOne({id: utente.id}).set({otp: await utils.hashPasswordArgon2(otp),otp_exp: otpExpire});
                   // invia l'otp al mail
                   const HTML = `
                   <!DOCTYPE html>
@@ -161,11 +162,23 @@ module.exports = {
                       </div>
                   </body>
                   </html>`;
-                  await sendMail(
+                  let mail = await sendMail(
                     utente.mail,
                     'Codice OTP di sicurezza',
                     HTML
                   );
+                  if (mail.accepted.length > 0) {
+                    return res.ApiResponse({
+                      data: {
+                        otpExpire: utils.convertUnixTimestamp(otpExpire,'Europe/Rome', "YYYY-MM-DD HH:mm:ss"),
+                      }
+                    });
+                  } else {
+                    return res.ApiResponse({
+                      errType: ERROR_TYPES.NON_AUTORIZZATO,
+                      errMsg: 'Errore invio OTP'
+                    });
+                  }
                 }
                 else // attendere
                 {
@@ -175,11 +188,34 @@ module.exports = {
                   });
                 }
               }
-              else
-              {
+              else if (utente.otp) {
+                let valid = false;
                 // verifica token
                 // verifica se il token è expired
                 const expired = moment().isAfter(moment(utente.otp_exp));
+                if (expired) {
+                  await Auth_Utenti.updateOne({id: utente.id}).set({otp: null, otp_exp: null});
+                  return res.ApiResponse({
+                    errType: ERROR_TYPES.NON_AUTORIZZATO,
+                    errMsg: 'Token OTP scaduto'
+                  });
+                }
+                // verifica se il token è valido
+                valid = await utils.verifyPasswordArgon2(utente.otp, inputs.otp);
+                if (!valid) {
+                  return res.ApiResponse({
+                    errType: ERROR_TYPES.NON_AUTORIZZATO,
+                    errMsg: 'Token OTP non valido'
+                  });
+                }
+                else
+                  await Auth_Utenti.updateOne({id: utente.id}).set({otp: null, otp_exp: null});
+              }
+              else {
+                return res.ApiResponse({
+                  errType: ERROR_TYPES.NON_AUTORIZZATO,
+                  errMsg: 'Nessun OTP richiesto. Procedi a richiedere un nuovo otp'
+                });
               }
             } else {
               return res.ApiResponse({

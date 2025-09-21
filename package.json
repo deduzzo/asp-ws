@@ -9,6 +9,7 @@
     "@sailshq/lodash": "^3.10.6",
     "@sailshq/socket.io-redis": "^6.1.2",
     "@turf/turf": "^7.2.0",
+    "argon2": "^0.44.0",
     "axios": "^1.8.4",
     "aziendasanitaria-utils": "^1.2.30",
     "express": "^4.21.2",
