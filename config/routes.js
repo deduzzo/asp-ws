@@ -143,6 +143,9 @@ let routes = {
   'POST /api/v1/login/get-token': {
     action: 'login/get-token',
   },
+  'POST /api/v1/login/verify-token': {
+    action: 'login/verify-token',
+  },
   'POST /api/v1/anagrafica/ricerca': {
     action: 'anagrafica/ricerca',
     scopi: ['asp5-anagrafica'],
