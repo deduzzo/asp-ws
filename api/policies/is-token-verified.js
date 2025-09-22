@@ -16,13 +16,13 @@ module.exports = async function (req, res, proceed) {
       message: `Token verificato: ${tokenData.valid}`,
       action: req.options.action,
       ipAddress: req.ip,
-      user: tokenData.valid ? tokenData.decoded.username : null,
+      user: tokenData.valid ? tokenData.decoded.username : "null",
       context: {
         authToken: req.headers.authorization,
         params: req.allParams(),
         tokenData: {
           decoded: tokenData.decoded,
-          error: (tokenData.error ? _.omit(tokenData.error, ['stack']) : null)
+          error: (tokenData.error ? _.omit(tokenData.error, ['stack']) : "null")
         }
       }
     });
@@ -38,14 +38,14 @@ module.exports = async function (req, res, proceed) {
           authToken: req.headers.authorization,
           params: req.allParams(),
           tokenData: {
-            decoded: null,
-            error: (tokenData.error ? _.omit(tokenData.error, ['stack']) : null)
+            decoded: "null",
+            error: (tokenData.error ? _.omit(tokenData.error, ['stack']) : "null")
           }
         }
       });
       return res.ApiResponse(
         {
-          errType: tokenData.error.name === 'TokenExpiredError' ? ERROR_TYPES.TOKEN_SCADUTO : ERROR_TYPES.TOKEN_NON_VALIDO,
+          errType: tokenData.error ? (tokenData.error.name === 'TokenExpiredError' ? ERROR_TYPES.TOKEN_SCADUTO : ERROR_TYPES.TOKEN_NON_VALIDO) : ERROR_TYPES.TOKEN_NON_VALIDO,
           errMsg: 'Errore nel token, token non valido'
         });
     }

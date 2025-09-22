@@ -11,12 +11,13 @@
 module.exports.policies = {
 
   /***************************************************************************
-  *                                                                          *
-  * Default policy for all controllers and actions, unless overridden.       *
-  * (`true` allows public access)                                            *
-  *                                                                          *
-  ***************************************************************************/
+   *                                                                          *
+   * Default policy for all controllers and actions, unless overridden.       *
+   * (`true` allows public access)                                            *
+   *                                                                          *
+   ***************************************************************************/
 
-    "anagrafica/*": ["is-token-verified"],
-    //'*': ['logger'],
+  'anagrafica/*': ['is-token-verified'],
+  'admin/*': ['is-token-verified'],
+  //'*': ['logger'],
 };

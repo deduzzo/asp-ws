@@ -185,6 +185,12 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+  'POST /api/v1/admin/new-user': {
+    action: 'admin/new-user',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 
   'GET /api/v1/stats/info': {
     action: 'stats/info',
