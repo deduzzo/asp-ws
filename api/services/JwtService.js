@@ -24,6 +24,7 @@ const JwtService = {
    * @param {Array} userData.scopi - Gli scopi associati all'utente.
    * @param {string} userData.ambito - L'ambito dell'utente.
    * @param {number} userData.livello - Il livello di accesso dell'utente.
+   * @param {string} userData.id_ambito - L'ID dell'ambito dell'utente.'
    * @returns {{token: *, expiresIn: *}|null} - Il token JWT generato e la data di scadenza, o null in caso di errore.
    */
   generateToken: (userData) => {
@@ -31,7 +32,8 @@ const JwtService = {
       username: userData.username,
       scopi: userData.scopi,
       ambito: userData.ambito,
-      livello: userData.livello
+      livello: userData.livello,
+      id_ambito: userData.id_ambito,
     };
     try {
       const token = jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
@@ -59,9 +61,9 @@ const JwtService = {
     if (!decoded.hasOwnProperty('username') || !decoded.hasOwnProperty('scopi') || !decoded.hasOwnProperty('ambito') || !decoded.hasOwnProperty('livello')) {
       return false;
     }
-    let {username, scopi, ambito, livello} = decoded;
+    let {username, scopi, ambito, livello, id_ambito} = decoded;
     console.log('Verifica permessi per:', username);
-    const utente = await Auth_Utenti.findOne({username: username}).populate('ambito').populate('scopi');
+    const utente = await Auth_Utenti.findOne({username: username, ambito: id_ambito}).populate('ambito').populate('scopi');
     const scopiUtenteAttivi = utente.scopi.filter(s => s.attivo).map(s => s.scopo);
     const utenteHaAutorizzazioneAScopoToken = scopi.every(s => scopiUtenteAttivi.includes(s));
     const utenteHaAutorizzazioneAScopiRichiesti = scopoRichiesto.every(s => scopiUtenteAttivi.includes(s));

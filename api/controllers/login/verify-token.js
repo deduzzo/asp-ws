@@ -42,7 +42,7 @@ module.exports = {
       const decoded = jwt.verify(inputs.token, JwtService.getSecret());
 
       // Recupera info utente per restituire scopi abilitati e ambito effettivo
-      const utente = await Auth_Utenti.findOne({username: decoded.username})
+      const utente = await Auth_Utenti.findOne({username: decoded.username, ambito: decoded.id_ambito, attivo: true})
         .populate('scopi')
         .populate('ambito');
 
@@ -56,6 +56,7 @@ module.exports = {
             username: decoded.username,
             scopi: decoded.scopi,
             ambito: decoded.ambito,
+            id_ambito: decoded.id_ambito,
             livello: decoded.livello,
             iat: decoded.iat,
             exp: decoded.exp,

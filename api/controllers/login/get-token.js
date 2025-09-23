@@ -256,6 +256,7 @@ module.exports = {
         username: utente.username,
         scopi: scopi,
         ambito: utente.ambito.ambito,
+        id_ambito: utente.ambito.id,
         livello: utente.livello
       });
       if (!token) {
