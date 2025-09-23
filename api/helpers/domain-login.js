@@ -42,7 +42,7 @@ module.exports = {
         // url: http://192.168.250.78/flussi/site/login-internal?username={{ this.params.username}}&password={{ this.params.password}}
         // remove @asp.messina.it from the end of username if present
         if (inputs.username.endsWith('@asp.messina.it')) {
-          inputs.username = inputs.username.slice(0, -14);
+          inputs.username = inputs.username.slice(0, -15);
         }
         const url = `http://192.168.250.78/flussi/site/login-internal?username=${inputs.username}&password=${inputs.password}`;
         const response = await sails.helpers.http.get(url);
