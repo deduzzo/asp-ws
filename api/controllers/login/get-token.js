@@ -66,9 +66,21 @@ module.exports = {
     const res = this.res;
     let utente = null;
     let domain = null;
+    let ambito = await Auth_Ambiti.findOne({ambito: inputs.ambito || 'generale'});
+    if (!ambito)
+      return res.ApiResponse({
+        errType: ERROR_TYPES.NON_AUTORIZZATO,
+        errMsg: 'Ambito non valido'
+      });
+    // Cerca l'utente in base al login e popola i campi relazionati
+    // (se il dominio è specificato, cerca l'utente in base al login e dominio, altrimenti cerca solo l'utente in base al login
     try {
       if (inputs.domain) {
-        utente = await Auth_Utenti.findOne({username: inputs.login, domain: inputs.domain})
+        utente = await Auth_Utenti.findOne({
+          username: inputs.login,
+          domain: inputs.domain,
+          ambito: ambito.id,
+        })
           .populate('scopi')
           .populate('ambito');
         domain = inputs.domain;
