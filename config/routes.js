@@ -72,55 +72,40 @@ const getDocs = async (req, res) => {
     }
     data = data.replace(' src="./swagger-initializer.js" charset="UTF-8"> ',
       '> let csrfToken= "' + csrfToken + '"; window.onload = function() {' +
-      'window.ui = SwaggerUIBundle({' +
-      '  url: "' + apiurl + '",' +
-      '  dom_id: "#swagger-ui",' +
-      '  deepLinking: true,' +
-      '  presets: [' +
-      '    SwaggerUIBundle.presets.apis,' +
-      '    SwaggerUIStandalonePreset' +
-      '  ],' +
-      '  plugins: [' +
-      '    SwaggerUIBundle.plugins.DownloadUrl' +
-      '  ],' +
-      '  layout: "StandaloneLayout"' + (csrfToken !== '' ?
-        '  ,requestInterceptor: function(req) {' +
-        '    req.headers["X-CSRF-Token"] = csrfToken;' +
-        '    return req;' +
-        '  }' : '') +
-      '});' +
-/*      '(function(){' +
-      '  function doReplaceTokens(stats){' +
+      '  var headers = {};' +
+      '  if (csrfToken) { headers["X-CSRF-Token"] = csrfToken; }' +
+      '  var swaggerPromise = fetch("' + apiurl + '", { credentials: "same-origin" }).then(function(r){ return r.text(); });' +
+      '  var statsPromise = fetch("/api/v1/stats/info", { method: "GET", headers: headers, credentials: "same-origin" })' +
+      '    .then(function(r){ return r.json(); })' +
+      '    .then(function(j){ return (j && j.data) ? j.data : j; });' +
+      '  Promise.all([swaggerPromise, statsPromise]).then(function(arr){' +
+      '    var specText = arr[0]; var stats = arr[1] || {};' +
       '    try {' +
-      '      var el = document.getElementById("swagger-ui");' +
-      '      if(!el) return;' +
-      '      var html = el.innerHTML;' +
-      '      html = html.replace(/{{TOTAL_ASSISTITI}}/g, (stats && stats.totAssistiti) ? stats.totAssistiti : "");' +
-      '      html = html.replace(/{{LAST_UPDATE}}/g, (stats && stats.lastUpdate) ? stats.lastUpdate : "");' +
-      '      html = html.replace(/{{GEO_PERC}}/g, (stats && stats.geoPerc) ? stats.geoPerc : "");' +
-      '      el.innerHTML = html;' +
-      '    } catch(e) { console.error("Errore nella sostituzione dei token SwaggerUI:", e); }' +
-      '  }' +
-      '  function fetchStatsAndReplace(){' +
-      '    var headers = {};' +
-      '    if (csrfToken) { headers["X-CSRF-Token"] = csrfToken; }' +
-      '    fetch("/api/v1/stats/info", { method: "GET", headers: headers, credentials: "same-origin" })' +
-      '      .then(function(r){ return r.json(); })' +
-      '      .then(function(j){ var data = (j && j.data) ? j.data : j; doReplaceTokens(data); })' +
-      '      .catch(function(err){ console.error("Errore caricando /api/v1/stats/info:", err); });' +
-      '  }' +
-      '  /!* Attendi che SwaggerUI abbia renderizzato il contenuto e poi esegui la sostituzione *!/' +
-      '  var attempts = 0;' +
-      '  var iv = setInterval(function(){' +
-      '    attempts++;' +
-      '    var el = document.getElementById("swagger-ui");' +
-      '    if (el && /{{(TOTAL_ASSISTITI|LAST_UPDATE|GEO_PERC)}}/.test(el.innerHTML)) {' +
-      '      clearInterval(iv);' +
-      '      fetchStatsAndReplace();' +
-      '    }' +
-      '    if (attempts > 50) { clearInterval(iv); }' +
-      '  }, 200);' +
-      '})();' +*/
+      '      if (specText) {' +
+      '        specText = specText.replace(/{{TOTAL_ASSISTITI}}/g, stats.totAssistiti || "");' +
+      '        specText = specText.replace(/{{LAST_UPDATE}}/g, stats.lastUpdate || "");' +
+      '        specText = specText.replace(/{{GEO_PERC}}/g, stats.geoPerc || "");' +
+      '      }' +
+      '      var specObj = JSON.parse(specText);' +
+      '      window.ui = SwaggerUIBundle({' +
+      '        spec: specObj,' +
+      '        dom_id: "#swagger-ui",' +
+      '        deepLinking: true,' +
+      '        presets: [' +
+      '          SwaggerUIBundle.presets.apis,' +
+      '          SwaggerUIStandalonePreset' +
+      '        ],' +
+      '        plugins: [' +
+      '          SwaggerUIBundle.plugins.DownloadUrl' +
+      '        ],' +
+      '        layout: "StandaloneLayout"' + (csrfToken !== '' ?
+      '        ,requestInterceptor: function(req) {' +
+      '          req.headers["X-CSRF-Token"] = csrfToken;' +
+      '          return req;' +
+      '        }' : '') +
+      '      });' +
+      '    } catch(e) { console.error("Errore inizializzando SwaggerUI con spec:", e); }' +
+      '  }).catch(function(err){ console.error("Errore caricando swagger.json o stats:", err); });' +
       '};');
 
     res.send(data);
