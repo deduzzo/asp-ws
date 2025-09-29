@@ -14,7 +14,7 @@ module.exports = {
    * @param {string[]} [configParams.tipoMedico=[MMG, PLS]] - Tipologia di medico da includere (MMG, PLS o entrambi).
    * @param {boolean} [configParams.soloAttivi=true] - Se `true`, restituisce solo i medici attivi.
    * @param {boolean} [configParams.nascondiCessati=true] - Se `true`, esclude i medici cessati.
-   * @returns {Promise<Object[]|[]>} - Restituisce un array di medici o un array vuoto in caso di errore.
+   * @return {Promise<Object>} - Una promessa che risolve un array di oggetti medico.
    */
   getMedici: async function (configParams = {}) {
     let {
@@ -36,13 +36,20 @@ module.exports = {
     if (nascondiCessati) {
       config.nascondiCessati = true;
     }
-    let data = await nar2.getMediciFromNar2(config);
-    if (data.ok) {
-      return data;
-    } else {
-      return [];
-    }
+    return await nar2.getMediciFromNar2(config);
+  },
+  getSituazioniAssistenzialiAssistito: async function (cfAssistito,includeFullData = false) {
+    let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
+    let nar2 = new Nar2(impostazioniServizi, {...keys});
+    return await nar2.getSituazioniAssistenziali(cfAssistito,includeFullData);
+  },
+  async getAmbitiDomicilioAssistito(cfAssistito, situazioneAssistenziale = 4) {
+    let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
+    let nar2 = new Nar2(impostazioniServizi, {...keys});
+    return await nar2.getAmbitiDomicilioAssistito(cfAssistito, situazioneAssistenziale);
   },
   getMediciPerAssistito: async function (cfAssistito) {
+  },
+
 
 };

@@ -22,7 +22,11 @@ module.exports = {
       description: 'Codice fiscale dell\'assistito'
     },
     tipoMedico: {
-
+      type: 'string',
+      required: true,
+      isIn: ['P', 'M'],
+      description: 'Tipo di medico: "M" per medico di base, "P" per pediatra'
+    }
   },
 
 

@@ -66,8 +66,9 @@ const JwtService = {
     const utente = await Auth_Utenti.findOne({username: username, ambito: id_ambito}).populate('ambito').populate('scopi');
     const scopiUtenteAttivi = utente.scopi.filter(s => s.attivo).map(s => s.scopo);
     const utenteHaAutorizzazioneAScopoToken = scopi.every(s => scopiUtenteAttivi.includes(s));
+    const utenteHaRichiestoScopoCorretto = scopoRichiesto.every(s => scopi.includes(s));
     const utenteHaAutorizzazioneAScopiRichiesti = scopoRichiesto.every(s => scopiUtenteAttivi.includes(s));
-    if (!utente || !utente.attivo || !utenteHaAutorizzazioneAScopoToken || !utenteHaAutorizzazioneAScopiRichiesti || !utente.ambito
+    if (!utente || !utente.attivo || !utenteHaAutorizzazioneAScopoToken|| !utenteHaRichiestoScopoCorretto || !utenteHaAutorizzazioneAScopiRichiesti || !utente.ambito
       || utente.ambito.ambito !== ambito || ambito !== ambitoRichiesto || utente.livello < livelloRichiesto || livello !== utente.livello) {
       return false;
     }
