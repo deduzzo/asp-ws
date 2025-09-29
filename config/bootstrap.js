@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const AssistitoService = require('../api/services/AssistitoService');
 const {sendMail} = require('../api/services/MailService');
+const MediciService = require('../api/services/MediciService');
 
 
 module.exports.bootstrap = async function () {
@@ -46,7 +47,9 @@ module.exports.bootstrap = async function () {
   }
 
   const drop = false;
-  if (drop) {
+  let data =await MediciService.getMedici();
+  console.log("Cia");
+/*  if (drop) {
     await Auth_Livelli.destroy({});
     await Auth_Livelli.createEach([
       {livello: 'admin'},
@@ -91,7 +94,7 @@ module.exports.bootstrap = async function () {
       alter table utenti_scopi
         add constraint utenti_scopi_scopi_id_fk
           foreign key (scopo) references scopi (id);`);
-  }
+  }*/
 
   // ADD NEW USER
   /*

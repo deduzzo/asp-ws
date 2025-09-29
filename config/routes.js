@@ -179,6 +179,18 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+  'POST /api/v1/cambio-medico/get-medici': {
+    action: 'cambio-medico/get-medici',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/cambio-medico/get-medici-disponibili-assistito': {
+    action: 'cambio-medico/get-medici-disponibili-assistito',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
 
   'GET /api/v1/stats/info': {
     action: 'stats/info',

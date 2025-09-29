@@ -19,5 +19,6 @@ module.exports.policies = {
 
   'anagrafica/*': ['is-token-verified'],
   'admin/*': ['is-token-verified'],
+  'cambio-medico/*': ['is-token-verified'],
   //'*': ['logger'],
 };
