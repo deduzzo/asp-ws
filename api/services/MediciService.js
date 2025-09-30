@@ -48,7 +48,10 @@ module.exports = {
     let nar2 = new Nar2(impostazioniServizi, {...keys});
     return await nar2.getAmbitiDomicilioAssistito(cfAssistito, situazioneAssistenziale);
   },
-  getMediciPerAssistito: async function (cfAssistito) {
+  getMediciPerAssistito: async function (cfAssistito,idAmbito, tipoMedico = Nar2.MEDICO_DI_BASE) {
+    let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
+    let nar2 = new Nar2(impostazioniServizi, {...keys});
+    return await nar2.getMediciByAmbito(idAmbito,cfAssistito,tipoMedico);
   },
 
 
