@@ -9,7 +9,8 @@
  */
 module.exports = function(grunt) {
   grunt.registerTask('polyfill:prod', 'Add the polyfill file to the top of the list of files to concatenate', ()=>{
-    grunt.config.set('concat.js.src', [require('sails-hook-grunt/accessible/babel-polyfill')].concat(grunt.config.get('concat.js.src')));
+    // Use our custom lightweight regenerator polyfill instead of the heavy babel-polyfill
+    grunt.config.set('concat.js.src', ['.tmp/public/js/regenerator-polyfill.js'].concat(grunt.config.get('concat.js.src')));
   });
   grunt.registerTask('polyfill:dev', 'Add the polyfill file to the top of the list of files to copy and link', ()=>{
     grunt.config.set('copy.dev.files', grunt.config.get('copy.dev.files').concat({
