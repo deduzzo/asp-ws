@@ -1,5 +1,4 @@
 
-const argon2 = require('argon2');
 
 module.exports = {
   friendlyName: 'Create user',
@@ -110,10 +109,10 @@ module.exports = {
       await sails.helpers.log.with({
         level: 'info',
         tag: 'ADMIN',
-        azione: 'USER_CREATED',
-        ip: this.req.ip,
-        utente: this.req.token ? this.req.token.username : null,
-        req: this.req,
+        message: 'New user created successfully',
+        action: 'USER_CREATED',
+        ipAddress: this.req.ip,
+        user: this.req.user || "null",
         context: { newUserId: newUser.id, username: inputs.username }
       });
 

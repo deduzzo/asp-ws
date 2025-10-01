@@ -40,10 +40,10 @@ module.exports = {
       await sails.helpers.log.with({
         level: 'info',
         tag: 'ADMIN',
-        azione: 'SCOPE_CREATED',
-        ip: this.req.ip,
-        utente: this.req.token ? this.req.token.username : null,
-        req: this.req,
+        message: 'New scope created successfully',
+        action: 'SCOPE_CREATED',
+        ipAddress: this.req.ip,
+        user: this.req.user || "null",
         context: { newScopeId: newScope.id, scopo: inputs.scopo }
       });
 

@@ -63,10 +63,10 @@ module.exports = {
       await sails.helpers.log.with({
         level: 'info',
         tag: 'ADMIN',
-        azione: 'SCOPE_UPDATED',
-        ip: this.req.ip,
-        utente: this.req.token ? this.req.token.username : null,
-        req: this.req,
+        message: 'Scope updated successfully',
+        action: 'SCOPE_UPDATED',
+        ipAddress: this.req.ip,
+        user: this.req.user || "null",
         context: { scopeId: inputs.id, changes: Object.keys(updateData) }
       });
 

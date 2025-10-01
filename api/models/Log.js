@@ -36,5 +36,6 @@ module.exports = {
     TOKEN_REQUEST_KO: 'TOKEN_REQUEST_KO',
     API_RESPONSE_OK: 'API_RESPONSE_OK',
     API_RESPONSE_KO: 'API_RESPONSE_KO',
+    ADMIN: 'ADMIN',
   }
 };

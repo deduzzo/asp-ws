@@ -47,10 +47,10 @@ module.exports = {
       await sails.helpers.log.with({
         level: 'warn',
         tag: 'ADMIN',
-        azione: 'SCOPE_DELETED',
-        ip: this.req.ip,
-        utente: this.req.token ? this.req.token.username : null,
-        req: this.req,
+        message: 'Scope deleted',
+        action: 'SCOPE_DELETED',
+        ipAddress: this.req.ip,
+        user: this.req.user || "null",
         context: {
           deletedScopeId: inputs.id,
           deletedScope: existingScope.scopo,

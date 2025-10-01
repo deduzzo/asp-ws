@@ -43,10 +43,10 @@ module.exports = {
       await sails.helpers.log.with({
         level: 'warn',
         tag: 'ADMIN',
-        azione: 'USER_DELETED',
-        ip: this.req.ip,
-        utente: this.req.token ? this.req.token.username : null,
-        req: this.req,
+        message: 'User deleted',
+        action: 'USER_DELETED',
+        ipAddress: this.req.ip,
+        user: this.req.user || "null",
         context: { deletedUserId: inputs.id, deletedUsername: existingUser.username }
       });
 

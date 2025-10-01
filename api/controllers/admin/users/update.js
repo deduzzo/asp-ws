@@ -2,8 +2,6 @@
  * Admin users update controller
  */
 
-const argon2 = require('argon2');
-
 module.exports = {
   friendlyName: 'Update user',
   description: 'Update an existing user and their permissions.',
@@ -84,7 +82,7 @@ module.exports = {
 
       // Handle password update
       if (inputs.password) {
-        updateData.hash_password = await argon2.hash(inputs.password);
+        updateData.hash_password = await sails.helpers.passwords.hashPassword(inputs.password);
       }
 
       // Handle deactivation date
@@ -123,10 +121,10 @@ module.exports = {
       await sails.helpers.log.with({
         level: 'info',
         tag: 'ADMIN',
-        azione: 'USER_UPDATED',
-        ip: this.req.ip,
-        utente: this.req.token ? this.req.token.username : null,
-        req: this.req,
+        message: 'User updated successfully',
+        action: 'USER_UPDATED',
+        ipAddress: this.req.ip,
+        user: this.req.user || "null",
         context: { userId: inputs.id, changes: Object.keys(updateData) }
       });
 
