@@ -21,13 +21,32 @@ const getHomepage = (req, res) => {
   return res.view('pages/homepage', { layout: false });
 };
 
-// Basic auth middleware using config/auth.js
+// Basic auth middleware using config/custom/private_ui_users.json
 const getBasicAuthMiddleware = () => {
-  const authConfig = require('./auth').auth || { users: { 'admin': 'password123' }, challenge: true, realm: 'ASP5Ws Documentation' };
+  let authConfig;
+  try {
+    authConfig = require('./custom/private_ui_users.json');
+  } catch (error) {
+    console.warn('Warning: private_ui_users.json not found, using default credentials');
+    authConfig = {
+      users: [{ username: 'admin', password: 'password123' }],
+      challenge: true,
+      realm: 'ASP5Ws Admin Portal'
+    };
+  }
+
+  // Convert users array to object format expected by express-basic-auth
+  const usersObj = {};
+  if (authConfig.users && Array.isArray(authConfig.users)) {
+    authConfig.users.forEach(user => {
+      usersObj[user.username] = user.password;
+    });
+  }
+
   return basicAuth({
-    users: authConfig.users,
-    challenge: authConfig.challenge,
-    realm: authConfig.realm
+    users: usersObj,
+    challenge: authConfig.challenge !== false,
+    realm: authConfig.realm || 'ASP5Ws Admin Portal'
   });
 };
 
@@ -43,29 +62,7 @@ const getDocs = async (req, res) => {
   if (req.csrfToken) {
     csrfToken = req.csrfToken();
   }
-/*  try {
-    const total_assistiti = await Anagrafica_Assistiti.count();
-    // last update è il più alto updatedAt della tabella assistiti
-    const lastAssitito = await Anagrafica_Assistiti.find({
-      sort: 'updatedAt DESC',
-      limit: 1
-    });
-    const geoCount = await Anagrafica_Assistiti.count({
-      lat: {'!=': null},
-    });
 
-    const swaggerPath = path.resolve(__dirname, '../swagger/swagger.json');
-
-    if (fs.existsSync(swaggerPath)) {
-      let swaggerDoc = fs.readFileSync(swaggerPath, {encoding: 'utf8'});
-      swaggerDoc = swaggerDoc.replace('{{TOTAL_ASSISTITI}}', total_assistiti.toLocaleString('it-IT'))
-        .replace('{{LAST_UPDATE}}', moment(lastAssitito[0].updatedAt).format('DD/MM/YYYY HH:mm:ss'))
-        .replace('{{GEO_PERC}}', ((geoCount / total_assistiti) * 100).toFixed(2) + '%');
-      await fs.promises.writeFile(swaggerPath, swaggerDoc, {encoding: 'utf8'});
-    }
-  } catch (error) {
-    sails.log.error('Errore nel bootstrap per il conteggio assistiti:', error);
-  }*/
   fs.readFile(filePath, 'utf8', function (err, data) {
     if (err) {
       return res.serverError(err);
@@ -269,8 +266,30 @@ let routes = {
 
   // Admin interface routes
   'GET /admin': {
-    action: 'admin/index'
-    // No auth required - authentication is handled client-side via JWT
+    fn: function(req, res, next) {
+      // Apply the middleware directly
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) {
+          return res.status(401).send('Unauthorized');
+        }
+        // If authentication passes, call the admin/index action
+        return res.redirect('/admin/index');
+      });
+    }
+  },
+  'GET /admin/index': {
+    fn: function(req, res, next) {
+      // Apply the middleware directly
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) {
+          return res.status(401).send('Unauthorized');
+        }
+        // If authentication passes, serve the admin view directly
+        return res.view('pages/admin/index', { layout: false });
+      });
+    }
   },
 
   // Admin API routes for users

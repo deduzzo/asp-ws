@@ -23,16 +23,6 @@ module.exports['swagger-generator'] = {
         url: process.env.BASE_URL || 'http://localhost:1337'
       }
     ],
-    includeRoute: function(routeInfo) {
-      console.log('Route path:', routeInfo.path);
-      console.log('Route info:', routeInfo);
-
-      if (routeInfo.path && routeInfo.path.includes('/admin')) {
-        return false;
-      }
-
-      return true;
-    },
     // -- Aggiungi la sezione 'components' con i securitySchemes
     components: {
       securitySchemes: {
@@ -243,4 +233,14 @@ module.exports['swagger-generator'] = {
     }
   },
   excludeDeprecatedPutBlueprintRoutes: true,
+  includeRoute: function(routeInfo) {
+    //console.log('Route path:', routeInfo.path);
+    //console.log('Route info:', routeInfo);
+
+    if (routeInfo.path && routeInfo.path.includes('/admin')) {
+      return false;
+    }
+
+    return true;
+  },
 };

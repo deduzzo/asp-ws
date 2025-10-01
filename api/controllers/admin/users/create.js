@@ -68,7 +68,7 @@ module.exports = {
       // Hash password if provided
       let hashPassword = null;
       if (inputs.password && !inputs.allow_domain_login) {
-        hashPassword = await argon2.hash(inputs.password);
+        hashPassword = await sails.helpers.passwords.hashPassword(inputs.password);
       }
 
       // Validate domain requirement

@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "password": "securepassword123"
+    },
+    {
+      "username": "viewer",
+      "password": "viewerpassword456"
+    }
+  ],
+  "challenge": true,
+  "realm": "ASP5Ws Admin Portal"
+}
