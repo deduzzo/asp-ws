@@ -153,7 +153,7 @@ class AdminPanel {
             console.log('Response data:', result);
 
             if (!result.ok) {
-                throw new Error(result.err?.msg || 'Errore di autenticazione');
+                throw new Error(result.err.msg || 'Errore di autenticazione');
             }
 
             // Store token
