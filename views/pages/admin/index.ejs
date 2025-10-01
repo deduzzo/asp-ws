@@ -504,7 +504,11 @@
         if (typeof regeneratorRuntime === 'undefined') {
             window.regeneratorRuntime = {
                 mark: function(genFun) {
-                    genFun.__proto__ = GeneratorFunctionPrototype;
+                    if (Object.setPrototypeOf) {
+                        Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
+                    } else {
+                        genFun.__proto__ = GeneratorFunctionPrototype;
+                    }
                     genFun.prototype = Object.create(GeneratorPrototype);
                     return genFun;
                 },
@@ -514,44 +518,17 @@
                     var generator = Object.create(protoGenerator.prototype);
                     var context = new Context(tryLocsList || []);
 
+                    // Define generator methods
                     generator._invoke = makeInvokeMethod(innerFn, self, context);
+                    generator.next = function(arg) { return this._invoke("next", arg); };
+                    generator.throw = function(arg) { return this._invoke("throw", arg); };
+                    generator.return = function(arg) { return this._invoke("return", arg); };
+
                     return generator;
                 },
 
                 awrap: function(arg) {
                     return { __await: arg };
-                },
-
-                async: function(innerFn, outerFn, self, tryLocsList) {
-                    var iter = this.wrap(innerFn, outerFn, self, tryLocsList);
-
-                    return new Promise(function(resolve, reject) {
-                        function step(method, arg) {
-                            try {
-                                var record = iter[method](arg);
-                                var value = record.value;
-
-                                if (value && typeof value === "object" && value.hasOwnProperty("__await")) {
-                                    return Promise.resolve(value.__await).then(function(value) {
-                                        step("next", value);
-                                    }, function(err) {
-                                        step("throw", err);
-                                    });
-                                }
-
-                                return Promise.resolve(value).then(function(unwrapped) {
-                                    record.value = unwrapped;
-                                    resolve(record);
-                                }, function(error) {
-                                    return step("throw", error);
-                                });
-                            } catch (error) {
-                                reject(error);
-                            }
-                        }
-
-                        step("next");
-                    });
                 }
             };
 
@@ -560,9 +537,16 @@
             function GeneratorFunction() {}
             function GeneratorFunctionPrototype() {}
 
-            var GeneratorPrototype = {};
-            if (typeof Symbol !== 'undefined' && Symbol.iterator) {
-                GeneratorPrototype[Symbol.iterator] = function () { return this; };
+            var IteratorPrototype = {};
+            var GeneratorPrototype = Object.create(IteratorPrototype);
+
+            if (typeof Symbol !== 'undefined') {
+                if (Symbol.iterator) {
+                    IteratorPrototype[Symbol.iterator] = function () { return this; };
+                }
+                if (Symbol.toStringTag) {
+                    GeneratorPrototype[Symbol.toStringTag] = "Generator";
+                }
             }
 
             GeneratorPrototype.next = function(arg) {
@@ -578,7 +562,7 @@
             };
 
             function Context(tryLocsList) {
-                this.tryEntries = tryLocsList;
+                this.tryEntries = tryLocsList || [];
                 this.reset(true);
             }
 
@@ -592,27 +576,71 @@
                     this.delegate = null;
                     this.method = "next";
                     this.arg = undefined;
+                    this.rval = undefined;
+                    this.tryEntries = this.tryEntries || [];
+
+                    if (!skipTempReset) {
+                        for (var i = 0, list = this.tryEntries; i < list.length; i++) {
+                            var entry = list[i];
+                            if (entry.completion) {
+                                entry.completion = null;
+                            }
+                        }
+                    }
+                },
+
+                stop: function() {
+                    this.done = true;
+                    var rootRecord = this.tryEntries[0];
+                    var rootCompletion = rootRecord.completion;
+                    if (rootCompletion.type === "throw") {
+                        throw rootCompletion.arg;
+                    }
+                    return this.rval;
                 }
             };
 
             function makeInvokeMethod(innerFn, self, context) {
-                var state = "start";
+                var state = "suspendedStart";
 
                 return function invoke(method, arg) {
+                    if (state === "executing") {
+                        throw new Error("Generator is already executing.");
+                    }
+
                     if (state === "completed") {
                         if (method === "throw") {
                             throw arg;
                         }
-                        return doneResult();
+                        return { value: undefined, done: true };
                     }
 
                     context.method = method;
                     context.arg = arg;
 
                     while (true) {
+                        var delegate = context.delegate;
+                        if (delegate) {
+                            var delegateResult = maybeInvokeDelegate(delegate, context);
+                            if (delegateResult) {
+                                if (delegateResult === continueValue) continue;
+                                return delegateResult;
+                            }
+                        }
+
                         if (context.method === "next") {
                             context.sent = context._sent = context.arg;
+                        } else if (context.method === "throw") {
+                            if (state === "suspendedStart") {
+                                state = "completed";
+                                throw context.arg;
+                            }
+                            context.dispatchException(context.arg);
+                        } else if (context.method === "return") {
+                            context.abrupt("return", context.arg);
                         }
+
+                        state = "executing";
 
                         var record = tryCatch(innerFn, self, context);
                         if (record.type === "normal") {
@@ -626,10 +654,165 @@
                                 value: record.arg,
                                 done: context.done
                             };
+                        } else if (record.type === "throw") {
+                            state = "completed";
+                            context.method = "throw";
+                            context.arg = record.arg;
                         }
                     }
                 };
             }
+
+            function maybeInvokeDelegate(delegate, context) {
+                var method = context.method;
+                var arg = context.arg;
+                var iterator = delegate.iterator;
+
+                if (method === "return") {
+                    if (iterator.return === undefined) {
+                        context.delegate = null;
+                        context.method = "return";
+                        context.arg = arg;
+                        return continueValue;
+                    }
+
+                    var record = tryCatch(iterator.return, iterator, arg);
+                    if (record.type === "throw") {
+                        context.delegate = null;
+                        context.method = "throw";
+                        context.arg = record.arg;
+                        return continueValue;
+                    }
+
+                    var info = record.arg;
+                    if (info.done) {
+                        context.delegate = null;
+                        return info.value;
+                    } else {
+                        return info;
+                    }
+                }
+
+                var record = tryCatch(iterator[method], iterator, arg);
+                if (record.type === "throw") {
+                    context.delegate = null;
+                    context.method = "throw";
+                    context.arg = record.arg;
+                    return continueValue;
+                }
+
+                var info = record.arg;
+                if (info.done) {
+                    context.delegate = null;
+                } else {
+                    return info;
+                }
+
+                return continueValue;
+            }
+
+            Context.prototype.dispatchException = function(exception) {
+                if (this.done) {
+                    throw exception;
+                }
+
+                var context = this;
+                function handle(loc, caught) {
+                    record.type = "throw";
+                    record.arg = exception;
+                    context.next = loc;
+
+                    if (caught) {
+                        context.method = "next";
+                        context.arg = undefined;
+                    }
+
+                    return !! caught;
+                }
+
+                for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+                    var entry = this.tryEntries[i];
+                    var record = entry.completion;
+
+                    if (entry.tryLoc === "root") {
+                        return handle("end");
+                    }
+
+                    if (entry.tryLoc <= this.prev) {
+                        var hasCatch = hasOwn.call(entry, "catchLoc");
+                        var hasFinally = hasOwn.call(entry, "finallyLoc");
+
+                        if (hasCatch && hasFinally) {
+                            if (this.prev < entry.catchLoc) {
+                                return handle(entry.catchLoc, true);
+                            } else if (this.prev < entry.finallyLoc) {
+                                return handle(entry.finallyLoc);
+                            }
+                        } else if (hasCatch) {
+                            if (this.prev < entry.catchLoc) {
+                                return handle(entry.catchLoc, true);
+                            }
+                        } else if (hasFinally) {
+                            if (this.prev < entry.finallyLoc) {
+                                return handle(entry.finallyLoc);
+                            }
+                        } else {
+                            throw new Error("try statement without catch or finally");
+                        }
+                    }
+                }
+            };
+
+            Context.prototype.abrupt = function(type, arg) {
+                for (var i = this.tryEntries.length - 1; i >= 0; --i) {
+                    var entry = this.tryEntries[i];
+                    if (entry.tryLoc <= this.prev &&
+                        hasOwn.call(entry, "finallyLoc") &&
+                        this.prev < entry.finallyLoc) {
+                        var finallyEntry = entry;
+                        break;
+                    }
+                }
+
+                if (finallyEntry &&
+                    (type === "break" ||
+                     type === "continue") &&
+                    finallyEntry.tryLoc <= arg &&
+                    arg <= finallyEntry.finallyLoc) {
+                    finallyEntry = null;
+                }
+
+                var record = finallyEntry ? finallyEntry.completion : {};
+                record.type = type;
+                record.arg = arg;
+
+                if (finallyEntry) {
+                    this.method = "next";
+                    this.next = finallyEntry.finallyLoc;
+                    return continueValue;
+                }
+
+                return this.complete(record);
+            };
+
+            Context.prototype.complete = function(record, afterLoc) {
+                if (record.type === "throw") {
+                    throw record.arg;
+                }
+
+                if (record.type === "break" ||
+                    record.type === "continue") {
+                    this.next = record.arg;
+                } else if (record.type === "return") {
+                    this.rval = this.arg = record.arg;
+                    this.method = "return";
+                    this.next = "end";
+                } else if (record.type === "normal" && afterLoc) {
+                    this.next = afterLoc;
+                }
+
+                return continueValue;
+            };
 
             function tryCatch(fn, obj, arg) {
                 try {
@@ -639,11 +822,8 @@
                 }
             }
 
+            var hasOwn = Object.prototype.hasOwnProperty;
             var continueValue = {};
-
-            function doneResult() {
-                return { value: undefined, done: true };
-            }
         }
     </script>
 
