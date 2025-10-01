@@ -301,7 +301,7 @@ class AdminPanel {
 
             if (!result.ok) {
                 // Check if token is expired or invalid
-                if (result.err.code === 'TOKEN_SCADUTO' || result.err?.code === 'TOKEN_NON_VALIDO') {
+                if (result.err.code === 'TOKEN_SCADUTO' || result.err.code === 'TOKEN_NON_VALIDO') {
                     console.error('Token error detected:', result.err);
 
                     // Don't automatically logout - it might be a configuration issue
@@ -312,7 +312,7 @@ class AdminPanel {
                     // Throw error so calling function knows it failed
                     throw new Error('Token error: ' + result.err.msg);
                 }
-                throw new Error(result.err?.msg || 'Errore sconosciuto');
+                throw new Error(result.err.msg || 'Errore sconosciuto');
             }
 
             return result.data;
@@ -335,10 +335,10 @@ class AdminPanel {
             ]);
 
             console.log('Dashboard stats loaded successfully');
-            document.getElementById('total-users').textContent = users.pagination?.total || 0;
-            document.getElementById('total-scopes').textContent = scopes.pagination?.total || 0;
-            document.getElementById('total-domains').textContent = domains.pagination?.total || 0;
-            document.getElementById('total-levels').textContent = levels.levels?.length || 0;
+            document.getElementById('total-users').textContent = users.pagination.total || 0;
+            document.getElementById('total-scopes').textContent = scopes.pagination.total || 0;
+            document.getElementById('total-domains').textContent = domains.pagination.total || 0;
+            document.getElementById('total-levels').textContent = levels.levels.length || 0;
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
         }
@@ -391,8 +391,8 @@ class AdminPanel {
         row.innerHTML = `
             <td><strong>${user.username}</strong></td>
             <td>${user.mail}</td>
-            <td>${user.ambito?.ambito || '-'}</td>
-            <td>${user.livello?.livello || '-'}</td>
+            <td>${user.ambito.ambito || '-'}</td>
+            <td>${user.livello.livello || '-'}</td>
             <td>${statusBadge}</td>
             <td>${scopesList}</td>
             <td>
@@ -882,8 +882,8 @@ class AdminPanel {
             document.getElementById('username').value = user.username;
             document.getElementById('mail').value = user.mail;
             document.getElementById('domain').value = user.domain || '';
-            document.getElementById('ambito').value = user.ambito?.id || '';
-            document.getElementById('livello').value = user.livello?.id || '';
+            document.getElementById('ambito').value = user.ambito.id || '';
+            document.getElementById('livello').value = user.livello.id || '';
             document.getElementById('attivo').checked = user.attivo;
             document.getElementById('allow_domain_login').checked = user.allow_domain_login;
 
