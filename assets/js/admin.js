@@ -301,7 +301,7 @@ class AdminPanel {
 
             if (!result.ok) {
                 // Check if token is expired or invalid
-                if (result.err?.code === 'TOKEN_SCADUTO' || result.err?.code === 'TOKEN_NON_VALIDO') {
+                if (result.err.code === 'TOKEN_SCADUTO' || result.err?.code === 'TOKEN_NON_VALIDO') {
                     console.error('Token error detected:', result.err);
 
                     // Don't automatically logout - it might be a configuration issue
