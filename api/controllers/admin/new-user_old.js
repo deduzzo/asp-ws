@@ -16,7 +16,7 @@ module.exports = {
   friendlyName: 'Crea un nuovo utente',
 
   description: 'Crea un nuovo utente validando ambito e scopi, e aggiornando la tabella utenti_scopi.',
-
+  swagger: false,
   inputs: {
     username: {
       type: 'string',

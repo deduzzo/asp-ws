@@ -18,7 +18,7 @@ const indexConfig = require('./custom/private_index.json');
 
 // Function to render the homepage
 const getHomepage = (req, res) => {
-  return res.view('pages/homepage');
+  return res.view('pages/homepage', { layout: false });
 };
 
 // Basic auth middleware using config/auth.js
@@ -173,12 +173,6 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
-  'POST /api/v1/admin/new-user': {
-    action: 'admin/new-user',
-    scopi: ['admin-manage'],
-    ambito: 'api',
-    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
-  },
   'POST /api/v1/cambio-medico/get-medici': {
     action: 'cambio-medico/get-medici',
     scopi: ['cambio-medico'],
@@ -271,6 +265,98 @@ let routes = {
         getDocs(req, res);
       });
     }
+  },
+
+  // Admin interface routes
+  'GET /admin': {
+    action: 'admin/index'
+    // No auth required - authentication is handled client-side via JWT
+  },
+
+  // Admin API routes for users
+  'GET /api/v1/admin/users': {
+    action: 'admin/users/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/users': {
+    action: 'admin/users/create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/users/:id': {
+    action: 'admin/users/update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/users/:id': {
+    action: 'admin/users/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+
+  // Admin API routes for scopes
+  'GET /api/v1/admin/scopes': {
+    action: 'admin/scopes/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/scopes': {
+    action: 'admin/scopes/create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/scopes/:id': {
+    action: 'admin/scopes/update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/scopes/:id': {
+    action: 'admin/scopes/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+
+  // Admin API routes for domains
+  'GET /api/v1/admin/domains': {
+    action: 'admin/domains/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/domains': {
+    action: 'admin/domains/create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/domains/:id': {
+    action: 'admin/domains/update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/domains/:id': {
+    action: 'admin/domains/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+
+  // Admin API routes for levels
+  'GET /api/v1/admin/levels': {
+    action: 'admin/levels/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
 };
 

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pannello di Amministrazione - ASP5 Webservices</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #5a6c7d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .admin-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px;
+            min-height: calc(100vh - 40px);
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-top-left-radius: 15px;
+            border-bottom-left-radius: 15px;
+            min-height: calc(100vh - 40px);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            margin: 5px 15px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            padding: 30px;
+            background: var(--light-color);
+            border-top-right-radius: 15px;
+            border-bottom-right-radius: 15px;
+            min-height: calc(100vh - 40px);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 20px;
+        }
+
+        .btn {
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: var(--light-color);
+            border: none;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner-border {
+            color: var(--primary-color);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+
+        .stats-card .card-body {
+            padding: 25px;
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                margin: 10px;
+                min-height: calc(100vh - 20px);
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -250px;
+                width: 250px;
+                height: 100vh;
+                z-index: 1050;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="row g-0 h-100">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2">
+                <div class="sidebar d-flex flex-column p-3">
+                    <div class="mb-4">
+                        <h4 class="text-center mb-0">
+                            <i class="bi bi-shield-lock-fill me-2"></i>
+                            Admin Panel
+                        </h4>
+                        <small class="d-block text-center opacity-75">Gestione Sistema</small>
+                    </div>
+
+                    <nav class="nav nav-pills flex-column">
+                        <a class="nav-link active" href="#" data-section="dashboard">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Dashboard
+                        </a>
+                        <a class="nav-link" href="#" data-section="users">
+                            <i class="bi bi-people me-2"></i>
+                            Utenti
+                        </a>
+                        <a class="nav-link" href="#" data-section="scopes">
+                            <i class="bi bi-key me-2"></i>
+                            Scopi
+                        </a>
+                        <a class="nav-link" href="#" data-section="domains">
+                            <i class="bi bi-globe me-2"></i>
+                            Ambiti
+                        </a>
+                        <a class="nav-link" href="#" data-section="levels">
+                            <i class="bi bi-ladder me-2"></i>
+                            Livelli
+                        </a>
+                    </nav>
+
+                    <div class="mt-auto">
+                        <hr class="opacity-25">
+                        <button class="btn btn-outline-light w-100 mb-3" onclick="adminPanel.logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>
+                            Logout
+                        </button>
+                        <div class="text-center">
+                            <small class="opacity-75">ASP5 Webservices</small><br>
+                            <small class="opacity-50">v1.0.0</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10">
+                <div class="main-content">
+                    <!-- Mobile menu button -->
+                    <div class="d-md-none mb-3">
+                        <button class="btn btn-primary" type="button" id="sidebarToggle">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+
+                    <!-- Dashboard Section -->
+                    <div id="dashboard-section" class="content-section active">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard</h2>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card stats-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-people display-4 mb-2"></i>
+                                        <div class="stats-number" id="total-users">-</div>
+                                        <div>Utenti Totali</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card stats-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-key display-4 mb-2"></i>
+                                        <div class="stats-number" id="total-scopes">-</div>
+                                        <div>Scopi</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card stats-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-globe display-4 mb-2"></i>
+                                        <div class="stats-number" id="total-domains">-</div>
+                                        <div>Ambiti</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card stats-card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-ladder display-4 mb-2"></i>
+                                        <div class="stats-number" id="total-levels">-</div>
+                                        <div>Livelli</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Benvenuto nel Pannello di Amministrazione</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    Utilizza questo pannello per gestire utenti, permessi e configurazioni del sistema ASP5 Webservices.
+                                </p>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Gestione completa degli utenti</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Controllo scopi e permessi</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Amministrazione ambiti</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Configurazione livelli di accesso</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Section -->
+                    <div id="users-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-people me-2 text-primary"></i>Gestione Utenti</h2>
+                            <button class="btn btn-primary" onclick="showCreateUserModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Nuovo Utente
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <h5 class="mb-0">Elenco Utenti</h5>
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="user-search" placeholder="Cerca utenti...">
+                                            <button class="btn btn-outline-light" type="button" onclick="loadUsers()">
+                                                <i class="bi bi-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading" id="users-loading">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Caricamento...</span>
+                                    </div>
+                                    <p class="mt-2">Caricamento utenti...</p>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="users-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Email</th>
+                                                <th>Ambito</th>
+                                                <th>Livello</th>
+                                                <th>Stato</th>
+                                                <th>Scopi</th>
+                                                <th>Azioni</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="users-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <nav id="users-pagination" class="mt-3"></nav>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scopes Section -->
+                    <div id="scopes-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-key me-2 text-primary"></i>Gestione Scopi</h2>
+                            <button class="btn btn-primary" onclick="showCreateScopeModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Nuovo Scopo
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Elenco Scopi</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading" id="scopes-loading">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Caricamento...</span>
+                                    </div>
+                                    <p class="mt-2">Caricamento scopi...</p>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="scopes-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Scopo</th>
+                                                <th>Stato</th>
+                                                <th>Utenti Associati</th>
+                                                <th>Creato</th>
+                                                <th>Azioni</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="scopes-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domains Section -->
+                    <div id="domains-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-globe me-2 text-primary"></i>Gestione Ambiti</h2>
+                            <button class="btn btn-primary" onclick="showCreateDomainModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Nuovo Ambito
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Elenco Ambiti</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading" id="domains-loading">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Caricamento...</span>
+                                    </div>
+                                    <p class="mt-2">Caricamento ambiti...</p>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="domains-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Ambito</th>
+                                                <th>Tipo</th>
+                                                <th>Utenti Associati</th>
+                                                <th>Creato</th>
+                                                <th>Azioni</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="domains-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Levels Section -->
+                    <div id="levels-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-ladder me-2 text-primary"></i>Livelli di Accesso</h2>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Elenco Livelli</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading" id="levels-loading">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Caricamento...</span>
+                                    </div>
+                                    <p class="mt-2">Caricamento livelli...</p>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="levels-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Livello</th>
+                                                <th>Descrizione</th>
+                                                <th>Super Admin</th>
+                                                <th>Utenti Associati</th>
+                                                <th>Creato</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="levels-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script src="/js/admin.js"></script>
+</body>
+</html>

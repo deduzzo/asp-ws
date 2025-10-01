@@ -19,6 +19,7 @@ module.exports.policies = {
 
   'anagrafica/*': ['is-token-verified'],
   'admin/*': ['is-token-verified'],
+  'admin/index': true, // Allow public access to admin interface page (auth handled in frontend)
   'cambio-medico/*': ['is-token-verified'],
   //'*': ['logger'],
 };
