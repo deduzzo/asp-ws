@@ -69,16 +69,10 @@ var jsFilesToInject = [
   // > Be sure to list dependencies that depend on each other in the right order!
   'dependencies/**/*.js',
 
-  // Load regenerator polyfill before other JS files that use async/await
-  'js/regenerator-polyfill.js',
-
   // All of the rest of your custom client-side js files will be injected here,
   // in no particular order.  To customize the ordering, add additional items
   // here, _above_ this one.
-  'js/**/*.js',
-
-  // Exclude the polyfill from the general pattern to avoid double-inclusion
-  '!js/regenerator-polyfill.js'
+  'js/**/*.js'
 ];
 
 
