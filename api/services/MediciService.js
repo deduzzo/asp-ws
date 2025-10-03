@@ -14,6 +14,7 @@ module.exports = {
    * @param {string[]} [configParams.tipoMedico=[MMG, PLS]] - Tipologia di medico da includere (MMG, PLS o entrambi).
    * @param {boolean} [configParams.soloAttivi=true] - Se `true`, restituisce solo i medici attivi.
    * @param {boolean} [configParams.nascondiCessati=true] - Se `true`, esclude i medici cessati.
+   * @param {boolean} [configParams.addSituazioneMedico=false] - Se `true`, include la situazione del medico.
    * @return {Promise<Object>} - Una promessa che risolve un array di oggetti medico.
    */
   getMedici: async function (configParams = {}) {
@@ -21,6 +22,7 @@ module.exports = {
       tipoMedico = [MMG, PLS],
       soloAttivi = true,
       nascondiCessati = true,
+      addSituazioneMedico = false
     } = configParams;
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
     let nar2 = new Nar2(impostazioniServizi, {...keys});
@@ -36,22 +38,39 @@ module.exports = {
     if (nascondiCessati) {
       config.nascondiCessati = true;
     }
-    return await nar2.getMediciFromNar2(config);
+    let data = await nar2.getMediciFromNar2(config);
+    if (data.ok && addSituazioneMedico) {
+
+      const numParallels = 30; // Numero massimo di richieste parallele
+      const chunks = [];
+      for (let i = 0; i < data.data.length; i += numParallels) {
+        chunks.push(data.data.slice(i, i + numParallels));
+      }
+      for (const chunk of chunks) {
+        await Promise.all(chunk.map(async riga => {
+          let situazione = await nar2.getNumAssistitiMedico(riga.pf_id);
+          riga.situazioneMedico = situazione.ok ? situazione.data : null;
+        }));
+      }
+
+      return data.data;
+    }
+    return data;
   },
-  getSituazioniAssistenzialiAssistito: async function (cfAssistito,includeFullData = false) {
+  getSituazioniAssistenzialiAssistito: async function (cfAssistito, includeFullData = false) {
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
     let nar2 = new Nar2(impostazioniServizi, {...keys});
-    return await nar2.getSituazioniAssistenziali(cfAssistito,includeFullData);
+    return await nar2.getSituazioniAssistenziali(cfAssistito, includeFullData);
   },
   async getAmbitiDomicilioAssistito(cfAssistito, situazioneAssistenziale = 4) {
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
     let nar2 = new Nar2(impostazioniServizi, {...keys});
     return await nar2.getAmbitiDomicilioAssistito(cfAssistito, situazioneAssistenziale);
   },
-  getMediciPerAssistito: async function (cfAssistito,idAmbito, tipoMedico = Nar2.MEDICO_DI_BASE) {
+  getMediciPerAssistito: async function (cfAssistito, idAmbito, tipoMedico = Nar2.MEDICO_DI_BASE) {
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
     let nar2 = new Nar2(impostazioniServizi, {...keys});
-    return await nar2.getMediciByAmbito(idAmbito,cfAssistito,tipoMedico);
+    return await nar2.getMediciByAmbito(idAmbito, cfAssistito, tipoMedico);
   },
   getSituazioneMedico: async function (pf_id) {
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);

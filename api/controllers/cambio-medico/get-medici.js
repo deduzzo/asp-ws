@@ -22,8 +22,8 @@ module.exports = {
     tipoMedico: {
       type: 'string',
       required: true,
-      isIn: ['MMG', 'PLS'],
-      description: 'Tipo di medico (MMG o PLS)'
+      isIn: ["TUTTI",'MMG', 'PLS'],
+      description: 'Tipo di medico (MMG o PLS o entrambi)'
     },
     soloAttivi: {
       type: 'boolean',
@@ -37,6 +37,12 @@ module.exports = {
       description: 'Se true, esclude i medici cessati',
       defaultsTo: true
     },
+    addSituazioneMedico: {
+      type: 'boolean',
+      required: false,
+      description: 'Se true, aggiunge la situazione del medico (dettaglio carico, assistiti, deroghe)',
+      defaultsTo: false
+    }
   },
 
   exits: {},
@@ -45,11 +51,15 @@ module.exports = {
     const res = this.res;
     try {
       const tipoArray = [inputs.tipoMedico];
-      const result = await MediciService.getMedici({
-        tipoMedico: tipoArray,
+      let config = {
         soloAttivi: true,
         nascondiCessati: true,
-      });
+        addSituazioneMedico: inputs.addSituazioneMedico
+      };
+      if (inputs.tipoMedico !== 'TUTTI') {
+        config.tipoMedico = tipoArray;
+      }
+      const result = await MediciService.getMedici(config);
 
       // Normalizza l'output dal service
       let medici;

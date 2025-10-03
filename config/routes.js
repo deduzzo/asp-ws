@@ -194,6 +194,12 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
+  'POST /api/v1/cambio-medico/get-situazione-medico': {
+    action: 'cambio-medico/get-situazione-medico',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
 
   'GET /api/v1/stats/info': {
     action: 'stats/info',
