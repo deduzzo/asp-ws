@@ -41,7 +41,7 @@ module.exports = {
     let data = await nar2.getMediciFromNar2(config);
     if (data.ok && addSituazioneMedico) {
 
-      const numParallels = 50; // Numero massimo di richieste parallele
+      const numParallels = 100; // Numero massimo di richieste parallele
       const chunks = [];
       for (let i = 0; i < data.data.length; i += numParallels) {
         chunks.push(data.data.slice(i, i + numParallels));

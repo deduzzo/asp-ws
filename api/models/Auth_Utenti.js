@@ -15,7 +15,7 @@ module.exports = {
     username: {type: 'string', columnType: 'varchar(100)', allowNull: false},
     allow_domain_login: {type: 'boolean', defaultsTo: false},
     domain: {type: 'string', columnType: 'varchar(100)', allowNull: true},
-    mail: {type: 'string', columnType: 'varchar(200)', allowNull: false},
+    mail: {type: 'string', columnType: 'varchar(200)', allowNull: true},
     ambito: {model: 'auth_ambiti', allowNull: false},
     hash_password: {type: 'string', columnType: 'varchar(100)', allowNull: true},
     livello: {model: 'auth_livelli', allowNull: false},
