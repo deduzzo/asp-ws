@@ -22,7 +22,7 @@ module.exports = {
     attivo: {type: 'boolean', defaultsTo: false},
     data_disattivazione: {allowNull: true, type:'number'},
     refresh_token: {type: 'string', columnType: 'varchar(2048)', allowNull: true},
-    token_revocato: {type: 'boolean', defaultsTo: false},
+    token_revocato: {type: 'boolean', defaultsTo: false, allowNull: true},
     otp_enabled: {type: 'boolean', defaultsTo: false},
     otp_key: {type: 'string', columnType: 'varchar(200)', allowNull: true},
     otp: {type: 'string', columnType: 'varchar(100)', allowNull: true},
