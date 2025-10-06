@@ -32,6 +32,8 @@ module.exports.security = {
     allRoutes: true,
     allowOrigins: '*',
     allowCredentials: false,
+    // Ensure Authorization header is allowed in preflight requests
+    allowRequestHeaders: 'authorization, content-type'
   },
 
 
