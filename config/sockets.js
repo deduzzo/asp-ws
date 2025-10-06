@@ -42,13 +42,13 @@ module.exports.sockets = {
   *                                                                          *
   ***************************************************************************/
 
-  // beforeConnect: function(handshake, proceed) {
-  //
-  //   // `true` allows the socket to connect.
-  //   // (`false` would reject the connection)
-  //   return proceed(undefined, true);
-  //
-  // },
+  beforeConnect: function(handshake, proceed) {
+
+    // In production, Sails requires either `onlyAllowOrigins` or `beforeConnect`.
+    // This implementation allows connections from any origin. Use with caution.
+    return proceed(undefined, true);
+
+  },
 
 
   /***************************************************************************

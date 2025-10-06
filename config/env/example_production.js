@@ -119,21 +119,10 @@ module.exports = {
   ***************************************************************************/
   security: {
 
-    /***************************************************************************
-    *                                                                          *
-    * If this app has CORS enabled (see `config/security.js`) with the         *
-    * `allowCredentials` setting enabled, then you should uncomment the        *
-    * `allowOrigins` whitelist below.  This sets which "origins" are allowed   *
-    * to send cross-domain (CORS) requests to your Sails app.                  *
-    *                                                                          *
-    * > Replace "https://example.com" with the URL of your production server.  *
-    * > Be sure to use the right protocol!  ("http://" vs. "https://")         *
-    *                                                                          *
-    ***************************************************************************/
     cors: {
-      // allowOrigins: [
-      //   'https://example.com',
-      // ]
+      allRoutes: true,
+      allowOrigins: '*',
+      allowCredentials: false,
     },
 
   },
@@ -248,12 +237,11 @@ module.exports = {
     * > Be sure to use the right protocol!  ("http://" vs. "https://")         *
     *                                                                          *
     ***************************************************************************/
-     onlyAllowOrigins: [
-       'https://anagrafica.asp.robertodedomenico.it',
-     ],
+     // Allow WebSocket connections from any origin (use with caution)
+     // To allow any origin, leave `onlyAllowOrigins` undefined. Define an array to restrict.
 
 
-    /***************************************************************************
+     /***************************************************************************
     *                                                                          *
     * If you are deploying a cluster of multiple servers and/or processes,     *
     * then uncomment the following lines.  This tells Socket.io about a Redis  *
