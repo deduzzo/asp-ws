@@ -5,9 +5,7 @@
  *     tags:
  *       - Anagrafica
  */
-const {createJob, updateJob} = require('../../services/JobManager');
-const {getGeoAssistito} = require('../../services/AssistitoService');
-const {utils} = require('aziendasanitaria-utils/src/Utils');
+
 module.exports = {
   friendlyName: 'Assistiti in base ai dati geografici per comune di residenza',
   description: 'Ottieni i dati geografici degli assistiti per comune di residenza',

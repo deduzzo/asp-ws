@@ -17,7 +17,8 @@ module.exports = {
       description: 'ID del job'
     }
   },
-  exits: {},
+  exits: {
+  },
 
   fn: async function (inputs) {
     const res = this.res;
