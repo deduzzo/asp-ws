@@ -47,8 +47,8 @@ module.exports.bootstrap = async function () {
   }
 
   const drop = false;
-  let data =await MediciService.getMedici();
-  console.log("Cia");
+  //let data =await MediciService.getMedici();
+  //console.log("Cia");
 /*  if (drop) {
     await Auth_Livelli.destroy({});
     await Auth_Livelli.createEach([
@@ -246,5 +246,5 @@ module.exports.bootstrap = async function () {
   // show stats in %
   console.log ("% di assistiti geolocalizzati: " + (ok / total * 100).toFixed(2) + "%");
 */
-
+  //console.log("Ci2a");
 }
