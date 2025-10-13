@@ -386,12 +386,16 @@ class AdminPanel {
       ? '<span class="badge bg-success">Attivo</span>'
       : '<span class="badge bg-danger">Disattivo</span>';
 
+    const otpBadge = user.otp_enabled
+      ? '<span class="badge bg-warning text-dark ms-1" title="OTP Abilitato"><i class="bi bi-shield-lock"></i></span>'
+      : '';
+
     const scopesList = user.scopi.map(scope =>
       `<span class="badge bg-primary me-1">${scope.scopo}</span>`
     ).join('');
 
     row.innerHTML = `
-            <td><strong>${user.username}</strong></td>
+            <td><strong>${user.username}</strong>${otpBadge}</td>
             <td>${user.mail}</td>
             <td>${user.ambito.ambito || '-'}</td>
             <td>${user.livello.livello || '-'}</td>
@@ -686,16 +690,42 @@ class AdminPanel {
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="attivo" name="attivo" checked>
                                             <label class="form-check-label" for="attivo">Utente attivo</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="allow_domain_login" name="allow_domain_login">
                                             <label class="form-check-label" for="allow_domain_login">Login con dominio</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="otp_enabled" name="otp_enabled">
+                                            <label class="form-check-label" for="otp_enabled">
+                                                <i class="bi bi-shield-lock me-1"></i>OTP abilitato
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3" id="otp-settings" style="display: none;">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Autenticazione OTP:</strong> L'utente dovrà inserire un codice inviato via email ad ogni login
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="otp_type" class="form-label">Tipo OTP *</label>
+                                            <select class="form-select" id="otp_type" name="otp_type">
+                                                <option value="">Seleziona tipo...</option>
+                                                <option value="mail">Email</option>
+                                            </select>
+                                            <div class="form-text">Seleziona come inviare il codice OTP</div>
                                         </div>
                                     </div>
                                 </div>
@@ -778,8 +808,42 @@ class AdminPanel {
 
     await this.loadFormData();
 
+    // Setup OTP toggle handler
+    this.setupOtpToggle();
+
     const modal = new bootstrap.Modal(document.getElementById('userModal'));
     modal.show();
+  }
+
+  setupOtpToggle() {
+    const otpCheckbox = document.getElementById('otp_enabled');
+    const otpSettings = document.getElementById('otp-settings');
+    const otpTypeSelect = document.getElementById('otp_type');
+
+    // Remove any existing listeners
+    const newOtpCheckbox = otpCheckbox.cloneNode(true);
+    otpCheckbox.parentNode.replaceChild(newOtpCheckbox, otpCheckbox);
+
+    newOtpCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        otpSettings.style.display = 'block';
+        otpTypeSelect.setAttribute('required', 'required');
+        // Default to 'mail' if not set
+        if (!otpTypeSelect.value) {
+          otpTypeSelect.value = 'mail';
+        }
+      } else {
+        otpSettings.style.display = 'none';
+        otpTypeSelect.removeAttribute('required');
+        otpTypeSelect.value = '';
+      }
+    });
+
+    // Trigger initial state
+    if (newOtpCheckbox.checked) {
+      otpSettings.style.display = 'block';
+      otpTypeSelect.setAttribute('required', 'required');
+    }
   }
 
   async loadFormData() {
@@ -836,7 +900,9 @@ class AdminPanel {
       livello: parseInt(formData.get('livello')),
       attivo: formData.get('attivo') === 'on',
       allow_domain_login: formData.get('allow_domain_login') === 'on',
-      domain: formData.get('domain') || null
+      domain: formData.get('domain') || null,
+      otp_enabled: formData.get('otp_enabled') === 'on',
+      otp_type: formData.get('otp_type') || null
     };
 
     if (formData.get('password')) {
@@ -888,12 +954,20 @@ class AdminPanel {
       document.getElementById('livello').value = user.livello.id || '';
       document.getElementById('attivo').checked = user.attivo;
       document.getElementById('allow_domain_login').checked = user.allow_domain_login;
+      document.getElementById('otp_enabled').checked = user.otp_enabled || false;
+      document.getElementById('otp_type').value = user.otp_type || '';
 
       // Check user scopes
       user.scopi.forEach(scope => {
         const checkbox = document.getElementById(`scope_${scope.id}`);
         if (checkbox) checkbox.checked = true;
       });
+
+      // Setup OTP toggle handler and trigger display
+      this.setupOtpToggle();
+      if (user.otp_enabled) {
+        document.getElementById('otp-settings').style.display = 'block';
+      }
 
       const modal = new bootstrap.Modal(document.getElementById('userModal'));
       modal.show();
