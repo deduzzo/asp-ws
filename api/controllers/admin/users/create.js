@@ -49,8 +49,17 @@ module.exports = {
       type: 'boolean',
       defaultsTo: true,
       description: 'Whether user is active'
+    },
+    otp_enabled: {
+      type: 'boolean',
+      defaultsTo: false,
+      description: 'Whether OTP authentication is enabled for this user'
+    },
+    otp_type: {
+      type: 'string',
+      isIn: ['mail'],
+      description: 'Type of OTP authentication (mail)'
     }
-
 
   },
   fn: async function (inputs, exits) {
@@ -78,6 +87,21 @@ module.exports = {
         });
       }
 
+      // Validate OTP configuration
+      if (inputs.otp_enabled && !inputs.otp_type) {
+        return this.res.ApiResponse({
+          errType: 'VALIDATION_ERROR',
+          errMsg: 'Il tipo di OTP è richiesto quando OTP è abilitato'
+        });
+      }
+
+      if (inputs.otp_enabled && inputs.otp_type === 'mail' && !inputs.mail) {
+        return this.res.ApiResponse({
+          errType: 'VALIDATION_ERROR',
+          errMsg: 'L\'email è richiesta per il tipo di OTP mail'
+        });
+      }
+
       // Create user
       const newUser = await Auth_Utenti.create({
         username: inputs.username,
@@ -87,7 +111,12 @@ module.exports = {
         domain: inputs.domain,
         ambito: inputs.ambito,
         livello: inputs.livello,
-        attivo: inputs.attivo
+        attivo: inputs.attivo,
+        otp_enabled: inputs.otp_enabled || false,
+        otp_type: inputs.otp_enabled ? inputs.otp_type : null,
+        otp: null,
+        otp_exp: null,
+        otp_key: null
       }).fetch();
 
       // Associate scopes if provided
@@ -124,6 +153,8 @@ module.exports = {
           domain: completeUser.domain,
           allow_domain_login: completeUser.allow_domain_login,
           attivo: completeUser.attivo,
+          otp_enabled: completeUser.otp_enabled,
+          otp_type: completeUser.otp_type,
           ambito: completeUser.ambito,
           livello: completeUser.livello,
           scopi: completeUser.scopi

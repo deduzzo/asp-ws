@@ -53,8 +53,16 @@ module.exports = {
     token_revocato: {
       type: 'boolean',
       description: 'Whether user tokens are revoked'
+    },
+    otp_enabled: {
+      type: 'boolean',
+      description: 'Whether OTP authentication is enabled for this user'
+    },
+    otp_type: {
+      type: 'string',
+      isIn: ['mail'],
+      description: 'Type of OTP authentication (mail)'
     }
-
 
   },
   fn: async function (inputs, exits) {
@@ -65,6 +73,22 @@ module.exports = {
         return this.res.ApiResponse({
           errType: 'NOT_FOUND',
           errMsg: 'Utente non trovato'
+        });
+      }
+
+      // Validate OTP configuration
+      if (inputs.otp_enabled && !inputs.otp_type) {
+        return this.res.ApiResponse({
+          errType: 'VALIDATION_ERROR',
+          errMsg: 'Il tipo di OTP è richiesto quando OTP è abilitato'
+        });
+      }
+
+      const userMail = inputs.mail !== undefined ? inputs.mail : existingUser.mail;
+      if (inputs.otp_enabled && inputs.otp_type === 'mail' && !userMail) {
+        return this.res.ApiResponse({
+          errType: 'VALIDATION_ERROR',
+          errMsg: 'L\'email è richiesta per il tipo di OTP mail'
         });
       }
 
@@ -79,6 +103,22 @@ module.exports = {
       if (inputs.livello !== undefined) updateData.livello = inputs.livello;
       if (inputs.attivo !== undefined) updateData.attivo = inputs.attivo;
       if (inputs.token_revocato !== undefined) updateData.token_revocato = inputs.token_revocato;
+
+      // Handle OTP configuration
+      if (inputs.otp_enabled !== undefined) {
+        updateData.otp_enabled = inputs.otp_enabled;
+        if (inputs.otp_enabled) {
+          updateData.otp_type = inputs.otp_type;
+        } else {
+          // If disabling OTP, clear all OTP-related fields
+          updateData.otp_type = null;
+          updateData.otp = null;
+          updateData.otp_exp = null;
+          updateData.otp_key = null;
+        }
+      } else if (inputs.otp_type !== undefined) {
+        updateData.otp_type = inputs.otp_type;
+      }
 
       // Handle password update
       if (inputs.password) {
@@ -138,6 +178,8 @@ module.exports = {
           attivo: completeUser.attivo,
           data_disattivazione: completeUser.data_disattivazione,
           token_revocato: completeUser.token_revocato,
+          otp_enabled: completeUser.otp_enabled,
+          otp_type: completeUser.otp_type,
           ambito: completeUser.ambito,
           livello: completeUser.livello,
           scopi: completeUser.scopi
