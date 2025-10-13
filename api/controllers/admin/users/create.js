@@ -28,6 +28,7 @@ module.exports = {
     },
     domain: {
       type: 'string',
+      allowNull: true,
       description: 'Domain for domain login users'
     },
     ambito: {
@@ -57,6 +58,7 @@ module.exports = {
     },
     otp_type: {
       type: 'string',
+      allowNull: true,
       isIn: ['mail'],
       description: 'Type of OTP authentication (mail)'
     }
