@@ -28,11 +28,27 @@
           }
         },
         {
+          "id": "richiesta-risposta-email",
+          "type": "checkbox",
+          "label": "Modalità di risposta",
+          "required": false,
+          "description": "Seleziona questa opzione se desideri ricevere una risposta via email",
+          "options": [
+            {
+              "value": "si",
+              "label": "Desidero ricevere risposta via email",
+              "description": "Riceverai una conferma di invio e la risposta alla tua richiesta via email"
+            }
+          ]
+        },
+        {
           "id": "email",
           "type": "text",
           "label": "Indirizzo Email",
+          "subtitle": "Obbligatorio se hai richiesto risposta via email",
           "placeholder": "mario.rossi@example.com",
-          "required": true,
+          "required": false,
+          "conditionalOn": "richiesta-risposta-email",
           "validation": {
             "type": "email"
           }
@@ -182,8 +198,12 @@
     "loadingText": "Invio in corso..."
   },
   "messages": {
-    "success": "Grazie per la tua richiesta! Ti risponderemo al più presto all'indirizzo email fornito.",
+    "success": "Grazie per la tua richiesta! La tua richiesta è stata registrata correttamente.",
+    "successWithEmail": "Grazie per la tua richiesta! Riceverai una conferma via email e ti risponderemo all'indirizzo fornito.",
     "error": "Si è verificato un errore durante l'invio della richiesta. Riprova o contattaci telefonicamente.",
     "validation": "Compila tutti i campi obbligatori prima di procedere."
+  },
+  "notifications": {
+    "sendEmailConfirmation": true
   }
 }
