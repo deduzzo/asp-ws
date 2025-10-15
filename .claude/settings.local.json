@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(mkdir -p api/data/forms)",
+      "Bash(git add api/controllers/forms/ api/data/forms/ api/models/Log_FormSubmission.js config/custom/private_recaptcha.json.example views/pages/forms/ config/custom.js config/routes.js)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd dynamic forms feature with modern UI\n\n- Create database schema for form submissions (Log_FormSubmission model)\n- Add form definition storage in /api/data/forms\n- Implement API endpoint to fetch form definitions (GET /api/v1/forms/:id)\n- Create dynamic form view controller and EJS template\n- Add routes for form viewing (/forms/:id) and API access\n- Configure reCAPTCHA v3 integration\n- Implement modern, responsive UI with:\n  - Alpine.js for reactivity\n  - Tailwind CSS for styling\n  - Choices.js for searchable select fields\n  - Multiple theme support (Modern, Healthcare)\n  - Multi-page form navigation with progress bar\n  - Real-time field validation\n  - Searchable checkbox and select options\n- Support for multiple field types:\n  - text, textarea, radio, checkbox, checkbox-multiple, select\n- Add comprehensive documentation and example form\n- Add validation options: required, minLength, maxLength, min, max, email, phone, url\n\nGenerated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add FORMS_FEATURE.md api/data/forms/richiesta-informazioni.json)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd forms feature documentation and example form\n\n- Add comprehensive feature documentation (FORMS_FEATURE.md)\n- Create real-world example form (richiesta-informazioni.json)\n- Document all implemented features and future enhancements\n- Add usage examples and testing instructions\n\nGenerated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd forms index page and list functionality\n\n- Create forms index controller and view (GET /forms)\n- Add API endpoint to list all forms (GET /api/v1/forms)\n- Display forms in responsive card grid\n- Show form metadata (pages, theme, recaptcha status)\n- Add routes for index and list endpoints\n\nGenerated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
