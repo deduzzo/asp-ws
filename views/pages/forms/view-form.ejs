@@ -397,7 +397,7 @@
     </div>
 
     <!-- Form -->
-    <form x-show="!loading && !error" @submit.prevent="submitForm()" class="space-y-6">
+    <form x-show="!loading && !error && !submitted" @submit.prevent="submitForm()" class="space-y-6">
 
       <!-- Current Page -->
       <template x-if="formData.pages && formData.pages[currentPage]">
@@ -711,12 +711,13 @@
     </form>
 
     <!-- Success message -->
-    <div x-show="submitted" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center fade-in">
-      <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div x-show="submitted" class="bg-green-50 border border-green-200 rounded-lg p-8 text-center fade-in">
+      <svg class="w-20 h-20 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
       </svg>
-      <h3 class="text-green-800 font-semibold text-xl mb-2">Inviato con successo!</h3>
-      <p class="text-green-600" x-text="formData.messages?.success || 'Grazie! Il modulo è stato inviato con successo.'"></p>
+      <h3 class="text-green-800 font-semibold text-2xl mb-3">Inviato con successo!</h3>
+      <p class="text-green-700 text-lg mb-2">Grazie per la tua richiesta!</p>
+      <p class="text-green-600">Ti risponderemo al più presto all'indirizzo email fornito.</p>
     </div>
 
   </div>
@@ -736,8 +737,23 @@
         submitted: false,
 
         async init() {
+          // Check if form was already submitted in this session
+          const submittedKey = `form_submitted_${this.formId}`;
+          if (sessionStorage.getItem(submittedKey) === 'true') {
+            this.submitted = true;
+            this.loading = false;
+            return;
+          }
+
           await this.loadForm();
           this.initializeSearchableCheckboxes();
+
+          // Prevent back button after submission
+          window.addEventListener('popstate', () => {
+            if (this.submitted) {
+              history.pushState(null, '', window.location.href);
+            }
+          });
         },
 
         async loadForm() {
@@ -885,6 +901,14 @@
 
             if (response.ok && result.success) {
               this.submitted = true;
+
+              // Save submitted state to session storage
+              const submittedKey = `form_submitted_${this.formId}`;
+              sessionStorage.setItem(submittedKey, 'true');
+
+              // Replace history state to prevent back button from showing form again
+              history.replaceState({ submitted: true }, '', window.location.href);
+
               window.scrollTo({ top: 0, behavior: 'smooth' });
               console.log('Submission successful:', result.submissionId);
             } else {
