@@ -27,12 +27,25 @@ module.exports = {
         ipAddress: this.req.ip
       });
 
-      // Respond with view (layout: false to disable default layout)
-      return this.res.view('pages/forms/index', {}, { layout: false });
+      // Read the view file directly and render it
+      const ejs = require('ejs');
+      const path = require('path');
+      const fs = require('fs');
+      const viewPath = path.join(sails.config.appPath, 'views', 'pages', 'forms', 'index.ejs');
+      const template = fs.readFileSync(viewPath, 'utf8');
+      const html = ejs.render(template, {});
+
+      return this.res.send(html);
 
     } catch (error) {
       sails.log.error('Error in forms/index:', error);
-      return this.res.view('pages/forms/index', {}, { layout: false });
+      const ejs = require('ejs');
+      const path = require('path');
+      const fs = require('fs');
+      const viewPath = path.join(sails.config.appPath, 'views', 'pages', 'forms', 'index.ejs');
+      const template = fs.readFileSync(viewPath, 'utf8');
+      const html = ejs.render(template, {});
+      return this.res.send(html);
     }
 
   }

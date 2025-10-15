@@ -62,14 +62,20 @@ module.exports = {
         context: { formId: inputs.id }
       });
 
-      // Respond with view (layout: false to disable default layout)
-      return this.res.view('pages/forms/view-form', {
+      // Read the view file directly and render it
+      const ejs = require('ejs');
+      const viewPath = path.join(sails.config.appPath, 'views', 'pages', 'forms', 'view-form.ejs');
+      const template = fs.readFileSync(viewPath, 'utf8');
+
+      const html = ejs.render(template, {
         formId: inputs.id,
         formTitle: formDefinition.title || 'Form',
         formDescription: formDefinition.description || '',
         recaptchaEnabled: formDefinition.recaptcha?.enabled || false,
         recaptchaSiteKey: sails.config.custom.recaptcha?.siteKey || ''
-      }, { layout: false });
+      });
+
+      return this.res.send(html);
 
     } catch (error) {
       sails.log.error('Error in view-form:', error);
