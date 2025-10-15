@@ -9,7 +9,7 @@ module.exports = {
 
   exits: {
     success: {
-      viewTemplatePath: 'pages/forms/admin-index'
+      description: 'Admin page rendered successfully'
     }
   },
 
@@ -58,11 +58,20 @@ module.exports = {
         }
       }
 
-      return exits.success({ forms });
+      // Render direttamente l'EJS senza layout di Sails
+      const ejs = require('ejs');
+      const viewPath = path.join(sails.config.appPath, 'views', 'pages', 'forms', 'admin-index.ejs');
+      const template = fs.readFileSync(viewPath, 'utf8');
+
+      const html = ejs.render(template, {
+        forms: forms
+      });
+
+      return this.res.send(html);
 
     } catch (err) {
       sails.log.error('Error loading forms admin:', err);
-      return exits.success({ forms: [], error: 'Errore caricamento form' });
+      return this.res.serverError('Errore caricamento pagina admin');
     }
   }
 

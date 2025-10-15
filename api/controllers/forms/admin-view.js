@@ -9,7 +9,7 @@ module.exports = {
 
   exits: {
     success: {
-      viewTemplatePath: 'pages/forms/admin-view'
+      description: 'Admin view page rendered successfully'
     },
     notFound: {
       responseType: 'notFound'
@@ -50,12 +50,19 @@ module.exports = {
         });
       }
 
-      return exits.success({
+      // Render direttamente l'EJS senza layout di Sails
+      const ejs = require('ejs');
+      const viewPath = path.join(sails.config.appPath, 'views', 'pages', 'forms', 'admin-view.ejs');
+      const template = fs.readFileSync(viewPath, 'utf8');
+
+      const html = ejs.render(template, {
         formId: formId,
         formTitle: formDefinition.title,
         formDescription: formDefinition.description,
         fields: fields
       });
+
+      return this.res.send(html);
 
     } catch (err) {
       sails.log.error('Error loading form admin view:', err);
