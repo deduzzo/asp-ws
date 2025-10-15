@@ -140,6 +140,11 @@ module.exports = {
 
     // ========== HELPER FUNCTIONS ==========
 
+    function sanitizeFieldId(fieldId) {
+      // Sostituisce caratteri non validi per SQLite (trattini, spazi, etc.) con underscore
+      return fieldId.replace(/[^a-zA-Z0-9_]/g, '_');
+    }
+
     function tableExists(db) {
       const result = db.prepare(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='submissions'"
@@ -162,7 +167,8 @@ module.exports = {
         formDefinition.pages.forEach(page => {
           page.fields.forEach(field => {
             const columnType = getColumnType(field);
-            columns.push(`field_${field.id} ${columnType}`);
+            const sanitizedId = sanitizeFieldId(field.id);
+            columns.push(`field_${sanitizedId} ${columnType}`);
           });
         });
       }
@@ -205,7 +211,8 @@ module.exports = {
       if (formDefinition.pages) {
         formDefinition.pages.forEach(page => {
           page.fields.forEach(field => {
-            columns.push(`field_${field.id}`);
+            const sanitizedId = sanitizeFieldId(field.id);
+            columns.push(`field_${sanitizedId}`);
             placeholders.push('?');
 
             let value = formValues[field.id];
@@ -313,7 +320,8 @@ module.exports = {
         formDefinition.pages.forEach(page => {
           page.fields.forEach(field => {
             headers.push(field.label);
-            fieldMap[`field_${field.id}`] = field;
+            const sanitizedId = sanitizeFieldId(field.id);
+            fieldMap[`field_${sanitizedId}`] = field;
           });
         });
       }

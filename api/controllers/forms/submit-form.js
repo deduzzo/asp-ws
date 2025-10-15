@@ -112,11 +112,12 @@ module.exports = {
 
       // === 4. LOG L'EVENTO ===
       await sails.helpers.log.with({
-        livello: 'info',
+        level: 'info',
         tag: 'FORM_SUBMISSION',
-        azione: `Form ${formId} submitted`,
-        ip: ipAddress,
-        contesto: {
+        message: `Form ${formId} submitted`,
+        action: `submit_form_${formId}`,
+        ipAddress: ipAddress,
+        context: {
           submissionId: result.id,
           formId: formId,
           recaptchaScore: rateLimitCheck.recaptchaScore
@@ -145,11 +146,12 @@ module.exports = {
 
       // Log errore
       await sails.helpers.log.with({
-        livello: 'error',
+        level: 'error',
         tag: 'FORM_SUBMISSION_ERROR',
-        azione: `Form ${formId} submission failed`,
-        ip: ipAddress,
-        contesto: {
+        message: `Form ${formId} submission failed`,
+        action: `submit_form_${formId}_error`,
+        ipAddress: ipAddress,
+        context: {
           error: err.message,
           formId: formId
         }

@@ -48,7 +48,7 @@ module.exports = {
     const formId = this.req.param('id');
 
     if (!formId) {
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         errType: 'BAD_REQUEST',
         errMsg: 'formId is required'
       });
@@ -85,19 +85,20 @@ module.exports = {
 
       // Log l'accesso
       await sails.helpers.log.with({
-        livello: 'info',
+        level: 'info',
         tag: 'FORMS_ADMIN',
-        azione: `Get submissions for form ${formId}`,
-        ip: this.req.ip,
-        utente: this.req.user ? this.req.user.id : null,
-        contesto: {
+        message: `Get submissions for form ${formId}`,
+        action: `get_submissions_${formId}`,
+        ipAddress: this.req.ip,
+        user: this.req.user ? this.req.user.id : null,
+        context: {
           formId: formId,
           page: inputs.page,
           total: result.total
         }
       });
 
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         data: {
           submissions: result.submissions,
           total: result.total,
@@ -109,7 +110,7 @@ module.exports = {
 
     } catch (err) {
       sails.log.error('Error getting submissions:', err);
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         errType: 'SERVER_ERROR',
         errMsg: 'Error retrieving submissions'
       });
