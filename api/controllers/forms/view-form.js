@@ -60,8 +60,8 @@ module.exports = {
         level: 'info',
         tag: 'FORMS',
         action: 'VIEW_FORM',
-        msg: `Form page viewed: ${inputs.id}`,
-        ip: this.req.ip,
+        message: `Form page viewed: ${inputs.id}`,
+        ipAddress: this.req.ip,
         context: { formId: inputs.id }
       });
 

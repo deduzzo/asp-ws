@@ -85,8 +85,8 @@ module.exports = {
         level: 'info',
         tag: 'FORMS',
         action: 'GET_FORM',
-        msg: `Form retrieved: ${inputs.id}`,
-        ip: this.req.ip,
+        message: `Form retrieved: ${inputs.id}`,
+        ipAddress: this.req.ip,
         context: { formId: inputs.id }
       });
 

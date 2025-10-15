@@ -70,8 +70,8 @@ module.exports = {
         level: 'info',
         tag: 'FORMS',
         action: 'LIST_FORMS',
-        msg: `Forms list retrieved: ${forms.length} forms found`,
-        ip: this.req.ip,
+        message: `Forms list retrieved: ${forms.length} forms found`,
+        ipAddress: this.req.ip,
         context: { count: forms.length }
       });
 

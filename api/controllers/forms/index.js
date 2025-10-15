@@ -27,8 +27,8 @@ module.exports = {
         level: 'info',
         tag: 'FORMS',
         action: 'VIEW_INDEX',
-        msg: 'Forms index page viewed',
-        ip: this.req.ip
+        message: 'Forms index page viewed',
+        ipAddress: this.req.ip
       });
 
       // Respond with view

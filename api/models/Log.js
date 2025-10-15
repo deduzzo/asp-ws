@@ -37,5 +37,6 @@ module.exports = {
     API_RESPONSE_OK: 'API_RESPONSE_OK',
     API_RESPONSE_KO: 'API_RESPONSE_KO',
     ADMIN: 'ADMIN',
+    FORMS: 'FORMS',
   }
 };
