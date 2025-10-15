@@ -13,11 +13,7 @@ module.exports = {
 
   inputs: {},
 
-  exits: {
-    success: {
-      viewTemplatePath: 'pages/forms/index'
-    }
-  },
+  exits: {},
 
   fn: async function (inputs, exits) {
 
@@ -31,12 +27,12 @@ module.exports = {
         ipAddress: this.req.ip
       });
 
-      // Respond with view
-      return exits.success();
+      // Respond with view (layout: false to disable default layout)
+      return this.res.view('pages/forms/index', {}, { layout: false });
 
     } catch (error) {
       sails.log.error('Error in forms/index:', error);
-      return exits.success();
+      return this.res.view('pages/forms/index', {}, { layout: false });
     }
 
   }

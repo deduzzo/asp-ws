@@ -25,9 +25,6 @@ module.exports = {
   },
 
   exits: {
-    success: {
-      viewTemplatePath: 'pages/forms/view-form'
-    },
     notFound: {
       description: 'Form not found',
       responseType: 'notFound'
@@ -65,14 +62,14 @@ module.exports = {
         context: { formId: inputs.id }
       });
 
-      // Respond with view
-      return exits.success({
+      // Respond with view (layout: false to disable default layout)
+      return this.res.view('pages/forms/view-form', {
         formId: inputs.id,
         formTitle: formDefinition.title || 'Form',
         formDescription: formDefinition.description || '',
         recaptchaEnabled: formDefinition.recaptcha?.enabled || false,
         recaptchaSiteKey: sails.config.custom.recaptcha?.siteKey || ''
-      });
+      }, { layout: false });
 
     } catch (error) {
       sails.log.error('Error in view-form:', error);
