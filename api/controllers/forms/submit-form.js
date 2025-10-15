@@ -134,6 +134,21 @@ module.exports = {
         }
       }
 
+      // === 6. INVIA EMAIL DI CONFERMA ALL'UTENTE (se richiesto) ===
+      const wantsEmailResponse = inputs.formValues['richiesta-risposta-email'] &&
+                                  inputs.formValues['richiesta-risposta-email'].includes('si');
+      const userEmail = inputs.formValues['email'];
+
+      if (formDefinition.notifications && formDefinition.notifications.sendEmailConfirmation &&
+          wantsEmailResponse && userEmail) {
+        try {
+          await sendUserConfirmationEmail(formDefinition, userEmail, result.id);
+        } catch (emailErr) {
+          sails.log.error('Error sending user confirmation email:', emailErr);
+          // Non blocchiamo il submit se l'email fallisce
+        }
+      }
+
       return exits.success({
         success: true,
         message: formDefinition.messages?.success || 'Grazie! Il modulo è stato inviato con successo.',
@@ -335,6 +350,36 @@ module.exports = {
         subject: `Nuova submission: ${formDefinition.title}`,
         html: emailBody
       });
+    }
+
+    async function sendUserConfirmationEmail(formDefinition, userEmail, submissionId) {
+      const MailService = require('../../services/MailService');
+
+      // Prepara email di conferma per l'utente
+      let emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0ea5e9;">Conferma Ricezione Richiesta</h2>
+          <p>Gentile utente,</p>
+          <p>Abbiamo ricevuto correttamente la tua richiesta: <strong>${formDefinition.title}</strong></p>
+          <p><strong>Numero di riferimento:</strong> ${submissionId}</p>
+          <p><strong>Data:</strong> ${new Date().toLocaleString('it-IT')}</p>
+          <hr style="border: 1px solid #e5e7eb; margin: 20px 0;">
+          <p>Ti risponderemo al più presto all'indirizzo email fornito.</p>
+          <p style="color: #6b7280; font-size: 0.875rem;">
+            Questo è un messaggio automatico, ti preghiamo di non rispondere a questa email.
+          </p>
+          <p style="color: #6b7280; font-size: 0.875rem;">
+            <strong>ASP di Messina</strong><br>
+            Servizi Sanitari Territoriali
+          </p>
+        </div>
+      `;
+
+      await MailService.sendMail(
+        userEmail,
+        `Conferma ricezione: ${formDefinition.title}`,
+        emailBody
+      );
     }
   }
 
