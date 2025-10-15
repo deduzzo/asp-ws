@@ -392,7 +392,12 @@
             const response = await fetch('/api/v1/login/get-token', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(this.credentials)
+              body: JSON.stringify({
+                login: this.credentials.username,
+                password: this.credentials.password,
+                scopi: 'forms',
+                ambito: 'login'
+              })
             });
 
             const data = await response.json();
@@ -597,9 +602,6 @@
       };
     }
   </script>
-
-  <!-- Admin-specific scripts -->
-  <script src="/js/admin/admin.js"></script>
 
 </body>
 </html>
