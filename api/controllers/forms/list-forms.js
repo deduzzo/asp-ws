@@ -25,10 +25,10 @@ module.exports = {
   fn: async function (inputs, exits) {
 
     try {
-      const formsDir = path.join(sails.config.appPath, 'api', 'data', 'forms');
+      const templateDir = path.join(sails.config.appPath, 'api', 'data', 'forms', 'template');
 
       // Check if directory exists
-      if (!fs.existsSync(formsDir)) {
+      if (!fs.existsSync(templateDir)) {
         return exits.success({
           ok: true,
           data: []
@@ -36,14 +36,14 @@ module.exports = {
       }
 
       // Read all files in the directory
-      const files = fs.readdirSync(formsDir);
+      const files = fs.readdirSync(templateDir);
 
       // Filter only JSON files and read their metadata
       const forms = [];
       for (const file of files) {
         if (file.endsWith('.json')) {
           try {
-            const filePath = path.join(formsDir, file);
+            const filePath = path.join(templateDir, file);
             const fileData = fs.readFileSync(filePath, 'utf8');
             const formData = JSON.parse(fileData);
 

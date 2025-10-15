@@ -1,0 +1,728 @@
+{
+  "id": "strutture-private-accreditate",
+  "title": "STRUTTURE PRIVATE ACCREDITATE - Manifestazione di interesse per prestazioni abbattimento liste d'attesa",
+  "description": "Adesione per strutture private accreditate",
+  "theme": "healthcare",
+  "recaptcha": {
+    "enabled": true,
+    "version": "v3",
+    "action": "submit_strutture_private"
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "title": "Dati della Struttura",
+      "description": "Compila i dati della struttura privata accreditata",
+      "requireAllBeforeNext": true,
+      "fields": [
+        {
+          "id": "struttura",
+          "type": "select",
+          "label": "Struttura",
+          "subtitle": "Seleziona la struttura privata accreditata",
+          "placeholder": "Seleziona la struttura...",
+          "required": true,
+          "searchable": true,
+          "options": [
+            {
+              "value": "400400",
+              "label": "ODONTOMAX S. A S.",
+              "subtitle": "400400"
+            },
+            {
+              "value": "400500",
+              "label": "CENTRO NUCLEARE S.A.S.",
+              "subtitle": "400500"
+            },
+            {
+              "value": "400600",
+              "label": "CENTRO FISIOK. QUATTROCCHI",
+              "subtitle": "400600"
+            },
+            {
+              "value": "401200",
+              "label": "FKT 'MALFA' S.A S.",
+              "subtitle": "401200"
+            },
+            {
+              "value": "401300",
+              "label": "STUDIO ODONTOIATRICO MATERIA DI MATERIA ENRICA E C.S.A.S.",
+              "subtitle": "401300"
+            },
+            {
+              "value": "402000",
+              "label": "POLIAMBULATORIO LA MADONNINA S.R.L.",
+              "subtitle": "402000"
+            },
+            {
+              "value": "402100",
+              "label": "POLIAMBULATORIO 'S.T.A.F.' S.R.L.",
+              "subtitle": "402100"
+            },
+            {
+              "value": "402600",
+              "label": "ST. ODONTOIATRICO C.O.D. S.R.L.",
+              "subtitle": "402600"
+            },
+            {
+              "value": "402900",
+              "label": "IL CUORE - DIAGN. CARDIOVASC. DR. SIGNORINO",
+              "subtitle": "402900"
+            },
+            {
+              "value": "403000",
+              "label": "STUDIO ODONTOIATRICO MIRAGLIOTTA DI MIRAGLIOTTA GIUSEPPE & C. S.A.S.",
+              "subtitle": "403000"
+            },
+            {
+              "value": "403600",
+              "label": "CASA DI CURA I.O.M.I.",
+              "subtitle": "403600"
+            },
+            {
+              "value": "403700",
+              "label": "CASA DI CURA ORT. E TRAUM.",
+              "subtitle": "403700"
+            },
+            {
+              "value": "403800",
+              "label": "CASA DI CURA S. CAMILLO",
+              "subtitle": "403800"
+            },
+            {
+              "value": "403900",
+              "label": "CASA DI CURA VILLA IGEA",
+              "subtitle": "403900"
+            },
+            {
+              "value": "404000",
+              "label": "CASA DI CURA CRISTO RE",
+              "subtitle": "404000"
+            },
+            {
+              "value": "404200",
+              "label": "CASA DI CURA VILLA SALUS",
+              "subtitle": "404200"
+            },
+            {
+              "value": "404400",
+              "label": "CENTRO TERAPIA DI GREGORIO & C SAS",
+              "subtitle": "404400"
+            },
+            {
+              "value": "405200",
+              "label": "CENTRO MEDICINA RIABILITATIVA 'AMMANNATO' SRL",
+              "subtitle": "405200"
+            },
+            {
+              "value": "405300",
+              "label": "CARDIO CENTER SAS",
+              "subtitle": "405300"
+            },
+            {
+              "value": "405400",
+              "label": "RIABILITAZIONE E FISIOTERAPIA CILIA S.A S.",
+              "subtitle": "405400"
+            },
+            {
+              "value": "405600",
+              "label": "STUDIO ODONT. JASZCZYNSKA GALLETTA S.A S.",
+              "subtitle": "405600"
+            },
+            {
+              "value": "406400",
+              "label": "POLI ORTO FISIO S.R.L.",
+              "subtitle": "406400"
+            },
+            {
+              "value": "406800",
+              "label": "CENTRO CRISAFULLI ORTOPEDI MEDICINA FISICA E RIABILITATIVA",
+              "subtitle": "406800"
+            },
+            {
+              "value": "406900",
+              "label": "CARDIO STUDIO SAS DI CUTUGNO G.& C.",
+              "subtitle": "406900"
+            },
+            {
+              "value": "407400",
+              "label": "EVA S.R.L. STUDIO RADIOLOGICO",
+              "subtitle": "407400"
+            },
+            {
+              "value": "407500",
+              "label": "STUDIO OCULISTICO FARO S.A.S:",
+              "subtitle": "407500"
+            },
+            {
+              "value": "407600",
+              "label": "STUDIO CARDIOLOGICO GARUFI SAS",
+              "subtitle": "407600"
+            },
+            {
+              "value": "407900",
+              "label": "ST. DENTISTICO LIZIO P. SAS",
+              "subtitle": "407900"
+            },
+            {
+              "value": "408000",
+              "label": "STUDIO ODONTOIATRICO LO GIUDICE S.A.S.",
+              "subtitle": "408000"
+            },
+            {
+              "value": "408300",
+              "label": "CARDIONOVA S.R.L.",
+              "subtitle": "408300"
+            },
+            {
+              "value": "409400",
+              "label": "STUDIO CARDIOLOGICO RIZZO S.A.S.",
+              "subtitle": "409400"
+            },
+            {
+              "value": "411400",
+              "label": "STUDIO MEDICO TANZARIELLO & C SAS",
+              "subtitle": "411400"
+            },
+            {
+              "value": "411600",
+              "label": "NOVAMEDICA SRL SOCIETA'",
+              "subtitle": "411600"
+            },
+            {
+              "value": "412500",
+              "label": "STUDIO DIAGNOSTICO S. LUCIA ANALISI CLINICHE DELLA DOTT.SSA COZZO VIVIANA & C. S.N.C.",
+              "subtitle": "412500"
+            },
+            {
+              "value": "412600",
+              "label": "AMB. POLISP. SS. ANNUNZIATA",
+              "subtitle": "412600"
+            },
+            {
+              "value": "412800",
+              "label": "STUDIO RADIOLOGICO PANDOLFO S.R.L.",
+              "subtitle": "412800"
+            },
+            {
+              "value": "413000",
+              "label": "F.K.T.DI BUEMI E C. S.A.S.",
+              "subtitle": "413000"
+            },
+            {
+              "value": "413200",
+              "label": "CENTRO DIAGNOSTICA CARDIOVASCOLARE CAPRITI",
+              "subtitle": "413200"
+            },
+            {
+              "value": "413300",
+              "label": "CENTRO OFTALMICO REGIS S.R.L.",
+              "subtitle": "413300"
+            },
+            {
+              "value": "413700",
+              "label": "STUDIO LO DUCA S.R.L.",
+              "subtitle": "413700"
+            },
+            {
+              "value": "413800",
+              "label": "STUDIO DENTISTICO MAIORANA SAS",
+              "subtitle": "413800"
+            },
+            {
+              "value": "414000",
+              "label": "SANITAS S.R.L.",
+              "subtitle": "414000"
+            },
+            {
+              "value": "414800",
+              "label": "STUDIO 'REM' SAS",
+              "subtitle": "414800"
+            },
+            {
+              "value": "414900",
+              "label": "STUDIO 'SALUS' S.R.L.",
+              "subtitle": "414900"
+            },
+            {
+              "value": "415400",
+              "label": "AMBULATORIO ODONTOIATRICO MED. JONICA S.A.S. S.A.S",
+              "subtitle": "415400"
+            },
+            {
+              "value": "415500",
+              "label": "CENTRO DIGN. PER IMMAG DR. FIUMARA F. SAS",
+              "subtitle": "415500"
+            },
+            {
+              "value": "415600",
+              "label": "CENTRO MED. RIABIL. DR.SSA MARCHESE A. SAS",
+              "subtitle": "415600"
+            },
+            {
+              "value": "416000",
+              "label": "STUDIO BENEROM SAS",
+              "subtitle": "416000"
+            },
+            {
+              "value": "416500",
+              "label": "STUDIO D. T. RADIOLOGICO S. AGATA",
+              "subtitle": "416500"
+            },
+            {
+              "value": "417900",
+              "label": "E.C.A.S. S.R.L DR POLITO",
+              "subtitle": "417900"
+            },
+            {
+              "value": "418000",
+              "label": "STUDIO IANNELLI GUGLIELMO S. A S.",
+              "subtitle": "418000"
+            },
+            {
+              "value": "418200",
+              "label": "MEDICAL CENTER SRL",
+              "subtitle": "418200"
+            },
+            {
+              "value": "418500",
+              "label": "LAB. ANALISI GIUSEPPE AGOSTA E MARCELLA DI MUNI S.N.C",
+              "subtitle": "418500"
+            },
+            {
+              "value": "418600",
+              "label": "EMODIALISI IPPOCRATE S.R.L.",
+              "subtitle": "418600"
+            },
+            {
+              "value": "418700",
+              "label": "EMODIALISI SPARVIERO S.R.L.",
+              "subtitle": "418700"
+            },
+            {
+              "value": "418800",
+              "label": "STUDIO DI FISICA LA RINASCENTE S.A.S.",
+              "subtitle": "418800"
+            },
+            {
+              "value": "419100",
+              "label": "CENTRO DIALISI TIRRENIA S.R.L.",
+              "subtitle": "419100"
+            },
+            {
+              "value": "419400",
+              "label": "STUDIO RADIOLOGICO DEL TIRRENO S.A.S.",
+              "subtitle": "419400"
+            },
+            {
+              "value": "419500",
+              "subtitle": "419500"
+            },
+            {
+              "value": "419600",
+              "label": "NEPHROCARE S.P.A.",
+              "subtitle": "419600"
+            },
+            {
+              "value": "419700",
+              "label": "ESCULAPIO S.R.L.",
+              "subtitle": "419700"
+            },
+            {
+              "value": "419800",
+              "label": "LA.BO.S. S.R.L.",
+              "subtitle": "419800"
+            },
+            {
+              "value": "419900",
+              "label": "SAN FILIPPO DIAL CENTER S.R.L.",
+              "subtitle": "419900"
+            },
+            {
+              "value": "420000",
+              "label": "CENTRO DI NEFR. E DIAL. S.R.L.",
+              "subtitle": "420000"
+            },
+            {
+              "value": "420200",
+              "label": "STUDIO RADIOLOGICO 'ESCULAPIO' SRL",
+              "subtitle": "420200"
+            },
+            {
+              "value": "420300",
+              "label": "CENTRO IANNELLI DIAGNOSI VENETICO S.R.L.",
+              "subtitle": "420300"
+            },
+            {
+              "value": "421000",
+              "label": "RADIOLOGIA DIAGNOSTICA S.R.L.",
+              "subtitle": "421000"
+            },
+            {
+              "value": "421400",
+              "label": "STUDIO DI RADIOLOGIA SAN MICHELE S.R.L.",
+              "subtitle": "421400"
+            },
+            {
+              "value": "421700",
+              "label": "DIAVERUM ITALIA S.R.L.",
+              "subtitle": "421700"
+            },
+            {
+              "value": "421800",
+              "label": "CENTRO DIAGNOSTICO MESSINA SUD SRL",
+              "subtitle": "421800"
+            },
+            {
+              "value": "422200",
+              "label": "POLIDIAGNOSTICO SADA GROUP SRL",
+              "subtitle": "422200"
+            },
+            {
+              "value": "422300",
+              "label": "STUDIO MORABITO ORL S.R.L.",
+              "subtitle": "422300"
+            },
+            {
+              "value": "422700",
+              "label": "AMBULATORIO COT LIPARI",
+              "subtitle": "422700"
+            },
+            {
+              "value": "422800",
+              "label": "STUDIO DENTISTICO RIZZO GABRIELE",
+              "subtitle": "422800"
+            },
+            {
+              "value": "423000",
+              "label": "ARKOBA CENTRO MEDICO REUMATOLOGICO S.R.L.",
+              "subtitle": "423000"
+            },
+            {
+              "value": "423200",
+              "label": "AMBULATORIO ODONTOIATRICO DOTT. P. MAZZAGATTI S.R.L.",
+              "subtitle": "423200"
+            },
+            {
+              "value": "423400",
+              "label": "AMBULATORIO ODONTOIATRICO DOTT.SSA LA MALFA",
+              "subtitle": "423400"
+            },
+            {
+              "value": "423500",
+              "label": "STUDIO DENTISTICO MASTROIENI TINDARO",
+              "subtitle": "423500"
+            },
+            {
+              "value": "423600",
+              "label": "STUDIO DI ODONTOIATRIA E ORTODONZIA DOTT. R. DI NATALE IMBESI S.R.L. UNIPERSONALE",
+              "subtitle": "423600"
+            },
+            {
+              "value": "423700",
+              "label": "STUDIO DENTISTICO DOTTORESSA GIUSJ CECCONI",
+              "subtitle": "423700"
+            },
+            {
+              "value": "423800",
+              "label": "STUDIO DENTISTICO ASSOCIATO ALI' - TAMA'",
+              "subtitle": "423800"
+            },
+            {
+              "value": "423900",
+              "label": "AMBULATORIO ODONTOIATRICO DR. LORENZO ISGRO'",
+              "subtitle": "423900"
+            },
+            {
+              "value": "424000",
+              "label": "AMBULATORIO ODONTOIATRICO DR. RUSSO EDUARDO S.R.L.",
+              "subtitle": "424000"
+            },
+            {
+              "value": "424300",
+              "label": "STUDIO DENTISTICO DOTT ANTONIO ORITI",
+              "subtitle": "424300"
+            },
+            {
+              "value": "424500",
+              "label": "DOTT. MASSIMO NATALE SRL",
+              "subtitle": "424500"
+            },
+            {
+              "value": "424600",
+              "label": "LA SPADA CENTRO MEDICO DENTISTICO SRL",
+              "subtitle": "424600"
+            },
+            {
+              "value": "424700",
+              "label": "AMBULATORIO ODONTOIATRICO DOTT.SSA LO PRESTI GIOVANNA",
+              "subtitle": "424700"
+            },
+            {
+              "value": "424800",
+              "label": "STUDIO DENTISTICO DOTT.SSA D. MASTROIENI",
+              "subtitle": "424800"
+            },
+            {
+              "value": "424900",
+              "label": "AMBULATORIO SANT'APOLLONIA SAS DI PRONESTÌ ANDREA & CO",
+              "subtitle": "424900"
+            },
+            {
+              "value": "425000",
+              "label": "AMBULATORIO ODONTOIATRICO DOTT. SALVATORE MIRAGLIOTTA",
+              "subtitle": "425000"
+            },
+            {
+              "value": "425100",
+              "label": "AMBULATORIO STUDIO ODONTOIATRICO DOTT. GIUSEPPE LA SPADA",
+              "subtitle": "425100"
+            },
+            {
+              "value": "425300",
+              "label": "AMBULATORIO ODONTOIATRICO BUEMI DR. CARMELO GIOVANNI",
+              "subtitle": "425300"
+            },
+            {
+              "value": "425500",
+              "label": "AMBULATORIO RADIOLOGIA DOTT. CURRO' DOMENICO S.R.L.",
+              "subtitle": "425500"
+            },
+            {
+              "value": "425600",
+              "label": "AMBULATORIO ODONTOIATRICO HERA S.A.S. DI TORRE GAETANO & C.",
+              "subtitle": "425600"
+            },
+            {
+              "value": "425700",
+              "label": "STUDI DENTISTICI CORTOLILLO TAVIANO CAMPISI SRL",
+              "subtitle": "425700"
+            },
+            {
+              "value": "425800",
+              "label": "STUDIO DENTISTICO MARINO SNC DI MARINO ROSSANA E STEFANIA",
+              "subtitle": "425800"
+            },
+            {
+              "value": "425900",
+              "label": "STUDIO DENTISTICO SCALIA SRLTP",
+              "subtitle": "425900"
+            },
+            {
+              "value": "426000",
+              "label": "CENTRO ODONTOIATRICO DOTT.SSA MIRIAM CONTI NIBALI S.R.L.",
+              "subtitle": "426000"
+            },
+            {
+              "value": "426100",
+              "label": "AMBULATORIO ODONTOIATRICO SIRNA DI SIRNA MARIO ANTONINO &C. S.A.S",
+              "subtitle": "426100"
+            },
+            {
+              "value": "426300",
+              "label": "AMBULATORIO ODONTOIATRICO VIOLASAS. DI ROSANNA VIOLA",
+              "subtitle": "426300"
+            },
+            {
+              "value": "426400",
+              "label": "STUDIO DENTISTICO TRIFIRO' - SRLSTP",
+              "subtitle": "426400"
+            },
+            {
+              "value": "426600",
+              "label": "NEPHROCARE SPA VIA CONCA D'ORO - MESSINA",
+              "subtitle": "426600"
+            },
+            {
+              "value": "426700",
+              "label": "KINESIS S.R.L.",
+              "subtitle": "426700"
+            },
+            {
+              "value": "426800",
+              "label": "DAMASCAT S.R.L.",
+              "subtitle": "426800"
+            },
+            {
+              "value": "426900",
+              "label": "STUDIO DENTISTICO MEDITERRANEO SRL STP",
+              "subtitle": "426900"
+            },
+            {
+              "value": "427000",
+              "label": "DENTALIS S.R.L",
+              "subtitle": "427000"
+            },
+            {
+              "value": "831700",
+              "label": "STUDIO DENTISTICO ORITI ANTONIO",
+              "subtitle": "831700"
+            },
+            {
+              "value": "832100",
+              "label": "AMBULATORIO ODONTOIATRICO CRUPI DI CECILIA CRUPI S.A.S.",
+              "subtitle": "832100"
+            },
+            {
+              "value": "832200",
+              "label": "AMBULATORIO ODONTOIATRICO PRONESTÌ ROBERTO S.A.S.",
+              "subtitle": "832200"
+            },
+            {
+              "value": "832300",
+              "label": "STUDIO DENTISTICO DI PIETRO ANNAMARIA",
+              "subtitle": "832300"
+            }
+          ]
+        },
+        {
+          "id": "branca",
+          "type": "checkbox-multiple",
+          "label": "Branche Specialistiche",
+          "subtitle": "Seleziona una o più branche di interesse",
+          "required": true,
+          "searchable": true,
+          "options": [
+            {
+              "value": "17",
+              "label": "Odontostomatologia - chirurgia maxillofacciale",
+              "subtitle": "17"
+            },
+            {
+              "value": "08",
+              "label": "Diagnostica per immagini-Radiologia diagnostica",
+              "subtitle": "08"
+            },
+            {
+              "value": "12",
+              "label": "Medicina fisica e riabilitazione",
+              "subtitle": "12"
+            },
+            {
+              "value": "02",
+              "label": "Cardiologia",
+              "subtitle": "02"
+            },
+            {
+              "value": "09",
+              "label": "Endocrinologia",
+              "subtitle": "09"
+            },
+            {
+              "value": "20",
+              "label": "Ostetricia e ginecologia",
+              "subtitle": "20"
+            },
+            {
+              "value": "25",
+              "label": "Urologia",
+              "subtitle": "25"
+            },
+            {
+              "value": "03",
+              "label": "Chirurgia generale",
+              "subtitle": "03"
+            },
+            {
+              "value": "19",
+              "label": "Ortopedia e traumatologia",
+              "subtitle": "19"
+            },
+            {
+              "value": "21",
+              "label": "Otorinolaringoiatria",
+              "subtitle": "21"
+            },
+            {
+              "value": "07",
+              "label": "Diagnostica per immagini-Medicina nucleare",
+              "subtitle": "07"
+            },
+            {
+              "value": "16",
+              "label": "Oculistica",
+              "subtitle": "16"
+            },
+            {
+              "value": "26",
+              "label": "Altro",
+              "subtitle": "26"
+            },
+            {
+              "value": "15",
+              "label": "Neurologia",
+              "subtitle": "15"
+            },
+            {
+              "value": "22",
+              "label": "Pneumologia",
+              "subtitle": "22"
+            },
+            {
+              "value": "13",
+              "label": "Nefrologia",
+              "subtitle": "13"
+            },
+            {
+              "value": "06",
+              "label": "Dermosifilopatia",
+              "subtitle": "06"
+            },
+            {
+              "value": "27",
+              "label": "Allergologia",
+              "subtitle": "27"
+            },
+            {
+              "value": "30",
+              "label": "Reumatologia",
+              "subtitle": "30"
+            }
+          ]
+        },
+        {
+          "id": "legale-rappresentante",
+          "type": "text",
+          "label": "Legale Rappresentante",
+          "subtitle": "Nome e cognome",
+          "placeholder": "Mario Rossi",
+          "required": true,
+          "validation": {
+            "type": "text",
+            "minLength": 3,
+            "maxLength": 100
+          }
+        },
+        {
+          "id": "email",
+          "type": "text",
+          "label": "Email",
+          "placeholder": "esempio@email.com",
+          "required": true,
+          "validation": {
+            "type": "email"
+          }
+        },
+        {
+          "id": "cellulare",
+          "type": "text",
+          "label": "Recapito Cellulare",
+          "placeholder": "+39 123 456 7890",
+          "required": true,
+          "validation": {
+            "type": "phone"
+          }
+        }
+      ]
+    }
+  ],
+  "submitButton": {
+    "text": "Invia Manifestazione di Interesse",
+    "loadingText": "Invio in corso..."
+  },
+  "messages": {
+    "success": "Grazie per la manifestazione di interesse! Riceverai una conferma all'indirizzo email indicato.",
+    "error": "Si è verificato un errore durante l'invio. Riprova o contattaci telefonicamente.",
+    "validation": "Compila tutti i campi obbligatori prima di procedere."
+  }
+}

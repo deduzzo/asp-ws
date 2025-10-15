@@ -205,7 +205,7 @@ let routes = {
     action: 'stats/info',
   },
 
-  // Dynamic Forms routes
+  // Dynamic Forms routes (public)
   'GET /forms': {
     action: 'forms/index',
   },
@@ -217,6 +217,37 @@ let routes = {
   },
   'GET /api/v1/forms/:id': {
     action: 'forms/get-form',
+  },
+  'POST /api/v1/forms/:id/submit': {
+    action: 'forms/submit-form',
+  },
+
+  // Dynamic Forms admin routes (protected)
+  'GET /api/v1/forms/:id/submissions': {
+    action: 'forms/get-submissions',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/forms/:id/submissions/export': {
+    action: 'forms/export-submissions',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'DELETE /api/v1/forms/:id/submissions/:submissionId': {
+    action: 'forms/delete-submission',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+
+  // Forms admin interface
+  'GET /admin/forms': {
+    action: 'forms/admin-index'
+  },
+  'GET /admin/forms/:id': {
+    action: 'forms/admin-view'
   },
 
   /***************************************************************************

@@ -42,7 +42,7 @@ module.exports = {
 
     try {
       // Construct the path to the form JSON file
-      const formPath = path.join(sails.config.appPath, 'api', 'data', 'forms', `${inputs.id}.json`);
+      const formPath = path.join(sails.config.appPath, 'api', 'data', 'forms', 'template', `${inputs.id}.json`);
 
       // Check if file exists
       if (!fs.existsSync(formPath)) {

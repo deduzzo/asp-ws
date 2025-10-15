@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forms Admin - ASP Messina</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <div x-data="adminApp()" x-init="init()" class="min-h-screen">
+
+    <!-- Login Screen -->
+    <div x-show="!isAuthenticated" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600">
+      <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Forms Admin - Login</h1>
+
+        <form @submit.prevent="login()">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <input
+              type="text"
+              x-model="credentials.username"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              x-model="credentials.password"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div x-show="loginError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm" x-text="loginError"></div>
+
+          <button
+            type="submit"
+            :disabled="loggingIn"
+            class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 font-medium"
+          >
+            <span x-show="!loggingIn">Accedi</span>
+            <span x-show="loggingIn">Accesso in corso...</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div x-show="isAuthenticated" class="min-h-screen">
+
+      <!-- Header -->
+      <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <h1 class="text-2xl font-bold text-gray-900">Gestione Forms</h1>
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600" x-text="'Utente: ' + (userData.username || 'N/A')"></span>
+            <button
+              @click="logout()"
+              class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <div x-show="loading" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <p class="text-gray-600 mt-4">Caricamento...</p>
+        </div>
+
+        <div x-show="!loading && forms.length === 0" class="bg-white rounded-lg shadow-md p-8 text-center">
+          <span class="material-icons text-gray-400 text-6xl">description</span>
+          <p class="text-gray-600 mt-4">Nessun form disponibile</p>
+        </div>
+
+        <!-- Forms Grid -->
+        <div x-show="!loading && forms.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <template x-for="form in forms" :key="form.id">
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-2" x-text="form.title"></h3>
+                  <p class="text-sm text-gray-600 line-clamp-2" x-text="form.description"></p>
+                </div>
+                <span class="material-icons text-blue-500">description</span>
+              </div>
+
+              <div class="space-y-2 mb-4">
+                <div class="flex items-center text-sm text-gray-600">
+                  <span class="material-icons text-sm mr-2">layers</span>
+                  <span x-text="form.pages + ' pagine'"></span>
+                </div>
+                <div class="flex items-center text-sm">
+                  <span class="material-icons text-sm mr-2">inbox</span>
+                  <span class="font-semibold" :class="form.submissionsCount > 0 ? 'text-green-600' : 'text-gray-600'" x-text="form.submissionsCount + ' submissions'"></span>
+                </div>
+                <div class="flex items-center text-sm text-gray-600" x-show="form.recaptchaEnabled">
+                  <span class="material-icons text-sm mr-2">shield</span>
+                  <span>reCAPTCHA attivo</span>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <a
+                  :href="'/admin/forms/' + form.id"
+                  class="flex-1 bg-blue-500 text-white text-center py-2 px-4 rounded-md hover:bg-blue-600 text-sm font-medium"
+                >
+                  Vedi Submissions
+                </a>
+                <a
+                  :href="'/forms/' + form.id"
+                  target="_blank"
+                  class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                >
+                  <span class="material-icons text-sm">open_in_new</span>
+                </a>
+              </div>
+            </div>
+          </template>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <script>
+    function adminApp() {
+      return {
+        isAuthenticated: false,
+        credentials: {
+          username: '',
+          password: ''
+        },
+        loginError: null,
+        loggingIn: false,
+        userData: {},
+        forms: <%= JSON.stringify(forms || []) %>,
+        loading: false,
+
+        init() {
+          // Check if already authenticated
+          const token = localStorage.getItem('forms_admin_token');
+          if (token) {
+            this.isAuthenticated = true;
+            this.loadUserData();
+          }
+        },
+
+        async login() {
+          this.loggingIn = true;
+          this.loginError = null;
+
+          try {
+            const response = await fetch('/api/v1/login/get-token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                username: this.credentials.username,
+                password: this.credentials.password
+              })
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data && data.data.token) {
+              // Verifica che l'utente abbia lo scopo "forms"
+              const tokenData = JSON.parse(atob(data.data.token.split('.')[1]));
+
+              if (!tokenData.scopi || !tokenData.scopi.includes('forms')) {
+                this.loginError = 'Utente non autorizzato ad accedere alla gestione forms';
+                return;
+              }
+
+              // Salva il token
+              localStorage.setItem('forms_admin_token', data.data.token);
+              this.userData = tokenData;
+              this.isAuthenticated = true;
+
+            } else {
+              this.loginError = data.err?.msg || 'Credenziali non valide';
+            }
+
+          } catch (err) {
+            console.error('Login error:', err);
+            this.loginError = 'Errore di connessione al server';
+          } finally {
+            this.loggingIn = false;
+          }
+        },
+
+        loadUserData() {
+          const token = localStorage.getItem('forms_admin_token');
+          if (token) {
+            try {
+              this.userData = JSON.parse(atob(token.split('.')[1]));
+            } catch (err) {
+              console.error('Error decoding token:', err);
+            }
+          }
+        },
+
+        logout() {
+          localStorage.removeItem('forms_admin_token');
+          this.isAuthenticated = false;
+          this.credentials = { username: '', password: '' };
+          this.userData = {};
+        }
+      };
+    }
+  </script>
+
+</body>
+</html>

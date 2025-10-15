@@ -1,0 +1,7 @@
+# Ignora tutti i database SQLite delle submissions
+*.db
+*.db-shm
+*.db-wal
+
+# Ma tieni traccia di questo file
+!.gitignore

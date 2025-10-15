@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= formTitle %> - Submissions - ASP Messina</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+    .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <div x-data="submissionsApp()" x-init="init()" class="min-h-screen">
+
+    <!-- Login Screen -->
+    <div x-show="!isAuthenticated" class="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600">
+      <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Forms Admin - Login</h1>
+
+        <form @submit.prevent="login()">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <input
+              type="text"
+              x-model="credentials.username"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              x-model="credentials.password"
+              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div x-show="loginError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm" x-text="loginError"></div>
+
+          <button
+            type="submit"
+            :disabled="loggingIn"
+            class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50 font-medium"
+          >
+            <span x-show="!loggingIn">Accedi</span>
+            <span x-show="loggingIn">Accesso in corso...</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div x-show="isAuthenticated" class="min-h-screen">
+
+      <!-- Header -->
+      <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <a href="/admin/forms" class="text-gray-600 hover:text-gray-900">
+                <span class="material-icons">arrow_back</span>
+              </a>
+              <div>
+                <h1 class="text-2xl font-bold text-gray-900"><%= formTitle %></h1>
+                <p class="text-sm text-gray-600"><%= formDescription %></p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-600" x-text="'Utente: ' + (userData.username || 'N/A')"></span>
+              <button
+                @click="logout()"
+                class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Filters & Actions -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Data Inizio</label>
+              <input
+                type="date"
+                x-model="filters.startDate"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Data Fine</label>
+              <input
+                type="date"
+                x-model="filters.endDate"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">IP Address</label>
+              <input
+                type="text"
+                x-model="filters.ipAddress"
+                placeholder="192.168.1.1"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+
+            <div class="flex items-end">
+              <button
+                @click="loadSubmissions()"
+                class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 text-sm font-medium"
+              >
+                Applica Filtri
+              </button>
+            </div>
+
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              @click="exportToExcel()"
+              :disabled="exporting"
+              class="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+            >
+              <span class="material-icons text-sm">download</span>
+              <span x-text="exporting ? 'Esportando...' : 'Esporta Excel'"></span>
+            </button>
+
+            <button
+              @click="resetFilters()"
+              class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 text-sm font-medium"
+            >
+              Reset Filtri
+            </button>
+
+            <div class="flex-1"></div>
+
+            <div class="text-sm text-gray-600 flex items-center">
+              Totale: <span class="font-semibold ml-1" x-text="totalSubmissions"></span> submissions
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div x-show="loading" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <p class="text-gray-600 mt-4">Caricamento submissions...</p>
+        </div>
+
+        <!-- No Data -->
+        <div x-show="!loading && submissions.length === 0" class="bg-white rounded-lg shadow-md p-12 text-center">
+          <span class="material-icons text-gray-400 text-6xl">inbox</span>
+          <p class="text-gray-600 mt-4">Nessuna submission trovata</p>
+        </div>
+
+        <!-- Submissions Table -->
+        <div x-show="!loading && submissions.length > 0" class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
+                  <% fields.forEach(field => { %>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"><%= field.label %></th>
+                  <% }); %>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">reCAPTCHA</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Azioni</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="submission in submissions" :key="submission.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="submission.id"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(submission.created_at)"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="submission.ip_address || 'N/A'"></td>
+                    <% fields.forEach(field => { %>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                      <span x-text="formatFieldValue(submission, '<%= field.id %>')"></span>
+                    </td>
+                    <% }); %>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        x-show="submission.recaptcha_score"
+                        class="px-2 py-1 rounded-full text-xs font-medium"
+                        :class="getScoreClass(submission.recaptcha_score)"
+                        x-text="submission.recaptcha_score ? submission.recaptcha_score.toFixed(2) : 'N/A'"
+                      ></span>
+                      <span x-show="!submission.recaptcha_score" class="text-gray-400">N/A</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        @click="viewSubmission(submission)"
+                        class="text-blue-600 hover:text-blue-900 mr-3"
+                        title="Visualizza dettagli"
+                      >
+                        <span class="material-icons text-sm">visibility</span>
+                      </button>
+                      <button
+                        @click="confirmDelete(submission)"
+                        class="text-red-600 hover:text-red-900"
+                        title="Elimina"
+                      >
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <div class="text-sm text-gray-700">
+              Pagina <span class="font-medium" x-text="currentPage"></span> di <span class="font-medium" x-text="totalPages"></span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="previousPage()"
+                :disabled="currentPage === 1"
+                class="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Precedente
+              </button>
+              <button
+                @click="nextPage()"
+                :disabled="currentPage >= totalPages"
+                class="px-3 py-1 bg-white border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Successiva
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- View Modal -->
+    <div
+      x-show="viewModal"
+      @click.away="viewModal = false"
+      class="fixed inset-0 z-50 overflow-y-auto"
+      x-cloak
+    >
+      <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 modal-overlay" @click="viewModal = false"></div>
+
+        <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 z-10">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-gray-900">Dettagli Submission</h3>
+            <button @click="viewModal = false" class="text-gray-400 hover:text-gray-600">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+
+          <div x-show="selectedSubmission" class="space-y-3">
+            <div class="grid grid-cols-2 gap-4 pb-4 border-b">
+              <div>
+                <span class="text-sm font-medium text-gray-500">ID:</span>
+                <span class="text-sm text-gray-900 ml-2" x-text="selectedSubmission?.id"></span>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-500">Data:</span>
+                <span class="text-sm text-gray-900 ml-2" x-text="formatDate(selectedSubmission?.created_at)"></span>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-500">IP:</span>
+                <span class="text-sm text-gray-900 ml-2" x-text="selectedSubmission?.ip_address || 'N/A'"></span>
+              </div>
+              <div>
+                <span class="text-sm font-medium text-gray-500">reCAPTCHA Score:</span>
+                <span class="text-sm text-gray-900 ml-2" x-text="selectedSubmission?.recaptcha_score || 'N/A'"></span>
+              </div>
+            </div>
+
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+              <% fields.forEach(field => { %>
+              <div>
+                <div class="text-sm font-medium text-gray-700 mb-1"><%= field.label %></div>
+                <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md" x-text="formatFieldValue(selectedSubmission, '<%= field.id %>')"></div>
+              </div>
+              <% }); %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      x-show="deleteModal"
+      class="fixed inset-0 z-50 overflow-y-auto"
+      x-cloak
+    >
+      <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 modal-overlay" @click="deleteModal = false"></div>
+
+        <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-gray-900">Conferma Eliminazione</h3>
+            <button @click="deleteModal = false" class="text-gray-400 hover:text-gray-600">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+
+          <p class="text-gray-600 mb-6">
+            Sei sicuro di voler eliminare questa submission? L'operazione non può essere annullata.
+          </p>
+
+          <div class="flex gap-3 justify-end">
+            <button
+              @click="deleteModal = false"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            >
+              Annulla
+            </button>
+            <button
+              @click="deleteSubmission()"
+              :disabled="deleting"
+              class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+            >
+              <span x-show="!deleting">Elimina</span>
+              <span x-show="deleting">Eliminazione...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function submissionsApp() {
+      return {
+        formId: '<%= formId %>',
+        isAuthenticated: false,
+        credentials: { username: '', password: '' },
+        loginError: null,
+        loggingIn: false,
+        userData: {},
+        loading: false,
+        exporting: false,
+        submissions: [],
+        totalSubmissions: 0,
+        currentPage: 1,
+        totalPages: 1,
+        limit: 50,
+        filters: {
+          startDate: '',
+          endDate: '',
+          ipAddress: ''
+        },
+        viewModal: false,
+        deleteModal: false,
+        selectedSubmission: null,
+        submissionToDelete: null,
+        deleting: false,
+
+        init() {
+          const token = localStorage.getItem('forms_admin_token');
+          if (token) {
+            this.isAuthenticated = true;
+            this.loadUserData();
+            this.loadSubmissions();
+          }
+        },
+
+        async login() {
+          this.loggingIn = true;
+          this.loginError = null;
+
+          try {
+            const response = await fetch('/api/v1/login/get-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.credentials)
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data && data.data.token) {
+              const tokenData = JSON.parse(atob(data.data.token.split('.')[1]));
+
+              if (!tokenData.scopi || !tokenData.scopi.includes('forms')) {
+                this.loginError = 'Utente non autorizzato';
+                return;
+              }
+
+              localStorage.setItem('forms_admin_token', data.data.token);
+              this.userData = tokenData;
+              this.isAuthenticated = true;
+              this.loadSubmissions();
+
+            } else {
+              this.loginError = data.err?.msg || 'Credenziali non valide';
+            }
+
+          } catch (err) {
+            console.error('Login error:', err);
+            this.loginError = 'Errore di connessione';
+          } finally {
+            this.loggingIn = false;
+          }
+        },
+
+        loadUserData() {
+          const token = localStorage.getItem('forms_admin_token');
+          if (token) {
+            try {
+              this.userData = JSON.parse(atob(token.split('.')[1]));
+            } catch (err) {
+              console.error('Error decoding token:', err);
+            }
+          }
+        },
+
+        logout() {
+          localStorage.removeItem('forms_admin_token');
+          this.isAuthenticated = false;
+          this.credentials = { username: '', password: '' };
+          this.userData = {};
+        },
+
+        async loadSubmissions() {
+          this.loading = true;
+
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+            const params = new URLSearchParams({
+              page: this.currentPage,
+              limit: this.limit
+            });
+
+            if (this.filters.startDate) params.append('startDate', this.filters.startDate);
+            if (this.filters.endDate) params.append('endDate', this.filters.endDate);
+            if (this.filters.ipAddress) params.append('ipAddress', this.filters.ipAddress);
+
+            const response = await fetch(`/api/v1/forms/${this.formId}/submissions?${params}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.submissions = data.data.submissions;
+              this.totalSubmissions = data.data.total;
+              this.totalPages = data.data.totalPages;
+            } else {
+              console.error('Error loading submissions:', data);
+            }
+
+          } catch (err) {
+            console.error('Error loading submissions:', err);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async exportToExcel() {
+          this.exporting = true;
+
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+            const params = new URLSearchParams();
+
+            if (this.filters.startDate) params.append('startDate', this.filters.startDate);
+            if (this.filters.endDate) params.append('endDate', this.filters.endDate);
+            if (this.filters.ipAddress) params.append('ipAddress', this.filters.ipAddress);
+
+            const response = await fetch(`/api/v1/forms/${this.formId}/submissions/export?${params}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `submissions_${this.formId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+            }
+
+          } catch (err) {
+            console.error('Error exporting:', err);
+            alert('Errore durante l\'export');
+          } finally {
+            this.exporting = false;
+          }
+        },
+
+        viewSubmission(submission) {
+          this.selectedSubmission = submission;
+          this.viewModal = true;
+        },
+
+        confirmDelete(submission) {
+          this.submissionToDelete = submission;
+          this.deleteModal = true;
+        },
+
+        async deleteSubmission() {
+          if (!this.submissionToDelete) return;
+
+          this.deleting = true;
+
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+            const response = await fetch(`/api/v1/forms/${this.formId}/submissions/${this.submissionToDelete.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+              this.deleteModal = false;
+              this.loadSubmissions();
+            } else {
+              alert('Errore durante l\'eliminazione');
+            }
+
+          } catch (err) {
+            console.error('Error deleting:', err);
+            alert('Errore durante l\'eliminazione');
+          } finally {
+            this.deleting = false;
+          }
+        },
+
+        resetFilters() {
+          this.filters = { startDate: '', endDate: '', ipAddress: '' };
+          this.currentPage = 1;
+          this.loadSubmissions();
+        },
+
+        previousPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+            this.loadSubmissions();
+          }
+        },
+
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.loadSubmissions();
+          }
+        },
+
+        formatDate(dateString) {
+          if (!dateString) return 'N/A';
+          const date = new Date(dateString);
+          return date.toLocaleString('it-IT');
+        },
+
+        formatFieldValue(submission, fieldId) {
+          const value = submission[`field_${fieldId}`];
+          if (value === null || value === undefined || value === '') return 'N/A';
+          if (Array.isArray(value)) return value.join(', ');
+          return value;
+        },
+
+        getScoreClass(score) {
+          if (!score) return 'bg-gray-200 text-gray-700';
+          if (score >= 0.7) return 'bg-green-100 text-green-800';
+          if (score >= 0.5) return 'bg-yellow-100 text-yellow-800';
+          return 'bg-red-100 text-red-800';
+        }
+      };
+    }
+  </script>
+
+</body>
+</html>
