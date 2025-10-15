@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= formTitle %> - Submissions - ASP Messina</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     body { font-family: 'Roboto', sans-serif; }
@@ -381,6 +381,9 @@
             this.isAuthenticated = true;
             this.loadUserData();
             this.loadSubmissions();
+          } else {
+            // Redirect to admin forms home if not authenticated
+            window.location.href = '/admin/forms';
           }
         },
 
