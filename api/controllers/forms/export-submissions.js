@@ -39,7 +39,7 @@ module.exports = {
     const ExcelJS = require('exceljs');
 
     if (!formId) {
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         errType: 'BAD_REQUEST',
         errMsg: 'formId is required'
       });
@@ -121,17 +121,24 @@ module.exports = {
       ];
 
       // Log l'export
-      await sails.helpers.log.with({
-        livello: 'info',
+      const logData = {
+        level: 'info',
         tag: 'FORMS_ADMIN',
-        azione: `Export submissions for form ${formId}`,
-        ip: this.req.ip,
-        utente: this.req.user ? this.req.user.id : null,
-        contesto: {
+        message: `Export submissions for form ${formId}`,
+        action: `export_submissions_${formId}`,
+        ipAddress: this.req.ip,
+        context: {
           formId: formId,
           totalRows: exportData.rows.length
         }
-      });
+      };
+
+      // Add user only if authenticated
+      if (this.req.user && this.req.user.id) {
+        logData.user = this.req.user.id;
+      }
+
+      await sails.helpers.log.with(logData);
 
       // Genera filename
       const timestamp = new Date().toISOString().split('T')[0];
@@ -148,7 +155,7 @@ module.exports = {
 
     } catch (err) {
       sails.log.error('Error exporting submissions:', err);
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         errType: 'SERVER_ERROR',
         errMsg: 'Error exporting submissions'
       });

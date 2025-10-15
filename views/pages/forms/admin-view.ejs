@@ -590,6 +590,7 @@
         },
 
         formatFieldValue(submission, fieldId) {
+          if (!submission) return 'N/A';
           const value = submission[`field_${fieldId}`];
           if (value === null || value === undefined || value === '') return 'N/A';
           if (Array.isArray(value)) return value.join(', ');
