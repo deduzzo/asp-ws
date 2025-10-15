@@ -413,7 +413,9 @@
           <!-- Fields -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <template x-for="(field, index) in formData.pages[currentPage].fields" :key="field.id">
-              <div class="fade-in" :class="getFieldColSpan(field)">
+              <div class="fade-in"
+                   :class="getFieldColSpan(field)"
+                   x-show="!field.conditionalOn || (formValues[field.conditionalOn] && formValues[field.conditionalOn].includes('si'))">
 
                 <!-- Text input -->
                 <template x-if="field.type === 'text'">
@@ -967,8 +969,23 @@
         validateField(field) {
           const value = this.formValues[field.id];
 
+          // Check if field is conditional and if condition is met
+          const isConditional = field.conditionalOn;
+          const conditionMet = isConditional ?
+            (this.formValues[field.conditionalOn] && this.formValues[field.conditionalOn].includes('si')) :
+            true;
+
+          // Skip validation if field is conditional and condition not met
+          if (isConditional && !conditionMet) {
+            delete this.fieldErrors[field.id];
+            return true;
+          }
+
+          // For conditional fields, make them required when condition is met
+          const isRequired = field.required || (isConditional && conditionMet);
+
           // Check required
-          if (field.required) {
+          if (isRequired) {
             if (Array.isArray(value)) {
               if (value.length === 0) {
                 this.fieldErrors[field.id] = 'Campo obbligatorio';

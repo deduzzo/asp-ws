@@ -176,8 +176,22 @@ module.exports = {
         page.fields.forEach(field => {
           const value = formValues[field.id];
 
+          // Check if field is conditional and if condition is met
+          const isConditional = field.conditionalOn;
+          const conditionMet = isConditional ?
+            (formValues[field.conditionalOn] && formValues[field.conditionalOn].includes('si')) :
+            true;
+
+          // Skip validation if field is conditional and condition not met
+          if (isConditional && !conditionMet) {
+            return;
+          }
+
+          // For conditional fields, make them required when condition is met
+          const isRequired = field.required || (isConditional && conditionMet);
+
           // Verifica campi required
-          if (field.required) {
+          if (isRequired) {
             if (Array.isArray(value)) {
               if (value.length === 0) {
                 errors.push({
