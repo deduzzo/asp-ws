@@ -92,6 +92,48 @@
       ring-opacity: 0.5;
     }
 
+    /* Error states */
+    .field-error {
+      border-color: var(--error) !important;
+      background-color: #fef2f2;
+    }
+
+    .field-error:focus {
+      border-color: var(--error) !important;
+      ring-color: var(--error) !important;
+    }
+
+    /* Tooltip */
+    .error-tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .error-message {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      background-color: var(--error);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      z-index: 1000;
+      margin-bottom: 5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .error-message::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 20px;
+      border: 6px solid transparent;
+      border-top-color: var(--error);
+    }
+
     /* Loading spinner */
     .spinner {
       border: 3px solid #f3f4f6;
@@ -138,7 +180,7 @@
     <!-- Theme Selector -->
     <div class="bg-white rounded-lg shadow-lg p-4 mb-6 fade-in">
       <label class="block text-sm font-medium text-gray-700 mb-2">Tema dell'interfaccia</label>
-      <select @change="changeTheme($event.target.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+      <select x-model="currentTheme" @change="changeTheme($event.target.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
         <option value="modern">Moderno</option>
         <option value="healthcare">Sanitario</option>
       </select>
@@ -183,15 +225,21 @@
                       <span x-show="field.required" class="text-red-500">*</span>
                     </label>
                     <p x-show="field.subtitle" class="text-xs text-gray-500 mb-1" x-text="field.subtitle"></p>
-                    <input
-                      :id="field.id"
-                      :name="field.id"
-                      type="text"
-                      :placeholder="field.placeholder || ''"
-                      :required="field.required"
-                      x-model="formValues[field.id]"
-                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
-                    />
+                    <div class="error-tooltip">
+                      <input
+                        :id="field.id"
+                        :name="field.id"
+                        type="text"
+                        :placeholder="field.placeholder || ''"
+                        :required="field.required"
+                        x-model="formValues[field.id]"
+                        @blur="validateField(field)"
+                        @input="clearFieldError(field.id)"
+                        :class="{'field-error': fieldErrors[field.id]}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                      <div x-show="fieldErrors[field.id]" class="error-message" x-text="fieldErrors[field.id]"></div>
+                    </div>
                     <p x-show="field.description" class="text-xs text-gray-500 mt-1" x-text="field.description"></p>
                   </div>
                 </template>
@@ -204,15 +252,21 @@
                       <span x-show="field.required" class="text-red-500">*</span>
                     </label>
                     <p x-show="field.subtitle" class="text-xs text-gray-500 mb-1" x-text="field.subtitle"></p>
-                    <textarea
-                      :id="field.id"
-                      :name="field.id"
-                      :placeholder="field.placeholder || ''"
-                      :required="field.required"
-                      x-model="formValues[field.id]"
-                      rows="4"
-                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
-                    ></textarea>
+                    <div class="error-tooltip">
+                      <textarea
+                        :id="field.id"
+                        :name="field.id"
+                        :placeholder="field.placeholder || ''"
+                        :required="field.required"
+                        x-model="formValues[field.id]"
+                        @blur="validateField(field)"
+                        @input="clearFieldError(field.id)"
+                        :class="{'field-error': fieldErrors[field.id]}"
+                        rows="4"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
+                      ></textarea>
+                      <div x-show="fieldErrors[field.id]" class="error-message" x-text="fieldErrors[field.id]"></div>
+                    </div>
                     <p x-show="field.description" class="text-xs text-gray-500 mt-1" x-text="field.description"></p>
                   </div>
                 </template>
@@ -297,19 +351,25 @@
                       <span x-show="field.required" class="text-red-500">*</span>
                     </label>
                     <p x-show="field.subtitle" class="text-xs text-gray-500 mb-1" x-text="field.subtitle"></p>
-                    <select
-                      :id="field.id"
-                      :name="field.id"
-                      :required="field.required"
-                      x-model="formValues[field.id]"
-                      :data-searchable="field.searchable"
-                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
-                    >
-                      <option value="" x-text="field.placeholder || 'Seleziona un\'opzione...'"></option>
-                      <template x-for="option in field.options" :key="option.value">
-                        <option :value="option.value" x-text="option.label + (option.description ? ' - ' + option.description : '')"></option>
-                      </template>
-                    </select>
+                    <div class="error-tooltip">
+                      <select
+                        :id="field.id"
+                        :name="field.id"
+                        :required="field.required"
+                        x-model="formValues[field.id]"
+                        @blur="validateField(field)"
+                        @change="clearFieldError(field.id)"
+                        :class="{'field-error': fieldErrors[field.id]}"
+                        :data-searchable="field.searchable"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
+                      >
+                        <option value="" x-text="field.placeholder || 'Seleziona un\'opzione...'"></option>
+                        <template x-for="option in field.options" :key="option.value">
+                          <option :value="option.value" x-text="option.label + (option.description ? ' - ' + option.description : '')"></option>
+                        </template>
+                      </select>
+                      <div x-show="fieldErrors[field.id]" class="error-message" x-text="fieldErrors[field.id]"></div>
+                    </div>
                     <p x-show="field.description" class="text-xs text-gray-500 mt-1" x-text="field.description"></p>
                   </div>
                 </template>
@@ -381,7 +441,9 @@
         formId: '<%= formId %>',
         formData: {},
         formValues: {},
+        fieldErrors: {},
         currentPage: 0,
+        currentTheme: 'modern',
         loading: true,
         error: null,
         submitting: false,
@@ -488,32 +550,32 @@
           if (!this.formData.pages || !this.formData.pages[this.currentPage]) return true;
 
           const currentPageData = this.formData.pages[this.currentPage];
-          if (!currentPageData.requireAllBeforeNext) return true;
 
-          const requiredFields = currentPageData.fields.filter(f => f.required);
-
-          for (let field of requiredFields) {
-            const value = this.formValues[field.id];
-
-            if (Array.isArray(value)) {
-              if (value.length === 0) {
-                alert(`Il campo "${field.label}" è obbligatorio`);
-                return false;
-              }
-            } else if (!value || value.trim() === '') {
-              alert(`Il campo "${field.label}" è obbligatorio`);
-              return false;
-            }
+          // If requireAllBeforeNext is true, validate all fields
+          if (currentPageData.requireAllBeforeNext) {
+            return this.validateAllFieldsOnPage();
           }
 
           return true;
         },
 
         nextPage() {
-          if (!this.validateCurrentPage()) return;
+          // Validate all fields on current page before proceeding
+          if (!this.validateAllFieldsOnPage()) {
+            // Scroll to first error
+            this.$nextTick(() => {
+              const firstError = document.querySelector('.field-error');
+              if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+              }
+            });
+            return;
+          }
 
           if (this.currentPage < this.formData.pages.length - 1) {
             this.currentPage++;
+            this.fieldErrors = {}; // Clear errors when changing page
             window.scrollTo({ top: 0, behavior: 'smooth' });
             this.initializeSearchableSelects();
             this.initializeSearchableCheckboxes();
@@ -570,6 +632,109 @@
           const body = document.body;
           body.classList.remove('theme-modern', 'theme-healthcare');
           body.classList.add(`theme-${theme}`);
+          this.currentTheme = theme;
+        },
+
+        validateField(field) {
+          const value = this.formValues[field.id];
+
+          // Check required
+          if (field.required) {
+            if (Array.isArray(value)) {
+              if (value.length === 0) {
+                this.fieldErrors[field.id] = 'Campo obbligatorio';
+                return false;
+              }
+            } else if (!value || value.trim() === '') {
+              this.fieldErrors[field.id] = 'Campo obbligatorio';
+              return false;
+            }
+          }
+
+          // Check validation rules
+          if (value && field.validation) {
+            const validation = field.validation;
+
+            // Length validations
+            if (validation.minLength && value.length < validation.minLength) {
+              this.fieldErrors[field.id] = `Minimo ${validation.minLength} caratteri`;
+              return false;
+            }
+            if (validation.maxLength && value.length > validation.maxLength) {
+              this.fieldErrors[field.id] = `Massimo ${validation.maxLength} caratteri`;
+              return false;
+            }
+
+            // Number validations
+            if (validation.type === 'number') {
+              const num = parseFloat(value);
+              if (isNaN(num)) {
+                this.fieldErrors[field.id] = 'Deve essere un numero';
+                return false;
+              }
+              if (validation.min !== undefined && num < validation.min) {
+                this.fieldErrors[field.id] = `Minimo ${validation.min}`;
+                return false;
+              }
+              if (validation.max !== undefined && num > validation.max) {
+                this.fieldErrors[field.id] = `Massimo ${validation.max}`;
+                return false;
+              }
+            }
+
+            // Email validation
+            if (validation.type === 'email') {
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(value)) {
+                this.fieldErrors[field.id] = 'Email non valida';
+                return false;
+              }
+            }
+
+            // Phone validation
+            if (validation.type === 'phone') {
+              const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
+              if (!phoneRegex.test(value.replace(/\s/g, ''))) {
+                this.fieldErrors[field.id] = 'Telefono non valido';
+                return false;
+              }
+            }
+
+            // URL validation
+            if (validation.type === 'url') {
+              try {
+                new URL(value);
+              } catch (e) {
+                this.fieldErrors[field.id] = 'URL non valido';
+                return false;
+              }
+            }
+          }
+
+          // Clear error if validation passes
+          delete this.fieldErrors[field.id];
+          return true;
+        },
+
+        clearFieldError(fieldId) {
+          if (this.fieldErrors[fieldId]) {
+            delete this.fieldErrors[fieldId];
+          }
+        },
+
+        validateAllFieldsOnPage() {
+          if (!this.formData.pages || !this.formData.pages[this.currentPage]) return true;
+
+          const currentPageData = this.formData.pages[this.currentPage];
+          let isValid = true;
+
+          currentPageData.fields.forEach(field => {
+            if (!this.validateField(field)) {
+              isValid = false;
+            }
+          });
+
+          return isValid;
         }
       }
     }
