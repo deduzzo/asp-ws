@@ -205,7 +205,13 @@ let routes = {
     action: 'stats/info',
   },
 
-
+  // Dynamic Forms routes
+  'GET /forms/:id': {
+    action: 'forms/view-form',
+  },
+  'GET /api/v1/forms/:id': {
+    action: 'forms/get-form',
+  },
 
   /***************************************************************************
    *                                                                          *

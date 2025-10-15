@@ -1,0 +1,4 @@
+{
+  "RECAPTCHA_SITE_KEY": "your-recaptcha-site-key-here",
+  "RECAPTCHA_SECRET_KEY": "your-recaptcha-secret-key-here"
+}

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title><%= formTitle %> - ASP Messina</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js for interactivity -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <!-- Choices.js for searchable selects -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+  <% if (recaptchaEnabled) { %>
+  <!-- reCAPTCHA v3 -->
+  <script src="https://www.google.com/recaptcha/api.js?render=<%= recaptchaSiteKey %>"></script>
+  <% } %>
+
+  <style>
+    /* Custom animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .slide-in {
+      animation: slideIn 0.4s ease-out;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Modern theme colors */
+    .theme-modern {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    .theme-healthcare {
+      --primary: #0ea5e9;
+      --primary-dark: #0284c7;
+      --secondary: #06b6d4;
+      --success: #14b8a6;
+      --error: #f43f5e;
+    }
+
+    /* Checkbox and radio custom styles */
+    input[type="checkbox"]:checked,
+    input[type="radio"]:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Focus states */
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      ring: 2px;
+      ring-color: var(--primary);
+      ring-opacity: 0.5;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen py-8 px-4 theme-modern">
+
+  <div id="app" x-data="formApp()" x-init="init()" class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6 fade-in">
+      <h1 class="text-3xl font-bold text-gray-800 mb-2" x-text="formData.title"></h1>
+      <p class="text-gray-600" x-text="formData.description" x-show="formData.description"></p>
+
+      <!-- Progress bar for multi-page forms -->
+      <div x-show="formData.pages && formData.pages.length > 1" class="mt-4">
+        <div class="flex justify-between mb-2">
+          <span class="text-sm font-medium text-gray-700">
+            Pagina <span x-text="currentPage + 1"></span> di <span x-text="formData.pages ? formData.pages.length : 1"></span>
+          </span>
+          <span class="text-sm font-medium text-gray-700">
+            <span x-text="Math.round(((currentPage + 1) / (formData.pages ? formData.pages.length : 1)) * 100)"></span>%
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+               :style="`width: ${((currentPage + 1) / (formData.pages ? formData.pages.length : 1)) * 100}%`">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Theme Selector -->
+    <div class="bg-white rounded-lg shadow-lg p-4 mb-6 fade-in">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Tema dell'interfaccia</label>
+      <select @change="changeTheme($event.target.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+        <option value="modern">Moderno</option>
+        <option value="healthcare">Sanitario</option>
+      </select>
+    </div>
+
+    <!-- Loading state -->
+    <div x-show="loading" class="bg-white rounded-lg shadow-lg p-12 text-center">
+      <div class="spinner mx-auto mb-4"></div>
+      <p class="text-gray-600">Caricamento modulo...</p>
+    </div>
+
+    <!-- Error state -->
+    <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+      <h3 class="text-red-800 font-semibold mb-2">Errore</h3>
+      <p class="text-red-600" x-text="error"></p>
+    </div>
+
+    <!-- Form -->
+    <form x-show="!loading && !error" @submit.prevent="submitForm()" class="space-y-6">
+
+      <!-- Current Page -->
+      <template x-if="formData.pages && formData.pages[currentPage]">
+        <div class="bg-white rounded-lg shadow-lg p-6 slide-in" :key="currentPage">
+
+          <!-- Page title -->
+          <div class="mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800" x-text="formData.pages[currentPage].title"></h2>
+            <p class="text-gray-600 mt-1" x-text="formData.pages[currentPage].description"
+               x-show="formData.pages[currentPage].description"></p>
+          </div>
+
+          <!-- Fields -->
+          <div class="space-y-6">
+            <template x-for="(field, index) in formData.pages[currentPage].fields" :key="field.id">
+              <div class="fade-in">
+
+                <!-- Text input -->
+                <template x-if="field.type === 'text'">
+                  <div>
+                    <label :for="field.id" class="block text-sm font-medium text-gray-700 mb-1">
+                      <span x-text="field.label"></span>
+                      <span x-show="field.required" class="text-red-500">*</span>
+                    </label>
+                    <p x-show="field.subtitle" class="text-xs text-gray-500 mb-1" x-text="field.subtitle"></p>
+                    <input
+                      :id="field.id"
+                      :name="field.id"
+                      type="text"
+                      :placeholder="field.placeholder || ''"
+                      :required="field.required"
+                      x-model="formValues[field.id]"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                    <p x-show="field.description" class="text-xs text-gray-500 mt-1" x-text="field.description"></p>
+                  </div>
+                </template>
+
+                <!-- Textarea -->
+                <template x-if="field.type === 'textarea'">
+                  <div>
+                    <label :for="field.id" class="block text-sm font-medium text-gray-700 mb-1">
+                      <span x-text="field.label"></span>
+                      <span x-show="field.required" class="text-red-500">*</span>
+                    </label>
+                    <p x-show="field.subtitle" class="text-xs text-gray-500 mb-1" x-text="field.subtitle"></p>
+                    <textarea
+                      :id="field.id"
+                      :name="field.id"
+                      :placeholder="field.placeholder || ''"
+                      :required="field.required"
+                      x-model="formValues[field.id]"
+                      rows="4"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
+                    ></textarea>
+                    <p x-show="field.description" class="text-xs text-gray-500 mt-1" x-text="field.description"></p>
+                  </div>
+                </template>
+
+                <!-- Radio buttons -->
+                <template x-if="field.type === 'radio'">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      <span x-text="field.label"></span>
+                      <span x-show="field.required" class="text-red-500">*</span>
+                    </label>
+                    <p x-show="field.subtitle" class="text-xs text-gray-500 mb-2" x-text="field.subtitle"></p>
+                    <div class="space-y-2">
+                      <template x-for="option in field.options" :key="option.value">
+                        <label class="flex items-start p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-all">
+                          <input
+                            type="radio"
+                            :name="field.id"
+                            :value="option.value"
+                            :required="field.required"
+                            x-model="formValues[field.id]"
+                            class="mt-1 mr-3"
+                          />
+                          <div class="flex-1">
+                            <div class="font-medium text-gray-800" x-text="option.label"></div>
+                            <div x-show="option.description" class="text-xs text-gray-500 mt-1" x-text="option.description"></div>
+                          </div>
+                        </label>
+                      </template>
+                    </div>
+                    <p x-show="field.description" class="text-xs text-gray-500 mt-2" x-text="field.description"></p>
+                  </div>
+                </template>
+
+                <!-- Checkboxes -->
+                <template x-if="field.type === 'checkbox' || field.type === 'checkbox-multiple'">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      <span x-text="field.label"></span>
+                      <span x-show="field.required" class="text-red-500">*</span>
+                    </label>
+                    <p x-show="field.subtitle" class="text-xs text-gray-500 mb-2" x-text="field.subtitle"></p>
+
+                    <!-- Search bar for searchable checkboxes -->
+                    <div x-show="field.searchable" class="mb-3">
+                      <input
+                        type="text"
+                        :id="'search-' + field.id"
+                        placeholder="Cerca..."
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div class="space-y-2 max-h-96 overflow-y-auto">
+                      <template x-for="option in field.options" :key="option.value">
+                        <label class="flex items-start p-3 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-all"
+                               :data-search-text="(option.label + ' ' + (option.subtitle || '') + ' ' + (option.description || '')).toLowerCase()">
+                          <input
+                            type="checkbox"
+                            :name="field.id + '[]'"
+                            :value="option.value"
+                            @change="updateCheckboxValue(field.id, option.value, $event.target.checked)"
+                            class="mt-1 mr-3"
+                          />
+                          <div class="flex-1">
+                            <div class="font-medium text-gray-800" x-text="option.label"></div>
+                            <div x-show="option.subtitle" class="text-sm text-gray-600 mt-0.5" x-text="option.subtitle"></div>
+                            <div x-show="option.description" class="text-xs text-gray-500 mt-1" x-text="option.description"></div>
+                          </div>
+                        </label>
+                      </template>
+                    </div>
+                    <p x-show="field.description" class="text-xs text-gray-500 mt-2" x-text="field.description"></p>
+                  </div>
+                </template>
+
+                <!-- Select dropdown -->
+                <template x-if="field.type === 'select'">
+                  <div>
+                    <label :for="field.id" class="block text-sm font-medium text-gray-700 mb-1">
+                      <span x-text="field.label"></span>
+                      <span x-show="field.required" class="text-red-500">*</span>
+                    </label>
+                    <p x-show="field.subtitle" class="text-xs text-gray-500 mb-1" x-text="field.subtitle"></p>
+                    <select
+                      :id="field.id"
+                      :name="field.id"
+                      :required="field.required"
+                      x-model="formValues[field.id]"
+                      :data-searchable="field.searchable"
+                      class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 transition-all"
+                    >
+                      <option value="" x-text="field.placeholder || 'Seleziona un\'opzione...'"></option>
+                      <template x-for="option in field.options" :key="option.value">
+                        <option :value="option.value" x-text="option.label + (option.description ? ' - ' + option.description : '')"></option>
+                      </template>
+                    </select>
+                    <p x-show="field.description" class="text-xs text-gray-500 mt-1" x-text="field.description"></p>
+                  </div>
+                </template>
+
+              </div>
+            </template>
+          </div>
+
+        </div>
+      </template>
+
+      <!-- Navigation buttons -->
+      <div class="bg-white rounded-lg shadow-lg p-6 flex justify-between items-center">
+
+        <!-- Previous button -->
+        <button
+          type="button"
+          @click="previousPage()"
+          x-show="currentPage > 0"
+          class="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-all font-medium"
+        >
+          Indietro
+        </button>
+
+        <div x-show="currentPage === 0"></div>
+
+        <!-- Next button -->
+        <button
+          type="button"
+          @click="nextPage()"
+          x-show="currentPage < (formData.pages ? formData.pages.length - 1 : 0)"
+          class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-all font-medium"
+        >
+          Avanti
+        </button>
+
+        <!-- Submit button -->
+        <button
+          type="submit"
+          x-show="currentPage === (formData.pages ? formData.pages.length - 1 : 0)"
+          :disabled="submitting"
+          class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+        >
+          <span x-show="!submitting" x-text="formData.submitButton ? formData.submitButton.text : 'Invia'"></span>
+          <span x-show="submitting" class="flex items-center">
+            <span class="spinner mr-2"></span>
+            <span x-text="formData.submitButton ? formData.submitButton.loadingText : 'Invio...'"></span>
+          </span>
+        </button>
+
+      </div>
+
+    </form>
+
+    <!-- Success message -->
+    <div x-show="submitted" class="bg-green-50 border border-green-200 rounded-lg p-6 text-center fade-in">
+      <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <h3 class="text-green-800 font-semibold text-xl mb-2">Inviato con successo!</h3>
+      <p class="text-green-600" x-text="formData.messages?.success || 'Grazie! Il modulo è stato inviato con successo.'"></p>
+    </div>
+
+  </div>
+
+  <script>
+    function formApp() {
+      return {
+        formId: '<%= formId %>',
+        formData: {},
+        formValues: {},
+        currentPage: 0,
+        loading: true,
+        error: null,
+        submitting: false,
+        submitted: false,
+        choicesInstances: [],
+
+        async init() {
+          await this.loadForm();
+          this.initializeSearchableSelects();
+          this.initializeSearchableCheckboxes();
+        },
+
+        async loadForm() {
+          try {
+            const response = await fetch(`/api/v1/forms/${this.formId}`);
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.formData = data.data;
+              this.initializeFormValues();
+            } else {
+              this.error = 'Impossibile caricare il modulo';
+            }
+          } catch (err) {
+            this.error = 'Errore di connessione al server';
+            console.error(err);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        initializeFormValues() {
+          if (!this.formData.pages) return;
+
+          this.formData.pages.forEach(page => {
+            page.fields.forEach(field => {
+              if (field.type === 'checkbox' || field.type === 'checkbox-multiple') {
+                this.formValues[field.id] = [];
+              } else {
+                this.formValues[field.id] = '';
+              }
+            });
+          });
+        },
+
+        initializeSearchableSelects() {
+          this.$nextTick(() => {
+            // Destroy previous instances
+            this.choicesInstances.forEach(instance => instance.destroy());
+            this.choicesInstances = [];
+
+            // Initialize new instances
+            const selects = document.querySelectorAll('select[data-searchable="true"]');
+            selects.forEach(select => {
+              const choices = new Choices(select, {
+                searchEnabled: true,
+                searchPlaceholderValue: 'Cerca...',
+                noResultsText: 'Nessun risultato trovato',
+                itemSelectText: 'Premi per selezionare',
+                shouldSort: false
+              });
+              this.choicesInstances.push(choices);
+            });
+          });
+        },
+
+        initializeSearchableCheckboxes() {
+          this.$nextTick(() => {
+            const searchInputs = document.querySelectorAll('[id^="search-"]');
+            searchInputs.forEach(input => {
+              input.addEventListener('input', (e) => {
+                const searchText = e.target.value.toLowerCase();
+                const container = e.target.closest('div').nextElementSibling;
+                const items = container.querySelectorAll('[data-search-text]');
+
+                items.forEach(item => {
+                  const text = item.getAttribute('data-search-text');
+                  if (text.includes(searchText)) {
+                    item.style.display = 'flex';
+                  } else {
+                    item.style.display = 'none';
+                  }
+                });
+              });
+            });
+          });
+        },
+
+        updateCheckboxValue(fieldId, value, checked) {
+          if (!Array.isArray(this.formValues[fieldId])) {
+            this.formValues[fieldId] = [];
+          }
+
+          if (checked) {
+            if (!this.formValues[fieldId].includes(value)) {
+              this.formValues[fieldId].push(value);
+            }
+          } else {
+            this.formValues[fieldId] = this.formValues[fieldId].filter(v => v !== value);
+          }
+        },
+
+        validateCurrentPage() {
+          if (!this.formData.pages || !this.formData.pages[this.currentPage]) return true;
+
+          const currentPageData = this.formData.pages[this.currentPage];
+          if (!currentPageData.requireAllBeforeNext) return true;
+
+          const requiredFields = currentPageData.fields.filter(f => f.required);
+
+          for (let field of requiredFields) {
+            const value = this.formValues[field.id];
+
+            if (Array.isArray(value)) {
+              if (value.length === 0) {
+                alert(`Il campo "${field.label}" è obbligatorio`);
+                return false;
+              }
+            } else if (!value || value.trim() === '') {
+              alert(`Il campo "${field.label}" è obbligatorio`);
+              return false;
+            }
+          }
+
+          return true;
+        },
+
+        nextPage() {
+          if (!this.validateCurrentPage()) return;
+
+          if (this.currentPage < this.formData.pages.length - 1) {
+            this.currentPage++;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.initializeSearchableSelects();
+            this.initializeSearchableCheckboxes();
+          }
+        },
+
+        previousPage() {
+          if (this.currentPage > 0) {
+            this.currentPage--;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.initializeSearchableSelects();
+            this.initializeSearchableCheckboxes();
+          }
+        },
+
+        async submitForm() {
+          if (!this.validateCurrentPage()) return;
+
+          this.submitting = true;
+
+          try {
+            <% if (recaptchaEnabled) { %>
+            // Get reCAPTCHA token
+            const recaptchaToken = await grecaptcha.execute('<%= recaptchaSiteKey %>', {
+              action: this.formData.recaptcha?.action || 'submit'
+            });
+            <% } %>
+
+            // Here you would normally submit to an API endpoint
+            // For now, we just log the data
+            console.log('Form submission:', {
+              formId: this.formId,
+              values: this.formValues,
+              <% if (recaptchaEnabled) { %>
+              recaptchaToken: recaptchaToken
+              <% } %>
+            });
+
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            this.submitted = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+          } catch (err) {
+            alert(this.formData.messages?.error || 'Si è verificato un errore durante l\'invio');
+            console.error(err);
+          } finally {
+            this.submitting = false;
+          }
+        },
+
+        changeTheme(theme) {
+          const body = document.body;
+          body.classList.remove('theme-modern', 'theme-healthcare');
+          body.classList.add(`theme-${theme}`);
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
