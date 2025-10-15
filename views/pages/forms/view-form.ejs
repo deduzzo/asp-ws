@@ -213,9 +213,9 @@
           </div>
 
           <!-- Fields -->
-          <div class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <template x-for="(field, index) in formData.pages[currentPage].fields" :key="field.id">
-              <div class="fade-in">
+              <div class="fade-in" :class="getFieldColSpan(field)">
 
                 <!-- Text input -->
                 <template x-if="field.type === 'text'">
@@ -633,6 +633,25 @@
           body.classList.remove('theme-modern', 'theme-healthcare');
           body.classList.add(`theme-${theme}`);
           this.currentTheme = theme;
+        },
+
+        getFieldColSpan(field) {
+          // Fields that should take full width
+          if (field.type === 'textarea') return 'md:col-span-2';
+          if (field.type === 'checkbox' || field.type === 'checkbox-multiple') return 'md:col-span-2';
+          if (field.type === 'radio' && field.options && field.options.length > 3) return 'md:col-span-2';
+
+          // Select with searchable or long options takes full width
+          if (field.type === 'select' && (field.searchable || (field.options && field.options.length > 8))) {
+            return 'md:col-span-2';
+          }
+
+          // Check if label or description is long
+          if (field.label && field.label.length > 30) return 'md:col-span-2';
+          if (field.description && field.description.length > 50) return 'md:col-span-2';
+
+          // Default: single column (will be 2 columns on md+ screens)
+          return 'md:col-span-1';
         },
 
         validateField(field) {
