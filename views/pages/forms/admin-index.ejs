@@ -5,13 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Forms Admin - ASP Messina</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     body { font-family: 'Roboto', sans-serif; }
+    /* Loading indicator */
+    .alpine-loading { display: none; }
+    body:not(.alpine-ready) .alpine-loading {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      background: #f3f4f6;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
+
+  <!-- Loading indicator shown until Alpine.js is ready -->
+  <div class="alpine-loading">
+    <div class="text-center">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <p class="text-gray-600 mt-4">Caricamento...</p>
+    </div>
+  </div>
 
   <div x-data="adminApp()" x-init="init()" class="min-h-screen">
 
@@ -226,6 +244,27 @@
       };
     }
   </script>
+
+  <!-- Load Alpine.js and mark body as ready when initialized -->
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script>
+    // Mark Alpine.js as ready
+    document.addEventListener('alpine:init', () => {
+      console.log('Alpine.js initialized successfully');
+      document.body.classList.add('alpine-ready');
+    });
+
+    // Fallback: mark as ready after a delay if Alpine doesn't initialize
+    setTimeout(() => {
+      if (!document.body.classList.contains('alpine-ready')) {
+        console.warn('Alpine.js did not initialize, marking as ready anyway');
+        document.body.classList.add('alpine-ready');
+      }
+    }, 2000);
+  </script>
+
+  <!-- Admin-specific scripts -->
+  <script src="/js/admin/admin.js"></script>
 
 </body>
 </html>

@@ -10,7 +10,17 @@
       "Bash(git add -A)",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd forms index page and list functionality\n\n- Create forms index controller and view (GET /forms)\n- Add API endpoint to list all forms (GET /api/v1/forms)\n- Display forms in responsive card grid\n- Show form metadata (pages, theme, recaptcha status)\n- Add routes for index and list endpoints\n\nGenerated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(sails lift:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(python3:*)",
+      "Bash(node -e:*)",
+      "Read(//private/tmp/**)",
+      "Bash(cat:*)",
+      "Bash(npm install:*)",
+      "Bash(pkill:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
