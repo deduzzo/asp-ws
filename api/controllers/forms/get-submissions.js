@@ -84,19 +84,25 @@ module.exports = {
       });
 
       // Log l'accesso
-      await sails.helpers.log.with({
+      const logData = {
         level: 'info',
         tag: 'FORMS_ADMIN',
         message: `Get submissions for form ${formId}`,
         action: `get_submissions_${formId}`,
         ipAddress: this.req.ip,
-        user: this.req.user ? this.req.user.id : null,
         context: {
           formId: formId,
           page: inputs.page,
           total: result.total
         }
-      });
+      };
+
+      // Add user only if authenticated
+      if (this.req.user && this.req.user.id) {
+        logData.user = this.req.user.id;
+      }
+
+      await sails.helpers.log.with(logData);
 
       return this.res.ApiResponse({
         data: {
