@@ -371,5 +371,8 @@
     "success": "Grazie! Il modulo è stato inviato con successo.",
     "error": "Si è verificato un errore durante l'invio. Riprova.",
     "validation": "Compila tutti i campi obbligatori prima di continuare."
+  },
+  "notifications": {
+    "sendEmailConfirmation": true
   }
 }

@@ -253,6 +253,12 @@ let routes = {
     ambito: 'login',
     minAuthLevel: JwtService.LOGIN_LEVEL.admin
   },
+  'PUT /api/v1/forms/:formId/settings': {
+    action: 'forms/update-form-settings',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
+  },
 
   // Forms admin interface
   'GET /admin/forms': {

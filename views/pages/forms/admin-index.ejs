@@ -167,6 +167,13 @@
                 </a>
               </div>
               <button
+                @click="openFormSettings(form)"
+                class="w-full bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 text-sm font-medium flex items-center justify-center gap-2 mb-2"
+              >
+                <span class="material-icons text-sm">settings</span>
+                Impostazioni
+              </button>
+              <button
                 @click="exportFormSchema(form.id)"
                 class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 text-sm font-medium flex items-center justify-center gap-2 mb-2"
               >
@@ -288,6 +295,77 @@
         </div>
       </div>
 
+      <!-- Settings Dialog -->
+      <div
+        x-show="showSettingsDialog"
+        x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="showSettingsDialog = false"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Impostazioni Form</h2>
+            <button @click="showSettingsDialog = false" class="text-gray-400 hover:text-gray-600">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+
+          <div x-show="formBeingEdited" class="mb-4">
+            <p class="text-sm text-gray-600 mb-4">
+              Form: <strong x-text="formBeingEdited?.title"></strong>
+            </p>
+
+            <div class="space-y-4">
+              <!-- Email Notification Toggle -->
+              <div class="border rounded-lg p-4">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-gray-800">Email di Conferma</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                      Invia automaticamente un'email di conferma all'utente quando submittisce il form.
+                      L'email viene inviata al primo campo email trovato nel form.
+                    </p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer ml-4">
+                    <input
+                      type="checkbox"
+                      x-model="settingsData.sendEmailConfirmation"
+                      class="sr-only peer"
+                    />
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+                <div class="text-xs text-gray-500 mt-2">
+                  <span class="material-icons text-xs align-middle">info</span>
+                  Lo stato attuale: <span class="font-semibold" :class="settingsData.sendEmailConfirmation ? 'text-green-600' : 'text-gray-600'" x-text="settingsData.sendEmailConfirmation ? 'Abilitato' : 'Disabilitato'"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div x-show="settingsError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm" x-text="settingsError"></div>
+          <div x-show="settingsSuccess" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm" x-text="settingsSuccess"></div>
+
+          <div class="flex gap-3">
+            <button
+              @click="showSettingsDialog = false"
+              :disabled="savingSettings"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              Annulla
+            </button>
+            <button
+              @click="saveFormSettings()"
+              :disabled="savingSettings"
+              class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+            >
+              <span x-show="!savingSettings">Salva</span>
+              <span x-show="savingSettings">Salvataggio...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -315,6 +393,14 @@
         formToDelete: null,
         deleting: false,
         deleteError: null,
+        showSettingsDialog: false,
+        formBeingEdited: null,
+        settingsData: {
+          sendEmailConfirmation: false
+        },
+        savingSettings: false,
+        settingsError: null,
+        settingsSuccess: null,
 
         init() {
           // Check if already authenticated
@@ -522,6 +608,74 @@
             this.deleteError = 'Errore di connessione al server';
           } finally {
             this.deleting = false;
+          }
+        },
+
+        async openFormSettings(form) {
+          this.formBeingEdited = form;
+          this.settingsError = null;
+          this.settingsSuccess = null;
+
+          // Fetch current form definition to get current settings
+          try {
+            const response = await fetch(`/api/v1/forms/${form.id}`);
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              // Load current settings
+              this.settingsData.sendEmailConfirmation = data.data.notifications?.sendEmailConfirmation || false;
+              this.showSettingsDialog = true;
+            } else {
+              alert('Errore nel caricamento delle impostazioni');
+            }
+          } catch (err) {
+            console.error('Error loading form settings:', err);
+            alert('Errore nel caricamento delle impostazioni');
+          }
+        },
+
+        async saveFormSettings() {
+          if (!this.formBeingEdited) return;
+
+          this.savingSettings = true;
+          this.settingsError = null;
+          this.settingsSuccess = null;
+
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+
+            const response = await fetch(`/api/v1/forms/${this.formBeingEdited.id}/settings`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({
+                notifications: {
+                  sendEmailConfirmation: this.settingsData.sendEmailConfirmation
+                }
+              })
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.settingsSuccess = data.data.message || 'Impostazioni salvate con successo';
+
+              // Chiudi il dialog dopo 1.5 secondi
+              setTimeout(() => {
+                this.showSettingsDialog = false;
+                this.formBeingEdited = null;
+              }, 1500);
+            } else {
+              this.settingsError = data.err?.msg || 'Errore durante il salvataggio delle impostazioni';
+            }
+
+          } catch (err) {
+            console.error('Settings save error:', err);
+            this.settingsError = 'Errore di connessione al server';
+          } finally {
+            this.savingSettings = false;
           }
         }
       };

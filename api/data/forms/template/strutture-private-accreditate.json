@@ -725,5 +725,8 @@
     "success": "Grazie per la manifestazione di interesse! Riceverai una conferma all'indirizzo email indicato.",
     "error": "Si è verificato un errore durante l'invio. Riprova o contattaci telefonicamente.",
     "validation": "Compila tutti i campi obbligatori prima di procedere."
+  },
+  "notifications": {
+    "sendEmailConfirmation": true
   }
 }

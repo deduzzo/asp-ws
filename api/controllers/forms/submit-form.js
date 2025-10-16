@@ -131,18 +131,34 @@ module.exports = {
         }
       }
 
-      // === 6. INVIA EMAIL DI CONFERMA ALL'UTENTE (se richiesto) ===
-      const wantsEmailResponse = inputs.formValues['richiesta-risposta-email'] &&
-                                  inputs.formValues['richiesta-risposta-email'].includes('si');
-      const userEmail = inputs.formValues['email'];
+      // === 6. INVIA EMAIL DI CONFERMA ALL'UTENTE (se abilitato) ===
+      if (formDefinition.notifications && formDefinition.notifications.sendEmailConfirmation) {
+        // Cerca automaticamente il primo campo email nel form
+        let userEmail = null;
 
-      if (formDefinition.notifications && formDefinition.notifications.sendEmailConfirmation &&
-          wantsEmailResponse && userEmail) {
-        try {
-          await sendUserConfirmationEmail(formDefinition, userEmail, result.id);
-        } catch (emailErr) {
-          sails.log.error('Error sending user confirmation email:', emailErr);
-          // Non blocchiamo il submit se l'email fallisce
+        if (formDefinition.pages) {
+          formDefinition.pages.forEach(page => {
+            if (!userEmail) {  // Trova solo il primo campo email
+              page.fields.forEach(field => {
+                if (!userEmail && field.validation && field.validation.type === 'email') {
+                  userEmail = inputs.formValues[field.id];
+                }
+              });
+            }
+          });
+        }
+
+        // Invia email se trovato un indirizzo email valido
+        if (userEmail) {
+          try {
+            await sendUserConfirmationEmail(formDefinition, userEmail, result.id);
+            sails.log.info(`Confirmation email sent to: ${userEmail}`);
+          } catch (emailErr) {
+            sails.log.error('Error sending user confirmation email:', emailErr);
+            // Non blocchiamo il submit se l'email fallisce
+          }
+        } else {
+          sails.log.warn(`Email confirmation enabled for form ${formId} but no email field found`);
         }
       }
 
