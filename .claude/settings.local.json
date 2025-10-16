@@ -21,7 +21,8 @@
       "Bash(npm install:*)",
       "Bash(pkill:*)",
       "Bash(git add:*)",
-      "Bash(sails lift)"
+      "Bash(sails lift)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
