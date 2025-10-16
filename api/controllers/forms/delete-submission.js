@@ -23,7 +23,7 @@ module.exports = {
     const submissionId = this.req.param('submissionId');
 
     if (!formId || !submissionId) {
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         errType: 'BAD_REQUEST',
         errMsg: 'formId and submissionId are required'
       });
@@ -41,18 +41,19 @@ module.exports = {
 
       // Log l'eliminazione
       await sails.helpers.log.with({
-        livello: 'warn',
+        level: 'warn',
         tag: 'FORMS_ADMIN',
-        azione: `Delete submission ${submissionId} from form ${formId}`,
-        ip: this.req.ip,
-        utente: this.req.user ? this.req.user.id : null,
-        contesto: {
+        message: `Delete submission ${submissionId} from form ${formId}`,
+        action: `delete_submission_${formId}`,
+        ipAddress: this.req.ip,
+        user: this.req.user ? this.req.user.id : null,
+        context: {
           formId: formId,
           submissionId: submissionId
         }
       });
 
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         data: {
           success: true,
           message: 'Submission eliminata con successo'
@@ -61,7 +62,7 @@ module.exports = {
 
     } catch (err) {
       sails.log.error('Error deleting submission:', err);
-      return res.ApiResponse({
+      return this.res.ApiResponse({
         errType: 'SERVER_ERROR',
         errMsg: 'Error deleting submission'
       });
