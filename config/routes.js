@@ -247,6 +247,12 @@ let routes = {
     ambito: 'login',
     minAuthLevel: JwtService.LOGIN_LEVEL.admin
   },
+  'DELETE /api/v1/forms/:formId': {
+    action: 'forms/delete-form',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
+  },
 
   // Forms admin interface
   'GET /admin/forms': {

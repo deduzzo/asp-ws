@@ -168,16 +168,67 @@
               </div>
               <button
                 @click="exportFormSchema(form.id)"
-                class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 text-sm font-medium flex items-center justify-center gap-2"
+                class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 text-sm font-medium flex items-center justify-center gap-2 mb-2"
               >
                 <span class="material-icons text-sm">download</span>
                 Esporta Schema JSON
+              </button>
+              <button
+                @click="confirmDeleteForm(form)"
+                class="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <span class="material-icons text-sm">delete</span>
+                Elimina Form
               </button>
             </div>
           </template>
         </div>
 
       </main>
+
+      <!-- Delete Confirmation Dialog -->
+      <div
+        x-show="showDeleteDialog"
+        x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="showDeleteDialog = false"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+          <div class="flex items-start gap-4 mb-4">
+            <span class="material-icons text-red-500 text-4xl">warning</span>
+            <div class="flex-1">
+              <h2 class="text-xl font-bold text-gray-900 mb-2">Conferma Eliminazione</h2>
+              <p class="text-sm text-gray-600">
+                Sei sicuro di voler eliminare il form <strong x-text="formToDelete?.title"></strong>?
+              </p>
+              <p class="text-sm text-red-600 mt-2">
+                Questa azione eliminerà il template JSON e il database con tutte le submissions.
+                <strong>Non è reversibile!</strong>
+              </p>
+            </div>
+          </div>
+
+          <div x-show="deleteError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm" x-text="deleteError"></div>
+
+          <div class="flex gap-3">
+            <button
+              @click="showDeleteDialog = false"
+              :disabled="deleting"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              Annulla
+            </button>
+            <button
+              @click="deleteForm()"
+              :disabled="deleting"
+              class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+            >
+              <span x-show="!deleting">Elimina</span>
+              <span x-show="deleting">Eliminazione...</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Import Dialog -->
       <div
@@ -260,6 +311,10 @@
         importing: false,
         importError: null,
         importSuccess: null,
+        showDeleteDialog: false,
+        formToDelete: null,
+        deleting: false,
+        deleteError: null,
 
         init() {
           // Check if already authenticated
@@ -421,6 +476,54 @@
           } catch (err) {
             console.error('Export error:', err);
             alert('Errore durante l\'esportazione dello schema');
+          }
+        },
+
+        confirmDeleteForm(form) {
+          this.formToDelete = form;
+          this.showDeleteDialog = true;
+          this.deleteError = null;
+        },
+
+        async deleteForm() {
+          if (!this.formToDelete) return;
+
+          this.deleting = true;
+          this.deleteError = null;
+
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+
+            const response = await fetch(`/api/v1/forms/${this.formToDelete.id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ formId: this.formToDelete.id })
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              // Rimuovi il form dalla lista locale
+              this.forms = this.forms.filter(f => f.id !== this.formToDelete.id);
+
+              // Chiudi il dialog
+              this.showDeleteDialog = false;
+              this.formToDelete = null;
+
+              // Mostra notifica di successo (opzionale)
+              alert('Form eliminato con successo');
+            } else {
+              this.deleteError = data.err?.msg || 'Errore durante l\'eliminazione';
+            }
+
+          } catch (err) {
+            console.error('Delete error:', err);
+            this.deleteError = 'Errore di connessione al server';
+          } finally {
+            this.deleting = false;
           }
         }
       };
