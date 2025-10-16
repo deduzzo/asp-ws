@@ -497,10 +497,8 @@
             const response = await fetch(`/api/v1/forms/${this.formToDelete.id}`, {
               method: 'DELETE',
               headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ formId: this.formToDelete.id })
+                'Authorization': 'Bearer ' + token
+              }
             });
 
             const data = await response.json();

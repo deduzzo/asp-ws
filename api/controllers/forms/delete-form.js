@@ -7,13 +7,7 @@ module.exports = {
   description: 'Elimina un form (JSON template e database) - solo admin',
 
 
-  inputs: {
-    formId: {
-      type: 'string',
-      required: true,
-      description: 'ID del form da eliminare'
-    }
-  },
+  inputs: {},
 
 
   exits: {
@@ -36,7 +30,14 @@ module.exports = {
     const path = require('path');
 
     try {
-      const formId = inputs.formId;
+      // Get formId from URL parameter
+      const formId = this.req.param('formId');
+
+      if (!formId) {
+        return exits.badRequest({
+          error: 'formId is required'
+        });
+      }
 
       // Validate formId
       if (!/^[a-zA-Z0-9_-]+$/.test(formId)) {
