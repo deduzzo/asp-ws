@@ -141,12 +141,12 @@ module.exports = {
     // === 2. RECAPTCHA VERIFICATION ===
     let recaptchaScore = null;
 
-    if (recaptchaConfig && recaptchaConfig.secretKey && inputs.recaptchaToken) {
+    if (recaptchaConfig && recaptchaConfig.RECAPTCHA_SECRET_KEY && inputs.recaptchaToken) {
       try {
         const verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
         const response = await axios.post(verifyURL, null, {
           params: {
-            secret: recaptchaConfig.secretKey,
+            secret: recaptchaConfig.RECAPTCHA_SECRET_KEY,
             response: inputs.recaptchaToken
           }
         });
@@ -164,7 +164,7 @@ module.exports = {
         recaptchaScore = score;
 
         // Soglia di sicurezza (0.0 = bot, 1.0 = umano)
-        const minScore = recaptchaConfig.minScore || 0.5;
+        const minScore = recaptchaConfig.MIN_SCORE || 0.5;
 
         if (score < minScore) {
           sails.log.warn(`reCAPTCHA score too low: ${score} (min: ${minScore})`);
