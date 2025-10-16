@@ -7,7 +7,9 @@ module.exports = {
   description: 'Importa un form da file JSON e crea il database',
 
 
-  files: ['formFile'],
+  inputs: {
+    // Non definiamo inputs perché usiamo this.req.file() direttamente
+  },
 
 
   exits: {
