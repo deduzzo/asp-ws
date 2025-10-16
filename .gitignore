@@ -47,6 +47,7 @@
 
 config/local.js
 config/custom/private_*.json
+api/data/forms/template/
 
 
 ################################################
