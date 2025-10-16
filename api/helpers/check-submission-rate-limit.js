@@ -62,8 +62,8 @@ module.exports = {
     const rateLimitConfig = {
       maxSubmissionsPerIP: 10,        // Max submissions per IP
       windowMinutes: 60,               // Finestra temporale in minuti
-      maxSubmissionsPerForm: 3,        // Max submissions per form per IP
-      formWindowMinutes: 15,           // Finestra temporale per form specifico
+      maxSubmissionsPerForm: 1,        // Max submissions per form per IP (1 al minuto)
+      formWindowMinutes: 1,            // Finestra temporale per form specifico (1 minuto)
       blockDurationMinutes: 30         // Durata blocco se supera il limite
     };
 

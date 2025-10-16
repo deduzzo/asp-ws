@@ -60,11 +60,8 @@ module.exports = {
         ipAddress: ipAddress,
         formId: formId,
         recaptchaToken: inputs.recaptchaToken
-      }).intercept('rateLimitExceeded', (err) => {
-        return exits.rateLimitExceeded(err);
-      }).intercept('recaptchaFailed', (err) => {
-        return exits.recaptchaFailed(err);
-      });
+      }).intercept('rateLimitExceeded', 'rateLimitExceeded')
+        .intercept('recaptchaFailed', 'recaptchaFailed');
 
       sails.log.info('Rate limit check passed:', {
         ip: ipAddress,
