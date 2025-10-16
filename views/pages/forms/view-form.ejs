@@ -512,7 +512,11 @@
                       return field.options.filter(opt => formValues[field.id] && formValues[field.id].includes(opt.value));
                     },
                     getFilteredOptions() {
-                      if (!this.searchQuery) return [];
+                      // Se la query è vuota, mostra tutte le opzioni non selezionate
+                      if (!this.searchQuery) {
+                        return field.options.filter(opt => !(formValues[field.id] && formValues[field.id].includes(opt.value)));
+                      }
+                      // Altrimenti filtra in base alla query di ricerca
                       const query = this.searchQuery.toLowerCase();
                       return field.options.filter(opt => {
                         const searchText = (opt.label + ' ' + (opt.subtitle || '') + ' ' + (opt.description || '')).toLowerCase();
