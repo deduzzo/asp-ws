@@ -26,6 +26,9 @@ module.exports = {
   },
 
   fn: async function (inputs, exits) {
+    const req = this.req;
+    const res = this.res;
+
     try {
       const targetDir = path.resolve(sails.config.appPath, 'assets/images/forms');
 
@@ -35,18 +38,18 @@ module.exports = {
       }
 
       // Upload file using the receiver pattern
-      this.req.file('logo').upload({
+      req.file('logo').upload({
         dirname: targetDir,
         maxBytes: 5000000 // 5MB max
       }, async (err, uploadedFiles) => {
         if (err) {
           sails.log.error('Upload error:', err);
-          return exits.badRequest({ error: 'Upload failed', message: err.message });
+          return res.badRequest({ error: 'Upload failed', message: err.message });
         }
 
         if (!uploadedFiles || uploadedFiles.length === 0) {
           sails.log.error('No files in upload result');
-          return exits.badRequest({ error: 'No file uploaded' });
+          return res.badRequest({ error: 'No file uploaded' });
         }
 
         try {
@@ -72,14 +75,14 @@ module.exports = {
             tag: 'FORMS_ADMIN',
             message: 'Logo uploaded for forms',
             action: 'upload_forms_logo',
-            ipAddress: this.req.ip,
-            user: this.req.user ? this.req.user.id : undefined,
+            ipAddress: req.ip,
+            user: req.user ? req.user.id : undefined,
             context: {
               filename: filename
             }
           });
 
-          return exits.success({
+          return res.ok({
             success: true,
             message: 'Logo caricato con successo',
             path: `/images/forms/${filename}`
@@ -87,7 +90,7 @@ module.exports = {
 
         } catch (moveErr) {
           sails.log.error('Error moving logo file:', moveErr);
-          return exits.badRequest({
+          return res.badRequest({
             error: 'Upload failed',
             message: moveErr.message
           });
@@ -96,7 +99,7 @@ module.exports = {
 
     } catch (err) {
       sails.log.error('Error uploading logo:', err);
-      return exits.badRequest({
+      return res.badRequest({
         error: 'Upload failed',
         message: err.message
       });
