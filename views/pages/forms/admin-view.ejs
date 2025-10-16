@@ -591,7 +591,9 @@
 
         formatFieldValue(submission, fieldId) {
           if (!submission) return 'N/A';
-          const value = submission[`field_${fieldId}`];
+          // Sanitize fieldId (convert non-alphanumeric chars to underscore, same as backend)
+          const sanitizedFieldId = fieldId.replace(/[^a-zA-Z0-9_]/g, '_');
+          const value = submission[`field_${sanitizedFieldId}`];
           if (value === null || value === undefined || value === '') return 'N/A';
           if (Array.isArray(value)) return value.join(', ');
           return value;
