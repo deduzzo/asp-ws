@@ -34,15 +34,17 @@ module.exports = {
       const formId = this.req.param('formId');
 
       if (!formId) {
-        return exits.badRequest({
-          error: 'formId is required'
+        return this.res.ApiResponse({
+          errType: 'BAD_REQUEST',
+          errMsg: 'formId is required'
         });
       }
 
       // Validate formId
       if (!/^[a-zA-Z0-9_-]+$/.test(formId)) {
-        return exits.badRequest({
-          error: 'Invalid form ID format'
+        return this.res.ApiResponse({
+          errType: 'BAD_REQUEST',
+          errMsg: 'Invalid form ID format'
         });
       }
 
@@ -54,8 +56,9 @@ module.exports = {
 
       // Verifica esistenza form
       if (!fs.existsSync(jsonPath)) {
-        return exits.notFound({
-          error: 'Form not found'
+        return this.res.ApiResponse({
+          errType: 'NOT_FOUND',
+          errMsg: 'Form not found'
         });
       }
 
@@ -110,19 +113,21 @@ module.exports = {
 
       await sails.helpers.log.with(logData);
 
-      return exits.success({
-        success: true,
-        message: 'Form eliminato con successo',
-        formId: formId,
-        formTitle: formTitle,
-        dbDeleted: dbDeleted
+      return this.res.ApiResponse({
+        data: {
+          success: true,
+          message: 'Form eliminato con successo',
+          formId: formId,
+          formTitle: formTitle,
+          dbDeleted: dbDeleted
+        }
       });
 
     } catch (err) {
       sails.log.error('Error deleting form:', err);
-      return exits.badRequest({
-        error: 'Delete failed',
-        message: err.message
+      return this.res.ApiResponse({
+        errType: 'SERVER_ERROR',
+        errMsg: 'Errore durante l\'eliminazione del form: ' + err.message
       });
     }
   }
