@@ -22,7 +22,8 @@
       "Bash(pkill:*)",
       "Bash(git add:*)",
       "Bash(sails lift)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
