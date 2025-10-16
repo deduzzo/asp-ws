@@ -94,6 +94,13 @@
           <div class="flex items-center gap-4">
             <span class="text-sm text-gray-600" x-text="'Utente: ' + (userData.username || 'N/A')"></span>
             <button
+              @click="showImportDialog = true"
+              class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm flex items-center gap-2"
+            >
+              <span class="material-icons text-sm">upload_file</span>
+              Importa Form
+            </button>
+            <button
               @click="logout()"
               class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm"
             >
@@ -143,7 +150,7 @@
                 </div>
               </div>
 
-              <div class="flex gap-2">
+              <div class="flex gap-2 mb-2">
                 <a
                   :href="'/admin/forms/' + form.id"
                   class="flex-1 bg-blue-500 text-white text-center py-2 px-4 rounded-md hover:bg-blue-600 text-sm font-medium"
@@ -154,15 +161,81 @@
                   :href="'/forms/' + form.id"
                   target="_blank"
                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  title="Visualizza form"
                 >
                   <span class="material-icons text-sm">open_in_new</span>
                 </a>
               </div>
+              <button
+                @click="exportFormSchema(form.id)"
+                class="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <span class="material-icons text-sm">download</span>
+                Esporta Schema JSON
+              </button>
             </div>
           </template>
         </div>
 
       </main>
+
+      <!-- Import Dialog -->
+      <div
+        x-show="showImportDialog"
+        x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="showImportDialog = false"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Importa Form JSON</h2>
+            <button @click="showImportDialog = false" class="text-gray-400 hover:text-gray-600">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-4">
+              Seleziona un file JSON con la definizione del form. Se il form esiste già, verrà aggiornato.
+            </p>
+
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <input
+                type="file"
+                id="formFileInput"
+                accept=".json"
+                @change="handleFileSelect($event)"
+                class="hidden"
+              />
+              <label for="formFileInput" class="cursor-pointer">
+                <span class="material-icons text-4xl text-gray-400 mb-2">cloud_upload</span>
+                <p class="text-sm text-gray-600">Clicca per selezionare un file JSON</p>
+                <p class="text-xs text-gray-500 mt-1" x-show="selectedFile" x-text="selectedFile?.name"></p>
+              </label>
+            </div>
+          </div>
+
+          <div x-show="importError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm" x-text="importError"></div>
+          <div x-show="importSuccess" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm" x-text="importSuccess"></div>
+
+          <div class="flex gap-3">
+            <button
+              @click="showImportDialog = false"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            >
+              Annulla
+            </button>
+            <button
+              @click="importForm()"
+              :disabled="!selectedFile || importing"
+              class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span x-show="!importing">Importa</span>
+              <span x-show="importing">Importazione...</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
     </div>
 
@@ -182,6 +255,11 @@
         userData: {},
         forms: <%- JSON.stringify(forms || []) %>,
         loading: false,
+        showImportDialog: false,
+        selectedFile: null,
+        importing: false,
+        importError: null,
+        importSuccess: null,
 
         init() {
           // Check if already authenticated
@@ -262,6 +340,88 @@
           this.isAuthenticated = false;
           this.credentials = { username: '', password: '' };
           this.userData = {};
+        },
+
+        handleFileSelect(event) {
+          this.selectedFile = event.target.files[0];
+          this.importError = null;
+          this.importSuccess = null;
+        },
+
+        async importForm() {
+          if (!this.selectedFile) {
+            this.importError = 'Seleziona un file JSON';
+            return;
+          }
+
+          this.importing = true;
+          this.importError = null;
+          this.importSuccess = null;
+
+          try {
+            const formData = new FormData();
+            formData.append('formFile', this.selectedFile);
+
+            const token = localStorage.getItem('forms_admin_token');
+
+            const response = await fetch('/api/v1/forms/import', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + token
+              },
+              body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.importSuccess = data.data.message || 'Form importato con successo';
+
+              // Ricarica la pagina dopo 2 secondi per mostrare il nuovo form
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            } else {
+              this.importError = data.err?.msg || 'Errore durante l\'importazione';
+            }
+
+          } catch (err) {
+            console.error('Import error:', err);
+            this.importError = 'Errore di connessione al server';
+          } finally {
+            this.importing = false;
+          }
+        },
+
+        async exportFormSchema(formId) {
+          try {
+            // Fetch form definition
+            const response = await fetch(`/api/v1/forms/${formId}`);
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              const formSchema = data.data;
+
+              // Create JSON string with pretty formatting
+              const jsonString = JSON.stringify(formSchema, null, 2);
+
+              // Create blob and download
+              const blob = new Blob([jsonString], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${formId}.json`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            } else {
+              alert('Errore durante l\'esportazione dello schema');
+            }
+          } catch (err) {
+            console.error('Export error:', err);
+            alert('Errore durante l\'esportazione dello schema');
+          }
         }
       };
     }

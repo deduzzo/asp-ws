@@ -241,6 +241,12 @@ let routes = {
     ambito: 'login',
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
+  'POST /api/v1/forms/import': {
+    action: 'forms/import-form',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
+  },
 
   // Forms admin interface
   'GET /admin/forms': {

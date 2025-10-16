@@ -75,6 +75,9 @@ module.exports = {
       // === INIT: Crea la tabella se non esiste ===
       if (inputs.action === 'init' || !tableExists(db)) {
         createTable(db, formDefinition);
+      } else {
+        // Sincronizza lo schema se la tabella esiste già
+        syncTableSchema(db, formDefinition);
       }
 
       // === INSERT: Inserisce una nuova submission ===
@@ -186,6 +189,46 @@ module.exports = {
       db.exec('CREATE INDEX IF NOT EXISTS idx_ip_address ON submissions(ip_address)');
 
       sails.log.info(`Table created for form: ${formDefinition.id}`);
+    }
+
+    function syncTableSchema(db, formDefinition) {
+      // Ottieni le colonne esistenti
+      const existingColumns = db.prepare("PRAGMA table_info(submissions)").all();
+      const existingColumnNames = existingColumns.map(col => col.name);
+
+      // Raccogli tutti i campi dal form definition
+      const requiredFields = [];
+      if (formDefinition.pages) {
+        formDefinition.pages.forEach(page => {
+          page.fields.forEach(field => {
+            const sanitizedId = sanitizeFieldId(field.id);
+            requiredFields.push({
+              name: `field_${sanitizedId}`,
+              type: getColumnType(field),
+              originalId: field.id
+            });
+          });
+        });
+      }
+
+      // Trova colonne mancanti e aggiungile
+      let columnsAdded = 0;
+      requiredFields.forEach(field => {
+        if (!existingColumnNames.includes(field.name)) {
+          try {
+            const alterSQL = `ALTER TABLE submissions ADD COLUMN ${field.name} ${field.type}`;
+            db.exec(alterSQL);
+            sails.log.info(`Column added: ${field.name} for field ${field.originalId}`);
+            columnsAdded++;
+          } catch (err) {
+            sails.log.error(`Error adding column ${field.name}:`, err.message);
+          }
+        }
+      });
+
+      if (columnsAdded > 0) {
+        sails.log.info(`Schema sync completed: ${columnsAdded} columns added to form ${formDefinition.id}`);
+      }
     }
 
     function getColumnType(field) {
