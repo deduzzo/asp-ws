@@ -67,12 +67,23 @@ module.exports = {
       const viewPath = path.join(sails.config.appPath, 'views', 'pages', 'forms', 'view-form.ejs');
       const template = fs.readFileSync(viewPath, 'utf8');
 
+      // Check if form is enabled (default to true if not specified)
+      const formEnabled = formDefinition.enabled !== false;
+
+      // Load global forms settings
+      const globalSettings = await sails.helpers.formsSettings.with({
+        action: 'get'
+      });
+
       const html = ejs.render(template, {
         formId: inputs.id,
         formTitle: formDefinition.title || 'Form',
         formDescription: formDefinition.description || '',
+        formEnabled: formEnabled,
+        formDisabledMessage: formDefinition.disabledMessage || 'Questo modulo non è al momento disponibile. Riprova più tardi.',
         recaptchaEnabled: formDefinition.recaptcha?.enabled || false,
-        recaptchaSiteKey: sails.config.custom.recaptcha?.siteKey || ''
+        recaptchaSiteKey: sails.config.custom.recaptcha?.siteKey || '',
+        globalSettings: globalSettings
       });
 
       return this.res.send(html);

@@ -46,7 +46,7 @@ module.exports = {
         message: `Delete submission ${submissionId} from form ${formId}`,
         action: `delete_submission_${formId}`,
         ipAddress: this.req.ip,
-        user: this.req.user ? this.req.user.id : null,
+        user: this.req.user ? this.req.user.id : undefined,
         context: {
           formId: formId,
           submissionId: submissionId

@@ -363,6 +363,17 @@
 
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-6 fade-in">
+      <% if (globalSettings.logo && globalSettings.logo.enabled) { %>
+      <!-- Logo -->
+      <div class="flex justify-center mb-6">
+        <img
+          src="<%= globalSettings.logo.path %>"
+          alt="<%= globalSettings.logo.alt || 'Logo' %>"
+          style="height: <%= globalSettings.logo.height || 80 %>px; width: auto; max-width: 100%; object-fit: contain;"
+          class="fade-in"
+        />
+      </div>
+      <% } %>
       <h1 class="text-3xl font-bold text-gray-800 mb-2" x-text="formData.title"></h1>
       <p class="text-gray-600" x-text="formData.description" x-show="formData.description"></p>
 
@@ -383,6 +394,23 @@
         </div>
       </div>
     </div>
+
+    <% if (!formEnabled) { %>
+    <!-- Disabled form alert -->
+    <div class="bg-blue-50 border-l-4 border-blue-400 rounded-lg p-8 fade-in">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <svg class="h-10 w-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <h3 class="text-xl font-semibold text-blue-800 mb-2">Modulo non disponibile</h3>
+          <p class="text-blue-700"><%= formDisabledMessage %></p>
+        </div>
+      </div>
+    </div>
+    <% } else { %>
 
     <!-- Loading state -->
     <div x-show="loading" class="bg-white rounded-lg shadow-lg p-12 text-center">
@@ -411,7 +439,7 @@
           </div>
 
           <!-- Fields -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             <template x-for="(field, index) in formData.pages[currentPage].fields" :key="field.id">
               <div class="fade-in"
                    :class="getFieldColSpan(field)"
@@ -742,6 +770,8 @@
       </button>
     </div>
 
+    <% } %>
+
   </div>
 
   <script>
@@ -963,21 +993,32 @@
         },
 
         getFieldColSpan(field) {
-          // Fields that should take full width
-          if (field.type === 'textarea') return 'md:col-span-2';
-          if (field.type === 'checkbox' || field.type === 'checkbox-multiple') return 'md:col-span-2';
-          if (field.type === 'radio' && field.options && field.options.length > 3) return 'md:col-span-2';
+          // If colSpan is explicitly set in the field definition, use it
+          if (field.colSpan) {
+            const span = parseInt(field.colSpan);
+            if (span === 3) return 'md:col-span-3';
+            if (span === 2) return 'md:col-span-2';
+            return 'md:col-span-1';
+          }
+
+          // Fallback to automatic logic for fields without explicit colSpan
+          // Fields that should take full width (3 columns)
+          if (field.type === 'textarea') return 'md:col-span-3';
+          if (field.type === 'checkbox' || field.type === 'checkbox-multiple') return 'md:col-span-3';
+          if (field.type === 'radio' && field.options && field.options.length > 3) return 'md:col-span-3';
 
           // Select with searchable or long options takes full width
           if (field.type === 'select' && (field.searchable || (field.options && field.options.length > 8))) {
-            return 'md:col-span-2';
+            return 'md:col-span-3';
           }
 
           // Check if label or description is long
+          if (field.label && field.label.length > 50) return 'md:col-span-3';
           if (field.label && field.label.length > 30) return 'md:col-span-2';
+          if (field.description && field.description.length > 80) return 'md:col-span-3';
           if (field.description && field.description.length > 50) return 'md:col-span-2';
 
-          // Default: single column (will be 2 columns on md+ screens)
+          // Default: single column (will be 3 columns on md+ screens)
           return 'md:col-span-1';
         },
 

@@ -23,7 +23,9 @@
       "Bash(git add:*)",
       "Bash(sails lift)",
       "Bash(git rm:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(find:*)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,14 @@
+{
+  "logo": {
+    "enabled": false,
+    "path": "/images/forms/logo.png",
+    "alt": "Logo ASP Messina",
+    "width": 150,
+    "height": 60
+  },
+  "defaultTheme": "modern",
+  "globalMessages": {
+    "maintenanceMode": false,
+    "maintenanceMessage": "I moduli sono temporaneamente non disponibili per manutenzione. Riprova più tardi."
+  }
+}

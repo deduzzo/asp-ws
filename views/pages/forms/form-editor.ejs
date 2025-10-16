@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor Form - <%= formId %> - ASP Messina</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+
+    /* Field hover/selection states */
+    .field-preview {
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .field-preview:hover {
+      background-color: #f3f4f6;
+      border: 2px solid #3b82f6 !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .field-preview.selected {
+      background-color: #eff6ff;
+      border: 2px solid #2563eb !important;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+    }
+
+    .page-preview {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .page-preview:hover {
+      background-color: #fef3c7;
+      border-color: #f59e0b;
+    }
+
+    .page-preview.selected {
+      background-color: #fef3c7;
+      border-color: #d97706;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    /* Drag and Drop */
+    .component-item {
+      cursor: move;
+      transition: all 0.2s ease;
+    }
+
+    .component-item:hover {
+      background-color: #eff6ff;
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .drop-zone {
+      transition: all 0.3s ease;
+    }
+
+    .drop-zone.drag-over {
+      background-color: #dbeafe;
+      border-color: #3b82f6;
+      border-width: 3px;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .dragging {
+      opacity: 0.5;
+    }
+
+    /* Theme colors (Modern and Healthcare) */
+    .theme-modern {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #8b5cf6;
+      --success: #10b981;
+      --error: #ef4444;
+    }
+
+    .theme-healthcare {
+      --primary: #0ea5e9;
+      --primary-dark: #0284c7;
+      --secondary: #06b6d4;
+      --success: #14b8a6;
+      --error: #f43f5e;
+    }
+
+    /* Apply theme to preview fields */
+    .preview-container input:focus,
+    .preview-container textarea:focus,
+    .preview-container select:focus {
+      outline: none;
+      border-color: var(--primary);
+      ring: 2px;
+      ring-color: var(--primary);
+    }
+
+    .preview-container input[type="checkbox"]:checked,
+    .preview-container input[type="radio"]:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .preview-container .progress-bar {
+      background-color: var(--primary);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 overflow-hidden">
+
+  <div x-data="editorApp()" x-init="init()" class="h-screen flex flex-col">
+
+    <!-- Top Bar -->
+    <header class="bg-white shadow-sm z-10">
+      <div class="px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="/admin/forms" class="text-gray-600 hover:text-gray-900">
+            <span class="material-icons">arrow_back</span>
+          </a>
+          <div>
+            <h1 class="text-xl font-bold text-gray-900" x-text="'Editor: ' + form.title"></h1>
+            <p class="text-sm text-gray-500">ID: <%= formId %></p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button
+            @click="showVersions = true"
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm flex items-center gap-2"
+          >
+            <span class="material-icons text-sm">history</span>
+            Versioni
+          </button>
+          <button
+            @click="saveForm()"
+            :disabled="saving"
+            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 text-sm flex items-center gap-2"
+          >
+            <span class="material-icons text-sm">save</span>
+            <span x-text="saving ? 'Salvataggio...' : 'Salva'"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex overflow-hidden">
+
+      <!-- Component Palette (Left Sidebar) -->
+      <div class="w-64 bg-white border-r border-gray-200 overflow-y-auto p-4">
+        <h3 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wide">Componenti</h3>
+        <p class="text-xs text-gray-500 mb-4">Trascina i componenti nelle pagine</p>
+
+        <div class="space-y-2">
+          <template x-for="component in componentTypes" :key="component.type">
+            <div
+              draggable="true"
+              @dragstart="dragStart($event, component)"
+              @dragend="dragEnd($event)"
+              class="component-item border-2 border-gray-300 rounded-lg p-3 bg-white"
+            >
+              <div class="flex items-center gap-2 mb-1">
+                <span class="material-icons text-blue-600 text-sm" x-text="component.icon"></span>
+                <span class="font-semibold text-sm text-gray-800" x-text="component.label"></span>
+              </div>
+              <p class="text-xs text-gray-500" x-text="component.description"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Preview Area (Center) -->
+      <div class="flex-1 overflow-y-auto p-6 preview-container" :class="'theme-' + form.theme">
+        <div class="max-w-4xl mx-auto">
+
+          <!-- Form Global Settings (clickable header) -->
+          <div
+            @click="selectForm()"
+            class="bg-white rounded-lg shadow-md p-6 mb-6 cursor-pointer transition-all"
+            :class="{'ring-2 ring-blue-500': selectedType === 'form'}"
+          >
+            <div class="flex items-start justify-between mb-2">
+              <h2 class="text-2xl font-bold text-gray-800" x-text="form.title"></h2>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                    style="background-color: var(--primary);"
+                    x-text="'Tema: ' + (form.theme === 'modern' ? 'Modern' : 'Healthcare')">
+              </span>
+            </div>
+            <p class="text-gray-600" x-text="form.description"></p>
+            <div class="mt-4 flex items-center gap-4 text-sm text-gray-500">
+              <span><strong x-text="form.pages?.length || 0"></strong> pagine</span>
+              <span class="px-2 py-1 rounded" :class="form.enabled !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" x-text="form.enabled !== false ? 'Attivo' : 'Disattivo'"></span>
+            </div>
+          </div>
+
+          <!-- Pages Preview -->
+          <template x-for="(page, pageIndex) in form.pages" :key="pageIndex">
+            <div class="mb-6">
+              <!-- Page Header (clickable) -->
+              <div
+                @click="selectPage(pageIndex)"
+                class="bg-yellow-50 border-2 border-yellow-200 rounded-t-lg p-4 page-preview"
+                :class="{'selected': selectedType === 'page' && selectedIndex === pageIndex}"
+              >
+                <h3 class="text-lg font-semibold text-gray-800" x-text="page.title"></h3>
+                <p class="text-sm text-gray-600" x-text="page.description"></p>
+              </div>
+
+              <!-- Fields Preview -->
+              <div
+                class="bg-white border-2 border-gray-200 border-t-0 rounded-b-lg p-6 drop-zone"
+                @drop="drop($event, pageIndex)"
+                @dragover.prevent="dragOver($event)"
+                @dragleave="dragLeave($event)"
+              >
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <template x-for="(field, fieldIndex) in page.fields" :key="fieldIndex">
+                    <div
+                      @click.stop="selectField(pageIndex, fieldIndex)"
+                      class="field-preview border-2 border-gray-300 rounded-md p-4"
+                      :class="{
+                        'selected': selectedType === 'field' && selectedPageIndex === pageIndex && selectedIndex === fieldIndex,
+                        'md:col-span-1': field.colSpan === 1 || field.colSpan === '1',
+                        'md:col-span-2': field.colSpan === 2 || field.colSpan === '2',
+                        'md:col-span-3': field.colSpan === 3 || field.colSpan === '3'
+                      }"
+                    >
+                      <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <span x-text="field.label"></span>
+                        <span x-show="field.required" class="text-red-500">*</span>
+                      </label>
+                      <p x-show="field.subtitle" class="text-xs text-gray-500 mb-2" x-text="field.subtitle"></p>
+
+                      <!-- Field Type Badge -->
+                      <div class="mb-2">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded" x-text="field.type"></span>
+                      </div>
+
+                      <!-- Field Preview (simplified) -->
+                      <template x-if="field.type === 'text'">
+                        <input type="text" :placeholder="field.placeholder" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                      </template>
+                      <template x-if="field.type === 'email'">
+                        <input type="email" :placeholder="field.placeholder" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                      </template>
+                      <template x-if="field.type === 'tel'">
+                        <input type="tel" :placeholder="field.placeholder" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                      </template>
+                      <template x-if="field.type === 'number'">
+                        <input type="number" :placeholder="field.placeholder" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                      </template>
+                      <template x-if="field.type === 'date'">
+                        <input type="date" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                      </template>
+                      <template x-if="field.type === 'textarea'">
+                        <textarea disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 h-20" :placeholder="field.placeholder"></textarea>
+                      </template>
+                      <template x-if="field.type === 'radio'">
+                        <div class="space-y-2">
+                          <template x-for="opt in (field.options || []).slice(0, 3)" :key="opt.value">
+                            <label class="flex items-center text-sm">
+                              <input type="radio" disabled class="mr-2">
+                              <span x-text="opt.label"></span>
+                            </label>
+                          </template>
+                        </div>
+                      </template>
+                      <template x-if="field.type === 'select'">
+                        <select disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                          <option x-text="field.placeholder || 'Seleziona...'"></option>
+                        </select>
+                      </template>
+                      <template x-if="field.type === 'checkbox'">
+                        <div class="space-y-2">
+                          <template x-for="opt in (field.options || []).slice(0, 3)" :key="opt.value">
+                            <label class="flex items-center text-sm">
+                              <input type="checkbox" disabled class="mr-2">
+                              <span x-text="opt.label"></span>
+                            </label>
+                          </template>
+                        </div>
+                      </template>
+                      <template x-if="field.type === 'file'">
+                        <input type="file" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                      </template>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Add Field Button -->
+                <button
+                  @click="addField(pageIndex)"
+                  class="mt-4 w-full py-2 border-2 border-dashed rounded-md transition-all"
+                  style="border-color: var(--primary); color: var(--primary);"
+                  @mouseenter="$el.style.backgroundColor = 'var(--primary)'; $el.style.color = 'white';"
+                  @mouseleave="$el.style.backgroundColor = 'transparent'; $el.style.color = 'var(--primary)';"
+                >
+                  + Aggiungi Campo
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- Add Page Button -->
+          <button
+            @click="addPage()"
+            class="w-full py-4 border-2 border-dashed rounded-lg font-medium transition-all"
+            style="border-color: var(--primary); color: var(--primary);"
+            @mouseenter="$el.style.backgroundColor = 'var(--primary)'; $el.style.color = 'white';"
+            @mouseleave="$el.style.backgroundColor = 'transparent'; $el.style.color = 'var(--primary)';"
+          >
+            + Aggiungi Pagina
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Settings Panel (1/4) -->
+      <div class="w-96 bg-white border-l border-gray-200 overflow-y-auto p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Impostazioni</h3>
+
+        <!-- No Selection -->
+        <div x-show="selectedType === null" class="text-center text-gray-500 py-12">
+          <span class="material-icons text-6xl mb-4 text-gray-300">touch_app</span>
+          <p>Clicca su un elemento per modificarne le impostazioni</p>
+        </div>
+
+        <!-- Form Settings -->
+        <div x-show="selectedType === 'form'" class="space-y-4">
+          <h4 class="font-semibold text-gray-800 border-b pb-2">Impostazioni Form</h4>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Titolo</label>
+            <input type="text" x-model="form.title" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descrizione</label>
+            <textarea x-model="form.description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Form Attivo</label>
+            <input type="checkbox" x-model="form.enabled" class="rounded">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tema</label>
+            <select x-model="form.theme" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="modern">Modern</option>
+              <option value="healthcare">Healthcare</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Page Settings -->
+        <div x-show="selectedType === 'page' && form.pages[selectedIndex]" class="space-y-4">
+          <h4 class="font-semibold text-gray-800 border-b pb-2">Impostazioni Pagina</h4>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Titolo Pagina</label>
+            <input type="text" x-model="form.pages[selectedIndex].title" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descrizione Pagina</label>
+            <textarea x-model="form.pages[selectedIndex].description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Richiedi tutti i campi</label>
+            <input type="checkbox" x-model="form.pages[selectedIndex].requireAllBeforeNext" class="rounded">
+          </div>
+
+          <button
+            @click="deletePage(selectedIndex)"
+            class="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Elimina Pagina
+          </button>
+        </div>
+
+        <!-- Field Settings -->
+        <div x-show="selectedType === 'field' && form.pages[selectedPageIndex]?.fields[selectedIndex]" class="space-y-4">
+          <h4 class="font-semibold text-gray-800 border-b pb-2">Impostazioni Campo</h4>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo Campo</label>
+            <select x-model="form.pages[selectedPageIndex].fields[selectedIndex].type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="text">Text</option>
+              <option value="textarea">Textarea</option>
+              <option value="email">Email</option>
+              <option value="tel">Telefono</option>
+              <option value="number">Numero</option>
+              <option value="date">Data</option>
+              <option value="radio">Radio Button</option>
+              <option value="checkbox">Checkbox</option>
+              <option value="select">Select</option>
+              <option value="file">File Upload</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+            <input type="text" x-model="form.pages[selectedPageIndex].fields[selectedIndex].label" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+            <input type="text" x-model="form.pages[selectedPageIndex].fields[selectedIndex].subtitle" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Placeholder</label>
+            <input type="text" x-model="form.pages[selectedPageIndex].fields[selectedIndex].placeholder" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-gray-700">Campo Obbligatorio</label>
+            <input type="checkbox" x-model="form.pages[selectedPageIndex].fields[selectedIndex].required" class="rounded">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Larghezza Campo</label>
+            <select x-model="form.pages[selectedPageIndex].fields[selectedIndex].colSpan" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              <option value="1">1 colonna (33%)</option>
+              <option value="2">2 colonne (66%)</option>
+              <option value="3">3 colonne (100%)</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Il form è diviso in 3 colonne. Scegli quante colonne deve occupare questo campo.</p>
+          </div>
+
+          <!-- Options Editor (for radio, checkbox, select) -->
+          <div x-show="['radio', 'checkbox', 'select'].includes(form.pages[selectedPageIndex]?.fields[selectedIndex]?.type)" class="border-t pt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Opzioni</label>
+
+            <div class="space-y-2 mb-2">
+              <template x-for="(option, optIndex) in (form.pages[selectedPageIndex]?.fields[selectedIndex]?.options || [])" :key="optIndex">
+                <div class="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    x-model="form.pages[selectedPageIndex].fields[selectedIndex].options[optIndex].label"
+                    placeholder="Label"
+                    class="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                  >
+                  <input
+                    type="text"
+                    x-model="form.pages[selectedPageIndex].fields[selectedIndex].options[optIndex].value"
+                    placeholder="value"
+                    class="w-24 px-2 py-1 text-sm border border-gray-300 rounded"
+                  >
+                  <button
+                    @click="removeOption(selectedPageIndex, selectedIndex, optIndex)"
+                    class="px-2 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                  >
+                    <span class="material-icons text-sm">delete</span>
+                  </button>
+                </div>
+              </template>
+            </div>
+
+            <button
+              @click="addOption(selectedPageIndex, selectedIndex)"
+              class="w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded text-sm text-gray-600 hover:border-blue-400 hover:text-blue-600"
+            >
+              + Aggiungi Opzione
+            </button>
+
+            <!-- Searchable toggle for select -->
+            <div x-show="form.pages[selectedPageIndex]?.fields[selectedIndex]?.type === 'select'" class="flex items-center justify-between mt-3">
+              <label class="text-sm font-medium text-gray-700">Campo Ricercabile</label>
+              <input type="checkbox" x-model="form.pages[selectedPageIndex].fields[selectedIndex].searchable" class="rounded">
+            </div>
+          </div>
+
+          <button
+            @click="deleteField(selectedPageIndex, selectedIndex)"
+            class="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Elimina Campo
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Versions Modal -->
+    <div
+      x-show="showVersions"
+      x-cloak
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="showVersions = false"
+    >
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-900">Versioni Salvate</h3>
+          <button @click="showVersions = false" class="text-gray-400 hover:text-gray-600">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <div x-show="versions.length === 0" class="text-center text-gray-500 py-8">
+          Nessuna versione disponibile
+        </div>
+
+        <div x-show="versions.length > 0" class="space-y-2">
+          <template x-for="(version, index) in versions" :key="index">
+            <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" @click="restoreVersion(version)">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="font-semibold" x-text="version.timestamp"></div>
+                  <div class="text-sm text-gray-600" x-text="'Versione #' + (versions.length - index)"></div>
+                </div>
+                <button
+                  @click.stop="restoreVersion(version)"
+                  class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                >
+                  Ripristina
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const FORM_ID = '<%= formId %>';
+    const INITIAL_FORM = <%- formDefinition %>;
+
+    function editorApp() {
+      return {
+        form: JSON.parse(JSON.stringify(INITIAL_FORM)),
+        selectedType: null, // 'form', 'page', 'field'
+        selectedIndex: null,
+        selectedPageIndex: null,
+        saving: false,
+        showVersions: false,
+        versions: [],
+        draggedComponent: null,
+
+        // Component types available in palette
+        componentTypes: [
+          { type: 'text', label: 'Campo Testo', icon: 'text_fields', description: 'Input di testo singola riga' },
+          { type: 'textarea', label: 'Area Testo', icon: 'notes', description: 'Input di testo multi-riga' },
+          { type: 'email', label: 'Email', icon: 'email', description: 'Input per indirizzo email' },
+          { type: 'tel', label: 'Telefono', icon: 'phone', description: 'Input per numero di telefono' },
+          { type: 'number', label: 'Numero', icon: 'pin', description: 'Input numerico' },
+          { type: 'radio', label: 'Radio Button', icon: 'radio_button_checked', description: 'Scelta singola tra opzioni' },
+          { type: 'checkbox', label: 'Checkbox Multipla', icon: 'check_box', description: 'Selezione multipla' },
+          { type: 'checkbox-single', label: 'Checkbox Singola', icon: 'check_box_outline_blank', description: 'Checkbox singola (es. privacy)' },
+          { type: 'select', label: 'Select', icon: 'arrow_drop_down_circle', description: 'Menu a tendina' },
+          { type: 'select-searchable', label: 'Select Filtrata', icon: 'search', description: 'Select con ricerca' },
+          { type: 'date', label: 'Data', icon: 'event', description: 'Selettore data' },
+          { type: 'file', label: 'File Upload', icon: 'upload_file', description: 'Caricamento file' }
+        ],
+
+        init() {
+          this.loadVersions();
+        },
+
+        // Drag and Drop handlers
+        dragStart(event, component) {
+          this.draggedComponent = component;
+          event.target.classList.add('dragging');
+          event.dataTransfer.effectAllowed = 'copy';
+        },
+
+        dragEnd(event) {
+          event.target.classList.remove('dragging');
+          this.draggedComponent = null;
+        },
+
+        dragOver(event) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+          event.currentTarget.classList.add('drag-over');
+        },
+
+        dragLeave(event) {
+          event.currentTarget.classList.remove('drag-over');
+        },
+
+        drop(event, pageIndex) {
+          event.preventDefault();
+          event.currentTarget.classList.remove('drag-over');
+
+          if (this.draggedComponent) {
+            this.addFieldFromComponent(pageIndex, this.draggedComponent);
+          }
+        },
+
+        addFieldFromComponent(pageIndex, component) {
+          const fieldDefaults = {
+            text: { placeholder: 'Inserisci il testo' },
+            textarea: { placeholder: 'Inserisci il testo', rows: 4 },
+            email: { placeholder: 'email@esempio.it', validation: { email: true } },
+            tel: { placeholder: '+39 123 456 7890', validation: { phone: true } },
+            number: { placeholder: '0', validation: { number: true } },
+            radio: { options: [
+              { label: 'Opzione 1', value: 'opt1' },
+              { label: 'Opzione 2', value: 'opt2' }
+            ]},
+            checkbox: { options: [
+              { label: 'Opzione 1', value: 'opt1' },
+              { label: 'Opzione 2', value: 'opt2' }
+            ]},
+            'checkbox-single': { type: 'checkbox' },
+            select: {
+              placeholder: 'Seleziona...',
+              options: [
+                { label: 'Opzione 1', value: 'opt1' },
+                { label: 'Opzione 2', value: 'opt2' }
+              ]
+            },
+            'select-searchable': {
+              placeholder: 'Cerca e seleziona...',
+              searchable: true,
+              options: [
+                { label: 'Opzione 1', value: 'opt1' },
+                { label: 'Opzione 2', value: 'opt2' }
+              ]
+            },
+            date: { placeholder: 'gg/mm/aaaa' },
+            file: { accept: '*/*', maxSize: 5242880 }
+          };
+
+          // Determine default column span based on field type
+          const defaultColSpan = ['textarea', 'checkbox', 'checkbox-multiple'].includes(component.type) ? 3 : 1;
+
+          const baseField = {
+            id: 'field-' + Date.now(),
+            type: component.type === 'select-searchable' ? 'select' : component.type,
+            label: component.label,
+            subtitle: '',
+            required: false,
+            colSpan: defaultColSpan,
+            ...fieldDefaults[component.type]
+          };
+
+          if (!this.form.pages[pageIndex].fields) {
+            this.form.pages[pageIndex].fields = [];
+          }
+
+          this.form.pages[pageIndex].fields.push(baseField);
+
+          // Auto-select the new field
+          this.selectField(pageIndex, this.form.pages[pageIndex].fields.length - 1);
+        },
+
+        selectForm() {
+          this.selectedType = 'form';
+          this.selectedIndex = null;
+          this.selectedPageIndex = null;
+        },
+
+        selectPage(pageIndex) {
+          this.selectedType = 'page';
+          this.selectedIndex = pageIndex;
+          this.selectedPageIndex = null;
+        },
+
+        selectField(pageIndex, fieldIndex) {
+          this.selectedType = 'field';
+          this.selectedPageIndex = pageIndex;
+          this.selectedIndex = fieldIndex;
+        },
+
+        addPage() {
+          if (!this.form.pages) this.form.pages = [];
+          this.form.pages.push({
+            id: 'page-' + (this.form.pages.length + 1),
+            title: 'Nuova Pagina',
+            description: '',
+            requireAllBeforeNext: false,
+            fields: []
+          });
+        },
+
+        deletePage(pageIndex) {
+          if (confirm('Sei sicuro di voler eliminare questa pagina?')) {
+            this.form.pages.splice(pageIndex, 1);
+            this.selectedType = null;
+          }
+        },
+
+        addField(pageIndex) {
+          if (!this.form.pages[pageIndex].fields) this.form.pages[pageIndex].fields = [];
+          this.form.pages[pageIndex].fields.push({
+            id: 'field-' + Date.now(),
+            type: 'text',
+            label: 'Nuovo Campo',
+            placeholder: '',
+            required: false,
+            colSpan: 1
+          });
+        },
+
+        deleteField(pageIndex, fieldIndex) {
+          if (confirm('Sei sicuro di voler eliminare questo campo?')) {
+            this.form.pages[pageIndex].fields.splice(fieldIndex, 1);
+            this.selectedType = null;
+          }
+        },
+
+        addOption(pageIndex, fieldIndex) {
+          const field = this.form.pages[pageIndex].fields[fieldIndex];
+          if (!field.options) {
+            field.options = [];
+          }
+          field.options.push({
+            label: 'Nuova Opzione',
+            value: 'opt-' + Date.now()
+          });
+        },
+
+        removeOption(pageIndex, fieldIndex, optionIndex) {
+          const field = this.form.pages[pageIndex].fields[fieldIndex];
+          if (field.options) {
+            field.options.splice(optionIndex, 1);
+          }
+        },
+
+        async saveForm() {
+          this.saving = true;
+
+          try {
+            // Save to versions
+            this.saveVersion();
+
+            // Save to server (you'll need to create this endpoint)
+            const response = await fetch(`/api/v1/forms/${FORM_ID}/update`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('forms_admin_token')
+              },
+              body: JSON.stringify(this.form)
+            });
+
+            if (response.ok) {
+              alert('Form salvato con successo!');
+            } else {
+              alert('Errore durante il salvataggio');
+            }
+
+          } catch (err) {
+            console.error('Save error:', err);
+            alert('Errore durante il salvataggio');
+          } finally {
+            this.saving = false;
+          }
+        },
+
+        saveVersion() {
+          const version = {
+            timestamp: new Date().toLocaleString('it-IT'),
+            data: JSON.parse(JSON.stringify(this.form))
+          };
+
+          this.versions.unshift(version);
+
+          // Keep only last 10 versions
+          if (this.versions.length > 10) {
+            this.versions = this.versions.slice(0, 10);
+          }
+
+          localStorage.setItem(`form_versions_${FORM_ID}`, JSON.stringify(this.versions));
+        },
+
+        loadVersions() {
+          const stored = localStorage.getItem(`form_versions_${FORM_ID}`);
+          if (stored) {
+            try {
+              this.versions = JSON.parse(stored);
+            } catch (e) {
+              this.versions = [];
+            }
+          }
+        },
+
+        restoreVersion(version) {
+          if (confirm('Ripristinare questa versione? Le modifiche non salvate andranno perse.')) {
+            this.form = JSON.parse(JSON.stringify(version.data));
+            this.showVersions = false;
+            this.selectedType = null;
+          }
+        }
+      };
+    }
+  </script>
+
+</body>
+</html>

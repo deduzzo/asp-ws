@@ -259,13 +259,43 @@ let routes = {
     ambito: 'login',
     minAuthLevel: JwtService.LOGIN_LEVEL.admin
   },
+  'GET /api/v1/forms/global/settings': {
+    action: 'forms/get-global-settings',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
+  },
+  'PUT /api/v1/forms/global/settings': {
+    action: 'forms/update-global-settings',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
+  },
+  'POST /api/v1/forms/global/logo': {
+    action: 'forms/upload-logo',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
+  },
 
   // Forms admin interface
   'GET /admin/forms': {
     action: 'forms/admin-index'
   },
+  'GET /admin/forms/new': {
+    action: 'forms/create-form'
+  },
+  'GET /admin/forms/:id/edit': {
+    action: 'forms/edit-form'
+  },
   'GET /admin/forms/:id': {
     action: 'forms/admin-view'
+  },
+  'PUT /api/v1/forms/:formId/update': {
+    action: 'forms/update-form-definition',
+    scopi: ['forms'],
+    ambito: 'login',
+    minAuthLevel: JwtService.LOGIN_LEVEL.admin
   },
 
   /***************************************************************************

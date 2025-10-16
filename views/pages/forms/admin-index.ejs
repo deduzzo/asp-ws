@@ -93,6 +93,20 @@
           <h1 class="text-2xl font-bold text-gray-900">Gestione Forms</h1>
           <div class="flex items-center gap-4">
             <span class="text-sm text-gray-600" x-text="'Utente: ' + (userData.username || 'N/A')"></span>
+            <a
+              href="/admin/forms/new"
+              class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm flex items-center gap-2"
+            >
+              <span class="material-icons text-sm">add</span>
+              Crea Nuovo Form
+            </a>
+            <button
+              @click="showGlobalSettingsDialog = true; loadGlobalSettings()"
+              class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 text-sm flex items-center gap-2"
+            >
+              <span class="material-icons text-sm">settings</span>
+              Impostazioni Globali
+            </button>
             <button
               @click="showImportDialog = true"
               class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm flex items-center gap-2"
@@ -136,6 +150,10 @@
               </div>
 
               <div class="space-y-2 mb-4">
+                <div class="flex items-center text-sm">
+                  <span class="material-icons text-sm mr-2" :class="form.enabled !== false ? 'text-green-600' : 'text-red-600'" x-text="form.enabled !== false ? 'check_circle' : 'cancel'"></span>
+                  <span class="font-semibold" :class="form.enabled !== false ? 'text-green-600' : 'text-red-600'" x-text="form.enabled !== false ? 'Attivo' : 'Disattivo'"></span>
+                </div>
                 <div class="flex items-center text-sm text-gray-600">
                   <span class="material-icons text-sm mr-2">layers</span>
                   <span x-text="form.pages + ' pagine'"></span>
@@ -166,6 +184,13 @@
                   <span class="material-icons text-sm">open_in_new</span>
                 </a>
               </div>
+              <a
+                :href="'/admin/forms/' + form.id + '/edit'"
+                class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600 text-sm font-medium flex items-center justify-center gap-2 mb-2"
+              >
+                <span class="material-icons text-sm">edit</span>
+                Modifica Form
+              </a>
               <button
                 @click="openFormSettings(form)"
                 class="w-full bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 text-sm font-medium flex items-center justify-center gap-2 mb-2"
@@ -366,6 +391,113 @@
         </div>
       </div>
 
+      <!-- Global Settings Dialog -->
+      <div
+        x-show="showGlobalSettingsDialog"
+        x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto"
+        @click.self="showGlobalSettingsDialog = false"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl my-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">Impostazioni Globali Forms</h2>
+            <button @click="showGlobalSettingsDialog = false" class="text-gray-400 hover:text-gray-600">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+
+          <div class="space-y-6">
+            <!-- Logo Section -->
+            <div class="border rounded-lg p-4">
+              <h3 class="font-semibold text-gray-800 mb-3">Logo</h3>
+
+              <!-- Logo Enable Toggle -->
+              <div class="flex items-center justify-between mb-4">
+                <label class="text-sm text-gray-700">Abilita Logo</label>
+                <input
+                  type="checkbox"
+                  x-model="globalSettingsData.logo.enabled"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </div>
+
+              <!-- Logo Preview -->
+              <div x-show="globalSettingsData.logo.enabled && globalSettingsData.logo.path" class="mb-4">
+                <img
+                  :src="globalSettingsData.logo.path"
+                  :alt="globalSettingsData.logo.alt"
+                  class="max-h-32 mx-auto border rounded"
+                />
+              </div>
+
+              <!-- Logo Upload -->
+              <div x-show="globalSettingsData.logo.enabled" class="space-y-4">
+                <input
+                  type="file"
+                  id="logoInput"
+                  accept="image/*"
+                  @change="handleLogoSelect($event)"
+                  class="hidden"
+                />
+                <label for="logoInput" class="cursor-pointer block w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm text-center">
+                  <span x-show="!uploadingLogo">Carica Logo</span>
+                  <span x-show="uploadingLogo">Caricamento...</span>
+                </label>
+
+                <!-- Logo Height Control -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Altezza Logo (px)
+                    <span class="text-xs text-gray-500">(la larghezza si adatterà proporzionalmente)</span>
+                  </label>
+                  <input
+                    type="number"
+                    x-model.number="globalSettingsData.logo.height"
+                    min="30"
+                    max="300"
+                    step="10"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Theme Section -->
+            <div class="border rounded-lg p-4">
+              <h3 class="font-semibold text-gray-800 mb-3">Tema Predefinito</h3>
+              <select
+                x-model="globalSettingsData.defaultTheme"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="modern">Modern</option>
+                <option value="healthcare">Healthcare</option>
+              </select>
+            </div>
+          </div>
+
+          <div x-show="globalSettingsError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm" x-text="globalSettingsError"></div>
+          <div x-show="globalSettingsSuccess" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm" x-text="globalSettingsSuccess"></div>
+
+          <div class="flex gap-3 mt-6">
+            <button
+              @click="showGlobalSettingsDialog = false"
+              :disabled="savingGlobalSettings"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              Annulla
+            </button>
+            <button
+              @click="saveGlobalSettings()"
+              :disabled="savingGlobalSettings"
+              class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+            >
+              <span x-show="!savingGlobalSettings">Salva</span>
+              <span x-show="savingGlobalSettings">Salvataggio...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -401,6 +533,20 @@
         savingSettings: false,
         settingsError: null,
         settingsSuccess: null,
+        showGlobalSettingsDialog: false,
+        globalSettingsData: {
+          logo: {
+            enabled: false,
+            path: '/images/forms/logo.png',
+            alt: 'Logo',
+            height: 80
+          },
+          defaultTheme: 'modern'
+        },
+        uploadingLogo: false,
+        savingGlobalSettings: false,
+        globalSettingsError: null,
+        globalSettingsSuccess: null,
 
         init() {
           // Check if already authenticated
@@ -676,6 +822,100 @@
             this.settingsError = 'Errore di connessione al server';
           } finally {
             this.savingSettings = false;
+          }
+        },
+
+        async loadGlobalSettings() {
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+            const response = await fetch('/api/v1/forms/global/settings', {
+              headers: {
+                'Authorization': 'Bearer ' + token
+              }
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.globalSettingsData = data.data;
+            }
+          } catch (err) {
+            console.error('Error loading global settings:', err);
+          }
+        },
+
+        async handleLogoSelect(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          this.uploadingLogo = true;
+          this.globalSettingsError = null;
+
+          try {
+            const formData = new FormData();
+            formData.append('logo', file);
+
+            const token = localStorage.getItem('forms_admin_token');
+
+            const response = await fetch('/api/v1/forms/global/logo', {
+              method: 'POST',
+              headers: {
+                'Authorization': 'Bearer ' + token
+              },
+              body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.globalSettingsData.logo.path = data.data.path;
+              this.globalSettingsSuccess = 'Logo caricato con successo';
+              setTimeout(() => this.globalSettingsSuccess = null, 3000);
+            } else {
+              this.globalSettingsError = data.err?.msg || 'Errore durante il caricamento del logo';
+            }
+
+          } catch (err) {
+            console.error('Logo upload error:', err);
+            this.globalSettingsError = 'Errore di connessione al server';
+          } finally {
+            this.uploadingLogo = false;
+          }
+        },
+
+        async saveGlobalSettings() {
+          this.savingGlobalSettings = true;
+          this.globalSettingsError = null;
+          this.globalSettingsSuccess = null;
+
+          try {
+            const token = localStorage.getItem('forms_admin_token');
+
+            const response = await fetch('/api/v1/forms/global/settings', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify(this.globalSettingsData)
+            });
+
+            const data = await response.json();
+
+            if (data.ok && data.data) {
+              this.globalSettingsSuccess = 'Impostazioni salvate con successo';
+              setTimeout(() => {
+                this.showGlobalSettingsDialog = false;
+              }, 1500);
+            } else {
+              this.globalSettingsError = data.err?.msg || 'Errore durante il salvataggio';
+            }
+
+          } catch (err) {
+            console.error('Save global settings error:', err);
+            this.globalSettingsError = 'Errore di connessione al server';
+          } finally {
+            this.savingGlobalSettings = false;
           }
         }
       };
