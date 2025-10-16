@@ -3,5 +3,6 @@
 *.db-shm
 *.db-wal
 
-# Ma tieni traccia di questo file
+# Ma tieni traccia di questi file
 !.gitignore
+!.gitkeep

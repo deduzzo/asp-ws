@@ -48,7 +48,8 @@
 config/local.js
 config/custom/private_*.json
 api/data/forms/template/*.json
-assets/images/forms/
+assets/images/forms/*
+!assets/images/forms/.gitkeep
 
 
 ################################################
