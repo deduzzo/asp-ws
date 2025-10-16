@@ -312,6 +312,21 @@ module.exports = {
                 }
               }
             }
+
+            // Whitelist validation (allowedValues)
+            if (validation.allowedValues && Array.isArray(validation.allowedValues)) {
+              const normalizedValue = typeof value === 'string' ? value.trim().toUpperCase() : value;
+              const normalizedAllowedValues = validation.allowedValues.map(v =>
+                typeof v === 'string' ? v.trim().toUpperCase() : v
+              );
+
+              if (!normalizedAllowedValues.includes(normalizedValue)) {
+                errors.push({
+                  field: field.id,
+                  message: `${field.label} non è valido o non autorizzato`
+                });
+              }
+            }
           }
         });
       });
