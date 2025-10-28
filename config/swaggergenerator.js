@@ -237,7 +237,7 @@ module.exports['swagger-generator'] = {
     //console.log('Route path:', routeInfo.path);
     //console.log('Route info:', routeInfo);
 
-    if (routeInfo.path && routeInfo.path.includes('/admin')) {
+    if (routeInfo.path && (routeInfo.path.includes('/admin') || routeInfo.path.includes('/forms/'))) {
       return false;
     }
 
