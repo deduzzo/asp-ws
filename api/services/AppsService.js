@@ -32,12 +32,23 @@ const getDockerInstance = async () => {
     return null;
   }
 
-  if (os.platform() === 'win32') {
-    // On Windows, connect to Docker via WSL
-    return new Docker({ socketPath: '//./pipe/docker_engine' });
-  } else {
-    // On Unix, use default socket
-    return new Docker({ socketPath: '/var/run/docker.sock' });
+  try {
+    let docker;
+    if (os.platform() === 'win32') {
+      // On Windows, connect to Docker via WSL
+      docker = new Docker({ socketPath: '//./pipe/docker_engine' });
+    } else {
+      // On Unix, use default socket
+      docker = new Docker({ socketPath: '/var/run/docker.sock' });
+    }
+
+    // Test connection
+    await docker.ping();
+    return docker;
+  } catch (err) {
+    sails.log.warn('Cannot connect to Docker daemon via socket, will use shell commands:', err.message);
+    // If connection fails, return null to use shell commands
+    return null;
   }
 };
 
