@@ -64,23 +64,32 @@ Il `package.json` deve contenere gli script necessari:
 
 ## Implementazione BASE_PATH
 
-### Approccio Consigliato: API Endpoint + Client Fetch
+### Approccio Consigliato: Leggere BASE_PATH dall'URL
 
-#### Step 1: Creare endpoint di configurazione (Server-side)
+Il modo più semplice e diretto è leggere il BASE_PATH direttamente dall'URL del browser:
 
-Nel server della tua app, crea un endpoint che espone il BASE_PATH:
+```javascript
+// L'app è servita su: https://ws1.asp.messina.it/apps/presidi-distretti-asp-messina/
+// Estrai APP_ID e costruisci BASE_PATH dall'URL
+const pathMatch = window.location.pathname.match(/^\/apps\/([^\/]+)/);
+const APP_ID = pathMatch ? pathMatch[1] : '';
+const BASE_PATH = APP_ID ? `/apps/${APP_ID}` : '';
+
+console.log('APP_ID:', APP_ID);        // presidi-distretti-asp-messina
+console.log('BASE_PATH:', BASE_PATH);  // /apps/presidi-distretti-asp-messina
+```
+
+#### Server-side (Opzionale)
+
+Se vuoi che il server conosca il proprio BASE_PATH (utile per logging o altre operazioni), puoi leggerlo dalla variabile d'ambiente:
 
 ```javascript
 // server.js
 const express = require('express');
 const app = express();
 
-// Endpoint per esporre la configurazione al client
-app.get('/api/config', (req, res) => {
-  res.json({
-    basePath: process.env.BASE_PATH || ''
-  });
-});
+const BASE_PATH = process.env.BASE_PATH || '';
+console.log('Server BASE_PATH:', BASE_PATH);
 
 // Altri endpoint dell'app
 app.get('/api/data', (req, res) => {
@@ -98,7 +107,9 @@ app.listen(PORT, () => {
 
 #### Step 2: Leggere la configurazione nel client
 
-Nel client (HTML/JavaScript), fai una fetch all'avvio per ottenere il BASE_PATH:
+Nel client (HTML/JavaScript), l'app deve chiamare l'endpoint di configurazione del sistema principale (NON del proprio server interno). L'endpoint è servito dal reverse proxy a livello root:
+
+**Importante**: L'endpoint `/api/v1/apps/:appId/config` NON viene proxato attraverso l'app, ma è servito direttamente dal server principale.
 
 ```html
 <!-- public/index.html -->
@@ -114,19 +125,26 @@ Nel client (HTML/JavaScript), fai una fetch all'avvio per ottenere il BASE_PATH:
   <script>
     // Variabile globale per il BASE_PATH
     let BASE_PATH = '';
+    let APP_ID = '';
 
     // Inizializza l'app
     async function init() {
       try {
-        // Ottieni la configurazione dal server
-        const config = await fetch('/api/config').then(r => r.json());
-        BASE_PATH = config.basePath;
-        console.log('Using BASE_PATH:', BASE_PATH);
+        // Determina l'APP_ID dall'URL corrente
+        // Se l'app è su: https://ws1.asp.messina.it/apps/presidi-distretti-asp-messina/
+        const pathMatch = window.location.pathname.match(/^\/apps\/([^\/]+)/);
+        if (pathMatch) {
+          APP_ID = pathMatch[1];
+          BASE_PATH = `/apps/${APP_ID}`;
+        }
 
-        // Ora puoi usare BASE_PATH per le chiamate API
+        console.log('APP_ID:', APP_ID);
+        console.log('BASE_PATH:', BASE_PATH);
+
+        // Ora puoi usare BASE_PATH per le chiamate API interne dell'app
         loadData();
       } catch (err) {
-        console.error('Error loading config:', err);
+        console.error('Error during initialization:', err);
       }
     }
 
@@ -144,17 +162,17 @@ Nel client (HTML/JavaScript), fai una fetch all'avvio per ottenere il BASE_PATH:
 </html>
 ```
 
-### Approccio Alternativo: URL-based
+### Approccio Alternativo: Endpoint di Sistema (Non Consigliato)
 
-Se non vuoi creare un endpoint, puoi leggere il BASE_PATH dall'URL del browser:
+~~Il sistema ASP-WS espone un endpoint pubblico per ottenere la configurazione dell'app:~~
 
-```javascript
-// Il browser è su: https://example.com/apps/my-app-id/
-const BASE_PATH = window.location.pathname.match(/^\/apps\/[^\/]+/)?.[0] || '';
-console.log('Using BASE_PATH:', BASE_PATH);
+```
+GET /api/v1/apps/:appId/config
 ```
 
-**Nota**: Questo funziona solo se l'app è sempre servita sotto `/apps/:appId/`.
+**ATTENZIONE**: Questo endpoint NON è accessibile dall'interno dell'app perché non viene proxato. È un endpoint del server principale, non dell'app containerizzata.
+
+**Non usare questo approccio** - usa invece la lettura dall'URL come mostrato sopra.
 
 ## Struttura Progetto
 
@@ -208,14 +226,9 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-// API endpoint per configurazione
-app.get('/api/config', (req, res) => {
-  res.json({
-    basePath: process.env.BASE_PATH || '',
-    appName: 'Example App',
-    version: '1.0.0'
-  });
-});
+// Log BASE_PATH all'avvio (opzionale, utile per debug)
+const BASE_PATH = process.env.BASE_PATH || '';
+console.log(`BASE_PATH: ${BASE_PATH || '(not set)'}`);
 
 // API di esempio
 app.get('/api/users', (req, res) => {
@@ -236,7 +249,6 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`BASE_PATH: ${process.env.BASE_PATH || '(not set)'}`);
 });
 ```
 
@@ -270,12 +282,21 @@ app.listen(PORT, () => {
 
   <script>
     let BASE_PATH = '';
+    let APP_ID = '';
 
     async function init() {
       try {
-        // Carica configurazione
-        const config = await fetch('/api/config').then(r => r.json());
-        BASE_PATH = config.basePath;
+        // Determina BASE_PATH dall'URL
+        // Es: https://ws1.asp.messina.it/apps/presidi-distretti-asp-messina/
+        const pathMatch = window.location.pathname.match(/^\/apps\/([^\/]+)/);
+        if (pathMatch) {
+          APP_ID = pathMatch[1];
+          BASE_PATH = `/apps/${APP_ID}`;
+        }
+
+        console.log('APP_ID:', APP_ID);
+        console.log('BASE_PATH:', BASE_PATH);
+
         document.getElementById('basePath').textContent = BASE_PATH || '(root)';
 
         // Carica dati
