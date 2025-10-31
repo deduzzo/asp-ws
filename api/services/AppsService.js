@@ -281,13 +281,20 @@ const AppsService = {
       // Use shell commands for Docker operations
       try {
         // Pull image
-        execSync(`docker pull ${dockerImage}`, { stdio: 'inherit' });
+        sails.log.info(`Pulling Docker image: ${dockerImage}`);
+        execSync(`docker pull ${dockerImage}`, {
+          stdio: 'pipe',
+          encoding: 'utf8',
+          timeout: 300000 // 5 minutes timeout
+        });
+        sails.log.info(`Successfully pulled image: ${dockerImage}`);
       } catch (err) {
-        sails.log.warn('Error pulling Docker image:', err);
+        sails.log.warn(`Error pulling Docker image ${dockerImage}:`, err.message);
+        // Continue anyway, image might already exist
       }
 
       // Build docker run command
-      const envFlags = envArray.map(env => `-e "${env}"`).join(' ');
+      const envFlags = envArray.length > 0 ? envArray.map(env => `-e "${env}"`).join(' ') : '';
       const containerName = `asp-app-${app.id}`;
 
       // Remove existing container if exists
@@ -298,17 +305,13 @@ const AppsService = {
       }
 
       // Run container
-      const dockerCmd = `docker run -d \
-        --name ${containerName} \
-        ${envFlags} \
-        -v "${appPath}:/app" \
-        -p ${port}:3000 \
-        --restart unless-stopped \
-        -w /app \
-        ${dockerImage} \
-        sh -c "${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}"`;
+      const dockerCmd = `docker run -d --name ${containerName} ${envFlags} -v "${appPath}:/app" -p ${port}:3000 --restart unless-stopped -w /app ${dockerImage} sh -c "${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}"`;
 
-      const containerId = execSync(dockerCmd, { encoding: 'utf8' }).trim();
+      sails.log.info(`Starting container with command: ${dockerCmd}`);
+      const containerId = execSync(dockerCmd, {
+        encoding: 'utf8',
+        stdio: 'pipe'
+      }).trim();
 
       return {
         containerId: containerId,
