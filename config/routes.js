@@ -474,6 +474,83 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+
+  // Admin interface for Docker apps
+  'GET /admin/apps': {
+    fn: function(req, res, next) {
+      // Apply the middleware directly
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) {
+          return res.status(401).send('Unauthorized');
+        }
+        // If authentication passes, serve the apps admin view
+        return res.view('pages/admin/apps/index', { layout: false });
+      });
+    }
+  },
+
+  // Admin API routes for Docker apps
+  'GET /api/v1/admin/apps/list': {
+    action: 'admin/apps/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/admin/apps/get': {
+    action: 'admin/apps/get',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/upload': {
+    action: 'admin/apps/upload',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/clone': {
+    action: 'admin/apps/clone',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/update': {
+    action: 'admin/apps/update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/start': {
+    action: 'admin/apps/start',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/stop': {
+    action: 'admin/apps/stop',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/restart': {
+    action: 'admin/apps/restart',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/apps/delete': {
+    action: 'admin/apps/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/admin/apps/logs': {
+    action: 'admin/apps/logs',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato

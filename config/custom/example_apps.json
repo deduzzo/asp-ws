@@ -1,0 +1,21 @@
+[
+  {
+    "id": "personale-convenzionato-presidi",
+    "name": "Personale Convenzionato Presidi",
+    "description": "Application for managing healthcare personnel",
+    "type": "nodejs",
+    "source": "github",
+    "githubUrl": "https://github.com/deduzzo/personale-convenzionato-presidi",
+    "branch": "main",
+    "status": "stopped",
+    "port": null,
+    "containerId": null,
+    "dockerImage": "node:22-alpine",
+    "buildCommand": "npm install",
+    "startCommand": "npm start",
+    "environmentVars": {},
+    "path": null,
+    "createdAt": "2025-10-31T00:00:00.000Z",
+    "updatedAt": "2025-10-31T00:00:00.000Z"
+  }
+]
