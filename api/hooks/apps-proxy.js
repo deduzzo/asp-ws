@@ -56,6 +56,52 @@ module.exports = function defineAppsProxyHook(sails) {
               pathRewrite: {
                 [`^/apps/${appId}`]: '', // Remove /apps/:appId prefix
               },
+              selfHandleResponse: true, // Handle response manually for HTML injection
+              onProxyRes: (proxyRes, req, res) => {
+                // Check if response is HTML
+                const contentType = proxyRes.headers['content-type'] || '';
+
+                // Copy headers from proxy response
+                Object.keys(proxyRes.headers).forEach(key => {
+                  if (key !== 'content-length') {
+                    res.setHeader(key, proxyRes.headers[key]);
+                  }
+                });
+                res.statusCode = proxyRes.statusCode;
+
+                if (contentType.includes('text/html')) {
+                  // Collect response data
+                  let body = '';
+                  proxyRes.on('data', (chunk) => {
+                    body += chunk.toString('utf8');
+                  });
+
+                  proxyRes.on('end', () => {
+                    // Inject BASE_PATH script into HTML
+                    const basePath = `/apps/${appId}`;
+                    const scriptTag = `<script>window.BASE_PATH = '${basePath}';</script>`;
+
+                    // Try to inject after <head> tag, or before </head>, or at the beginning
+                    let modifiedBody = body;
+                    if (body.includes('<head>')) {
+                      modifiedBody = body.replace('<head>', `<head>${scriptTag}`);
+                    } else if (body.includes('</head>')) {
+                      modifiedBody = body.replace('</head>', `${scriptTag}</head>`);
+                    } else if (body.includes('<html>')) {
+                      modifiedBody = body.replace('<html>', `<html>${scriptTag}`);
+                    } else {
+                      modifiedBody = scriptTag + body;
+                    }
+
+                    // Update content-length and send
+                    res.setHeader('content-length', Buffer.byteLength(modifiedBody, 'utf8'));
+                    res.end(modifiedBody, 'utf8');
+                  });
+                } else {
+                  // For non-HTML content, just pipe through
+                  proxyRes.pipe(res);
+                }
+              },
               onError: (err, req, res) => {
                 sails.log.error(`Proxy error for app ${appId}:`, err);
                 res.status(502).json({
