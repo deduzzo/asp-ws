@@ -1,0 +1,21 @@
+[
+  {
+    "id": "presidi-distretti-asp-messina",
+    "name": "presidi-distretti-asp-messina",
+    "description": "Mappa interattiva dei distretti sanitari, comuni e presidi sanitari dell'ASP 5 Messina",
+    "type": "nodejs",
+    "source": "github",
+    "githubUrl": "https://github.com/deduzzo/personale-convenzionato-presidi",
+    "branch": "main",
+    "status": "running",
+    "port": 3100,
+    "containerId": "ea3184815504ce411544c96db25e8d14a519f6cccc5e6ec56443b1eaeffce8f8",
+    "dockerImage": "node:22-alpine",
+    "buildCommand": "npm install",
+    "startCommand": "npm start",
+    "environmentVars": {},
+    "path": "/Users/deduzzo/dev/asp-ws/.apps/presidi-distretti-asp-messina",
+    "updatedAt": "2025-10-31T09:47:54.160Z",
+    "createdAt": "2025-10-31T08:46:12.927Z"
+  }
+]
