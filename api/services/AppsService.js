@@ -284,7 +284,12 @@ const AppsService = {
     const port = await AppsService.findAvailablePort();
 
     // Prepare environment variables
-    const envArray = Object.entries(app.environmentVars || {}).map(
+    const basePath = `/apps/${app.id}`;
+    const envVars = {
+      BASE_PATH: basePath,
+      ...(app.environmentVars || {})
+    };
+    const envArray = Object.entries(envVars).map(
       ([key, value]) => `${key}=${value}`
     );
 

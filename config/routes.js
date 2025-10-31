@@ -551,6 +551,12 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+
+  // Public endpoint for apps to get their configuration
+  'GET /api/v1/apps/:appId/config': {
+    action: 'apps/config',
+    csrf: false
+  },
   'POST /api/v1/admin/apps/docker-settings': {
     action: 'admin/apps/docker-settings',
     scopi: ['apps'],
