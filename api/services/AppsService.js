@@ -254,6 +254,7 @@ const AppsService = {
    */
   startContainer: async (app) => {
     const docker = await getDockerInstance();
+    const settings = await getDockerSettings();
     const appPath = path.join(APPS_DIR, app.id);
 
     if (!await fs.pathExists(appPath)) {
@@ -268,25 +269,6 @@ const AppsService = {
       dockerImage = app.dockerImage;
     }
 
-    // Pull image if not exists
-    try {
-      await new Promise((resolve, reject) => {
-        docker.pull(dockerImage, (err, stream) => {
-          if (err) {
-            return reject(err);
-          }
-          docker.modem.followProgress(stream, (err, output) => {
-            if (err) {
-              return reject(err);
-            }
-            resolve(output);
-          });
-        });
-      });
-    } catch (err) {
-      sails.log.warn('Error pulling Docker image:', err);
-    }
-
     // Find available port
     const port = await AppsService.findAvailablePort();
 
@@ -295,38 +277,98 @@ const AppsService = {
       ([key, value]) => `${key}=${value}`
     );
 
-    // Create container
-    const container = await docker.createContainer({
-      Image: dockerImage,
-      name: `asp-app-${app.id}`,
-      Env: envArray,
-      ExposedPorts: {
-        '3000/tcp': {}
-      },
-      HostConfig: {
-        Binds: [`${appPath}:/app`],
-        PortBindings: {
-          '3000/tcp': [{ HostPort: port.toString() }]
+    if (settings.useSudo || !docker) {
+      // Use shell commands for Docker operations
+      try {
+        // Pull image
+        execSync(`docker pull ${dockerImage}`, { stdio: 'inherit' });
+      } catch (err) {
+        sails.log.warn('Error pulling Docker image:', err);
+      }
+
+      // Build docker run command
+      const envFlags = envArray.map(env => `-e "${env}"`).join(' ');
+      const containerName = `asp-app-${app.id}`;
+
+      // Remove existing container if exists
+      try {
+        execSync(`docker rm -f ${containerName}`, { stdio: 'ignore' });
+      } catch (err) {
+        // Container doesn't exist, ignore
+      }
+
+      // Run container
+      const dockerCmd = `docker run -d \
+        --name ${containerName} \
+        ${envFlags} \
+        -v "${appPath}:/app" \
+        -p ${port}:3000 \
+        --restart unless-stopped \
+        -w /app \
+        ${dockerImage} \
+        sh -c "${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}"`;
+
+      const containerId = execSync(dockerCmd, { encoding: 'utf8' }).trim();
+
+      return {
+        containerId: containerId,
+        port: port,
+        status: 'running'
+      };
+    } else {
+      // Use dockerode
+      // Pull image if not exists
+      try {
+        await new Promise((resolve, reject) => {
+          docker.pull(dockerImage, (err, stream) => {
+            if (err) {
+              return reject(err);
+            }
+            docker.modem.followProgress(stream, (err, output) => {
+              if (err) {
+                return reject(err);
+              }
+              resolve(output);
+            });
+          });
+        });
+      } catch (err) {
+        sails.log.warn('Error pulling Docker image:', err);
+      }
+
+      // Create container
+      const container = await docker.createContainer({
+        Image: dockerImage,
+        name: `asp-app-${app.id}`,
+        Env: envArray,
+        ExposedPorts: {
+          '3000/tcp': {}
         },
-        RestartPolicy: {
-          Name: 'unless-stopped'
-        }
-      },
-      WorkingDir: '/app',
-      Cmd: ['sh', '-c', `${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}`]
-    });
+        HostConfig: {
+          Binds: [`${appPath}:/app`],
+          PortBindings: {
+            '3000/tcp': [{ HostPort: port.toString() }]
+          },
+          RestartPolicy: {
+            Name: 'unless-stopped'
+          }
+        },
+        WorkingDir: '/app',
+        Cmd: ['sh', '-c', `${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}`]
+      });
 
-    // Start container
-    await container.start();
+      // Start container
+      await container.start();
 
-    // Get container info
-    const containerInfo = await container.inspect();
+      // Get container info
+      const containerInfo = await container.inspect();
 
-    return {
-      containerId: containerInfo.Id,
-      port: port,
-      status: 'running'
-    };
+      return {
+        containerId: containerInfo.Id,
+        port: port,
+        status: 'running'
+      };
+    }
   },
 
   /**
@@ -337,9 +379,18 @@ const AppsService = {
   stopContainer: async (containerId) => {
     try {
       const docker = await getDockerInstance();
-      const container = docker.getContainer(containerId);
-      await container.stop();
-      return true;
+      const settings = await getDockerSettings();
+
+      if (settings.useSudo || !docker) {
+        // Use shell command
+        execSync(`docker stop ${containerId}`, { stdio: 'inherit' });
+        return true;
+      } else {
+        // Use dockerode
+        const container = docker.getContainer(containerId);
+        await container.stop();
+        return true;
+      }
     } catch (err) {
       sails.log.error('Error stopping container:', err);
       return false;
@@ -354,9 +405,18 @@ const AppsService = {
   removeContainer: async (containerId) => {
     try {
       const docker = await getDockerInstance();
-      const container = docker.getContainer(containerId);
-      await container.remove({ force: true });
-      return true;
+      const settings = await getDockerSettings();
+
+      if (settings.useSudo || !docker) {
+        // Use shell command
+        execSync(`docker rm -f ${containerId}`, { stdio: 'inherit' });
+        return true;
+      } else {
+        // Use dockerode
+        const container = docker.getContainer(containerId);
+        await container.remove({ force: true });
+        return true;
+      }
     } catch (err) {
       sails.log.error('Error removing container:', err);
       return false;
@@ -371,15 +431,31 @@ const AppsService = {
   getContainerStatus: async (containerId) => {
     try {
       const docker = await getDockerInstance();
-      const container = docker.getContainer(containerId);
-      const info = await container.inspect();
+      const settings = await getDockerSettings();
 
-      return {
-        status: info.State.Status,
-        running: info.State.Running,
-        startedAt: info.State.StartedAt,
-        finishedAt: info.State.FinishedAt
-      };
+      if (settings.useSudo || !docker) {
+        // Use shell command
+        const output = execSync(`docker inspect ${containerId}`, { encoding: 'utf8' });
+        const info = JSON.parse(output)[0];
+
+        return {
+          status: info.State.Status,
+          running: info.State.Running,
+          startedAt: info.State.StartedAt,
+          finishedAt: info.State.FinishedAt
+        };
+      } else {
+        // Use dockerode
+        const container = docker.getContainer(containerId);
+        const info = await container.inspect();
+
+        return {
+          status: info.State.Status,
+          running: info.State.Running,
+          startedAt: info.State.StartedAt,
+          finishedAt: info.State.FinishedAt
+        };
+      }
     } catch (err) {
       sails.log.error('Error getting container status:', err);
       return { status: 'error', running: false };
@@ -395,16 +471,28 @@ const AppsService = {
   getContainerLogs: async (containerId, tail = 100) => {
     try {
       const docker = await getDockerInstance();
-      const container = docker.getContainer(containerId);
+      const settings = await getDockerSettings();
 
-      const logs = await container.logs({
-        stdout: true,
-        stderr: true,
-        tail: tail,
-        timestamps: true
-      });
+      if (settings.useSudo || !docker) {
+        // Use shell command
+        const logs = execSync(`docker logs --tail ${tail} --timestamps ${containerId}`, {
+          encoding: 'utf8',
+          maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+        });
+        return logs;
+      } else {
+        // Use dockerode
+        const container = docker.getContainer(containerId);
 
-      return logs.toString('utf8');
+        const logs = await container.logs({
+          stdout: true,
+          stderr: true,
+          tail: tail,
+          timestamps: true
+        });
+
+        return logs.toString('utf8');
+      }
     } catch (err) {
       sails.log.error('Error getting container logs:', err);
       return '';
