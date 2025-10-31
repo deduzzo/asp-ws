@@ -128,9 +128,14 @@
                     <h1><i class="bi bi-boxes"></i> Docker Apps Management</h1>
                     <p class="mb-0">Manage and deploy containerized applications</p>
                 </div>
-                <a href="/admin" class="btn btn-light">
-                    <i class="bi bi-arrow-left"></i> Back to Admin
-                </a>
+                <div>
+                    <button class="btn btn-light me-2" onclick="logout()">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                    <a href="/admin" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Back to Admin
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -227,6 +232,36 @@
         </div>
     </div>
 
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-shield-lock"></i> Autenticazione Richiesta</h5>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Per accedere alla gestione delle applicazioni Docker è necessario autenticarsi con un token valido.</p>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Username *</label>
+                            <input type="text" class="form-control" name="username" required autocomplete="username">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password *</label>
+                            <input type="password" class="form-control" name="password" required autocomplete="current-password">
+                        </div>
+                        <div id="loginError" class="alert alert-danger d-none"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="performLogin()">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- App Details Modal -->
     <div class="modal fade" id="appDetailsModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -249,11 +284,117 @@
 
     <script>
         let currentApps = [];
+        let loginModal = null;
+        const TOKEN_KEY = 'apps_auth_token';
 
-        // Load apps on page load
+        // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
-            loadApps();
+            loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            checkAuthentication();
         });
+
+        // Configure axios to include token in all requests
+        axios.interceptors.request.use(function (config) {
+            const token = localStorage.getItem(TOKEN_KEY);
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
+            return config;
+        }, function (error) {
+            return Promise.reject(error);
+        });
+
+        // Handle 401 responses
+        axios.interceptors.response.use(function (response) {
+            return response;
+        }, function (error) {
+            if (error.response && error.response.status === 401) {
+                // Token is invalid or expired, show login modal
+                localStorage.removeItem(TOKEN_KEY);
+                showLoginModal();
+            }
+            return Promise.reject(error);
+        });
+
+        function checkAuthentication() {
+            const token = localStorage.getItem(TOKEN_KEY);
+            if (!token) {
+                showLoginModal();
+            } else {
+                loadApps();
+            }
+        }
+
+        function showLoginModal() {
+            loginModal.show();
+        }
+
+        async function performLogin() {
+            const form = document.getElementById('loginForm');
+            const formData = new FormData(form);
+            const username = formData.get('username');
+            const password = formData.get('password');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!username || !password) {
+                errorDiv.textContent = 'Username e password sono richiesti';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            try {
+                errorDiv.classList.add('d-none');
+
+                // Call login API with specific scope and domain
+                const response = await axios.post('/api/v1/login/get-token', {
+                    login: username,
+                    password: password,
+                    scopi: 'apps',
+                    ambito: 'api'
+                });
+
+                if (response.data.ok && response.data.data.token) {
+                    // Store token in localStorage
+                    localStorage.setItem(TOKEN_KEY, response.data.data.token);
+
+                    // Hide login modal
+                    loginModal.hide();
+                    form.reset();
+
+                    // Load apps
+                    loadApps();
+                } else {
+                    errorDiv.textContent = 'Login fallito: ' + (response.data.err?.msg || 'Errore sconosciuto');
+                    errorDiv.classList.remove('d-none');
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                let errorMsg = 'Errore durante il login';
+                if (err.response?.data?.err?.msg) {
+                    errorMsg = err.response.data.err.msg;
+                } else if (err.message) {
+                    errorMsg = err.message;
+                }
+                errorDiv.textContent = errorMsg;
+                errorDiv.classList.remove('d-none');
+            }
+        }
+
+        // Allow form submission with Enter key
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                performLogin();
+            });
+        });
+
+        function logout() {
+            if (confirm('Sei sicuro di voler effettuare il logout?')) {
+                localStorage.removeItem(TOKEN_KEY);
+                document.getElementById('appsList').innerHTML = '';
+                showLoginModal();
+            }
+        }
 
         async function loadApps() {
             try {
