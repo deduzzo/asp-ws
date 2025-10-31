@@ -493,64 +493,72 @@ let routes = {
   // Admin API routes for Docker apps
   'GET /api/v1/admin/apps/list': {
     action: 'admin/apps/list',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'GET /api/v1/admin/apps/get': {
     action: 'admin/apps/get',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/upload': {
     action: 'admin/apps/upload',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/clone': {
     action: 'admin/apps/clone',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/update': {
     action: 'admin/apps/update',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/start': {
     action: 'admin/apps/start',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/stop': {
     action: 'admin/apps/stop',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/restart': {
     action: 'admin/apps/restart',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin/apps/delete': {
     action: 'admin/apps/delete',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'GET /api/v1/admin/apps/logs': {
     action: 'admin/apps/logs',
-    scopi: ['admin-manage'],
+    scopi: ['apps'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+
+  // Proxy routes for running apps (must be last to not interfere with other routes)
+  'GET /apps/:appId': { action: 'apps/proxy', skipAssets: true },
+  'GET /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
+  'POST /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
+  'PUT /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
+  'DELETE /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
+  'PATCH /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato
