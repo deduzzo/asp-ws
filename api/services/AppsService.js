@@ -253,7 +253,7 @@ const AppsService = {
    * @returns {Object} Container info
    */
   startContainer: async (app) => {
-    const docker = getDockerInstance();
+    const docker = await getDockerInstance();
     const appPath = path.join(APPS_DIR, app.id);
 
     if (!await fs.pathExists(appPath)) {
@@ -270,7 +270,19 @@ const AppsService = {
 
     // Pull image if not exists
     try {
-      await docker.pull(dockerImage);
+      await new Promise((resolve, reject) => {
+        docker.pull(dockerImage, (err, stream) => {
+          if (err) {
+            return reject(err);
+          }
+          docker.modem.followProgress(stream, (err, output) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(output);
+          });
+        });
+      });
     } catch (err) {
       sails.log.warn('Error pulling Docker image:', err);
     }
@@ -324,7 +336,7 @@ const AppsService = {
    */
   stopContainer: async (containerId) => {
     try {
-      const docker = getDockerInstance();
+      const docker = await getDockerInstance();
       const container = docker.getContainer(containerId);
       await container.stop();
       return true;
@@ -341,7 +353,7 @@ const AppsService = {
    */
   removeContainer: async (containerId) => {
     try {
-      const docker = getDockerInstance();
+      const docker = await getDockerInstance();
       const container = docker.getContainer(containerId);
       await container.remove({ force: true });
       return true;
@@ -358,7 +370,7 @@ const AppsService = {
    */
   getContainerStatus: async (containerId) => {
     try {
-      const docker = getDockerInstance();
+      const docker = await getDockerInstance();
       const container = docker.getContainer(containerId);
       const info = await container.inspect();
 
@@ -382,7 +394,7 @@ const AppsService = {
    */
   getContainerLogs: async (containerId, tail = 100) => {
     try {
-      const docker = getDockerInstance();
+      const docker = await getDockerInstance();
       const container = docker.getContainer(containerId);
 
       const logs = await container.logs({
