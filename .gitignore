@@ -47,7 +47,8 @@
 
 config/local.js
 config/custom/private_*.json
-config/custom/apps.json
+config/custom/docker_settings.json
+data/apps.json
 api/data/forms/template/*.json
 assets/images/forms/*
 !assets/images/forms/.gitkeep

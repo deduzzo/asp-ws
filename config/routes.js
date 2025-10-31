@@ -551,6 +551,12 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+  'POST /api/v1/admin/apps/docker-settings': {
+    action: 'admin/apps/docker-settings',
+    scopi: ['apps'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 
   // Proxy routes for running apps (must be last to not interfere with other routes)
   'GET /apps/:appId': { action: 'apps/proxy', skipAssets: true },

@@ -5,12 +5,33 @@ const Docker = require('dockerode');
 const AdmZip = require('adm-zip');
 const simpleGit = require('simple-git');
 const os = require('os');
+const {execSync} = require('child_process');
 
-const APPS_CONFIG_PATH = path.join(sails.config.appPath, 'config', 'custom', 'apps.json');
+const APPS_CONFIG_PATH = path.join(sails.config.appPath, 'data', 'apps.json');
 const APPS_DIR = path.join(sails.config.appPath, '.apps');
+const DOCKER_SETTINGS_PATH = path.join(sails.config.appPath, 'config', 'custom', 'docker_settings.json');
 
-// Initialize Docker based on platform
-const getDockerInstance = () => {
+// Read Docker settings
+const getDockerSettings = async () => {
+  try {
+    if (await fs.pathExists(DOCKER_SETTINGS_PATH)) {
+      return await fs.readJson(DOCKER_SETTINGS_PATH);
+    }
+  } catch (err) {
+    sails.log.warn('Error reading Docker settings:', err);
+  }
+  return { useSudo: false, sudoPassword: null };
+};
+
+// Initialize Docker based on platform and settings
+const getDockerInstance = async () => {
+  const settings = await getDockerSettings();
+
+  if (settings.useSudo) {
+    // If using sudo, we'll use shell commands instead of dockerode
+    return null;
+  }
+
   if (os.platform() === 'win32') {
     // On Windows, connect to Docker via WSL
     return new Docker({ socketPath: '//./pipe/docker_engine' });

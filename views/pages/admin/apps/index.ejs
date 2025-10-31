@@ -125,15 +125,18 @@
         <div class="page-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1><i class="bi bi-boxes"></i> Docker Apps Management</h1>
-                    <p class="mb-0">Manage and deploy containerized applications</p>
+                    <h1><i class="bi bi-boxes"></i> Gestione Applicazioni Docker</h1>
+                    <p class="mb-0">Gestisci e distribuisci applicazioni containerizzate</p>
                 </div>
                 <div>
+                    <button class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#dockerSettingsModal">
+                        <i class="bi bi-gear"></i> Impostazioni Docker
+                    </button>
                     <button class="btn btn-light me-2" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> Logout
+                        <i class="bi bi-box-arrow-right"></i> Esci
                     </button>
                     <a href="/admin" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> Back to Admin
+                        <i class="bi bi-arrow-left"></i> Torna all'Admin
                     </a>
                 </div>
             </div>
@@ -143,13 +146,13 @@
         <div class="row mb-4">
             <div class="col-md-12">
                 <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#cloneModal">
-                    <i class="bi bi-github"></i> Clone from GitHub
+                    <i class="bi bi-github"></i> Clona da GitHub
                 </button>
-                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                    <i class="bi bi-upload"></i> Upload ZIP
+                <button class="btn btn-secondary me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <i class="bi bi-upload"></i> Carica ZIP
                 </button>
                 <button class="btn btn-info" onclick="loadApps()">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                    <i class="bi bi-arrow-clockwise"></i> Aggiorna
                 </button>
             </div>
         </div>
@@ -165,13 +168,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-github"></i> Clone from GitHub</h5>
+                    <h5 class="modal-title"><i class="bi bi-github"></i> Clona da GitHub</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="cloneForm">
                         <div class="mb-3">
-                            <label class="form-label">GitHub Repository URL *</label>
+                            <label class="form-label">URL Repository GitHub *</label>
                             <input type="url" class="form-control" name="githubUrl" required
                                    placeholder="https://github.com/username/repository">
                         </div>
@@ -181,19 +184,19 @@
                                    placeholder="main">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">App Name (Optional)</label>
+                            <label class="form-label">Nome Applicazione (Opzionale)</label>
                             <input type="text" class="form-control" name="name"
-                                   placeholder="Will be read from package.json">
+                                   placeholder="Sarà letto da package.json">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Description (Optional)</label>
+                            <label class="form-label">Descrizione (Opzionale)</label>
                             <textarea class="form-control" name="description" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="cloneApp()">Clone & Deploy</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-primary" onclick="cloneApp()">Clona e Distribuisci</button>
                 </div>
             </div>
         </div>
@@ -204,29 +207,67 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-upload"></i> Upload ZIP</h5>
+                    <h5 class="modal-title"><i class="bi bi-upload"></i> Carica ZIP</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="uploadForm" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label class="form-label">ZIP File *</label>
+                            <label class="form-label">File ZIP *</label>
                             <input type="file" class="form-control" name="zipFile" accept=".zip" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">App Name (Optional)</label>
+                            <label class="form-label">Nome Applicazione (Opzionale)</label>
                             <input type="text" class="form-control" name="name"
-                                   placeholder="Will be read from package.json">
+                                   placeholder="Sarà letto da package.json">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Description (Optional)</label>
+                            <label class="form-label">Descrizione (Opzionale)</label>
                             <textarea class="form-control" name="description" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="uploadApp()">Upload & Deploy</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-primary" onclick="uploadApp()">Carica e Distribuisci</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Docker Settings Modal -->
+    <div class="modal fade" id="dockerSettingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-gear"></i> Impostazioni Docker</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-3">Configura le modalità di accesso a Docker. Se Docker richiede permessi root, abilita l'uso di sudo e inserisci la password.</p>
+                    <form id="dockerSettingsForm">
+                        <div class="mb-3">
+                            <label class="form-label">Modalità di esecuzione</label>
+                            <select class="form-select" name="useSudo" id="useSudoSelect" onchange="toggleSudoPassword()">
+                                <option value="false">Normale (senza sudo)</option>
+                                <option value="true">Con sudo (richiede password root)</option>
+                            </select>
+                            <small class="text-muted">Seleziona "Con sudo" se ricevi errori di permessi Docker</small>
+                        </div>
+                        <div class="mb-3" id="sudoPasswordGroup" style="display: none;">
+                            <label class="form-label">Password Root/Sudo *</label>
+                            <input type="password" class="form-control" name="sudoPassword" id="sudoPasswordInput" autocomplete="off">
+                            <small class="text-muted">La password verrà salvata in modo sicuro per le operazioni Docker</small>
+                        </div>
+                        <div id="dockerSettingsError" class="alert alert-danger d-none"></div>
+                        <div id="dockerSettingsSuccess" class="alert alert-success d-none"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-primary" onclick="saveDockerSettings()">
+                        <i class="bi bi-save"></i> Salva Impostazioni
+                    </button>
                 </div>
             </div>
         </div>
@@ -267,7 +308,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-info-circle"></i> App Details</h5>
+                    <h5 class="modal-title"><i class="bi bi-info-circle"></i> Dettagli Applicazione</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="appDetailsContent">
@@ -286,10 +327,12 @@
         let currentApps = [];
         let loginModal = null;
         const TOKEN_KEY = 'apps_auth_token';
+        const DOCKER_SETTINGS_KEY = 'docker_settings';
 
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
             loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loadDockerSettings();
             checkAuthentication();
         });
 
@@ -396,6 +439,82 @@
             }
         }
 
+        function loadDockerSettings() {
+            const settings = localStorage.getItem(DOCKER_SETTINGS_KEY);
+            if (settings) {
+                try {
+                    const parsed = JSON.parse(settings);
+                    document.getElementById('useSudoSelect').value = parsed.useSudo ? 'true' : 'false';
+                    if (parsed.useSudo && parsed.sudoPassword) {
+                        document.getElementById('sudoPasswordInput').value = parsed.sudoPassword;
+                        document.getElementById('sudoPasswordGroup').style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Error loading Docker settings:', err);
+                }
+            }
+        }
+
+        function toggleSudoPassword() {
+            const useSudo = document.getElementById('useSudoSelect').value === 'true';
+            const passwordGroup = document.getElementById('sudoPasswordGroup');
+            passwordGroup.style.display = useSudo ? 'block' : 'none';
+            if (!useSudo) {
+                document.getElementById('sudoPasswordInput').value = '';
+            }
+        }
+
+        async function saveDockerSettings() {
+            const useSudo = document.getElementById('useSudoSelect').value === 'true';
+            const sudoPassword = document.getElementById('sudoPasswordInput').value;
+            const errorDiv = document.getElementById('dockerSettingsError');
+            const successDiv = document.getElementById('dockerSettingsSuccess');
+
+            errorDiv.classList.add('d-none');
+            successDiv.classList.add('d-none');
+
+            if (useSudo && !sudoPassword) {
+                errorDiv.textContent = 'La password root/sudo è richiesta quando si usa sudo';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            try {
+                const settings = {
+                    useSudo: useSudo,
+                    sudoPassword: useSudo ? sudoPassword : null
+                };
+
+                // Save to backend
+                const response = await axios.post('/api/v1/admin/apps/docker-settings', settings);
+
+                if (response.data.ok) {
+                    // Save to localStorage
+                    localStorage.setItem(DOCKER_SETTINGS_KEY, JSON.stringify(settings));
+
+                    successDiv.textContent = 'Impostazioni Docker salvate con successo';
+                    successDiv.classList.remove('d-none');
+
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.getElementById('dockerSettingsModal')).hide();
+                    }, 1500);
+                } else {
+                    errorDiv.textContent = 'Errore nel salvare le impostazioni: ' + response.data.err.msg;
+                    errorDiv.classList.remove('d-none');
+                }
+            } catch (err) {
+                console.error('Error saving Docker settings:', err);
+                let errorMsg = 'Errore nel salvare le impostazioni';
+                if (err.response?.data?.err?.msg) {
+                    errorMsg = err.response.data.err.msg;
+                } else if (err.message) {
+                    errorMsg = err.message;
+                }
+                errorDiv.textContent = errorMsg;
+                errorDiv.classList.remove('d-none');
+            }
+        }
+
         async function loadApps() {
             try {
                 const response = await axios.get('/api/v1/admin/apps/list');
@@ -403,10 +522,10 @@
                     currentApps = response.data.data.apps;
                     renderApps(currentApps);
                 } else {
-                    showError('Error loading apps: ' + response.data.err.msg);
+                    showError('Errore nel caricamento delle app: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error loading apps: ' + err.message);
+                showError('Errore nel caricamento delle app: ' + err.message);
             }
         }
 
@@ -417,8 +536,8 @@
                 appsList.innerHTML = `
                     <div class="col-12">
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> No apps deployed yet.
-                            Clone from GitHub or upload a ZIP to get started.
+                            <i class="bi bi-info-circle"></i> Nessuna applicazione distribuita.
+                            Clona da GitHub o carica un file ZIP per iniziare.
                         </div>
                     </div>
                 `;
@@ -432,7 +551,7 @@
                             <h5 class="mb-0">${app.name}</h5>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted">${app.description || 'No description'}</p>
+                            <p class="text-muted">${app.description || 'Nessuna descrizione'}</p>
                             <div class="mb-2">
                                 <small class="text-muted">
                                     <i class="bi bi-tag"></i> ${app.id}
@@ -444,26 +563,26 @@
                             </div>
                             <div class="mb-3">
                                 <span class="status-badge status-${app.status}">
-                                    ${app.status.toUpperCase()}
+                                    ${app.status === 'running' ? 'IN ESECUZIONE' : app.status === 'stopped' ? 'FERMATA' : 'ERRORE'}
                                 </span>
                             </div>
-                            ${app.port ? `<p class="mb-2"><small><i class="bi bi-link-45deg"></i> <a href="/apps/${app.id}" target="_blank">Open App</a></small></p>` : ''}
+                            ${app.port ? `<p class="mb-2"><small><i class="bi bi-link-45deg"></i> <a href="/apps/${app.id}" target="_blank">Apri App</a></small></p>` : ''}
                             <div class="btn-group w-100" role="group" onclick="event.stopPropagation()">
                                 ${app.status === 'running' ? `
                                     <button class="btn btn-sm btn-warning" onclick="stopApp('${app.id}')">
-                                        <i class="bi bi-stop-circle"></i> Stop
+                                        <i class="bi bi-stop-circle"></i> Ferma
                                     </button>
                                     <button class="btn btn-sm btn-info" onclick="restartApp('${app.id}')">
-                                        <i class="bi bi-arrow-clockwise"></i> Restart
+                                        <i class="bi bi-arrow-clockwise"></i> Riavvia
                                     </button>
                                 ` : `
                                     <button class="btn btn-sm btn-success" onclick="startApp('${app.id}')">
-                                        <i class="bi bi-play-circle"></i> Start
+                                        <i class="bi bi-play-circle"></i> Avvia
                                     </button>
                                 `}
                                 ${app.source === 'github' ? `
                                     <button class="btn btn-sm btn-primary" onclick="updateApp('${app.id}')">
-                                        <i class="bi bi-arrow-down-circle"></i> Update
+                                        <i class="bi bi-arrow-down-circle"></i> Aggiorna
                                     </button>
                                 ` : ''}
                                 <button class="btn btn-sm btn-danger" onclick="deleteApp('${app.id}')">
@@ -482,24 +601,24 @@
             const data = Object.fromEntries(formData.entries());
 
             if (!data.githubUrl) {
-                showError('GitHub URL is required');
+                showError('L\'URL GitHub è richiesto');
                 return;
             }
 
             try {
-                showLoading('Cloning from GitHub...');
+                showLoading('Clonazione da GitHub in corso...');
                 const response = await axios.post('/api/v1/admin/apps/clone', data);
 
                 if (response.data.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('cloneModal')).hide();
                     form.reset();
-                    showSuccess('App cloned successfully!');
+                    showSuccess('App clonata con successo!');
                     loadApps();
                 } else {
-                    showError('Error cloning app: ' + response.data.err.msg);
+                    showError('Errore nella clonazione dell\'app: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error cloning app: ' + err.message);
+                showError('Errore nella clonazione dell\'app: ' + err.message);
             }
         }
 
@@ -508,12 +627,12 @@
             const formData = new FormData(form);
 
             if (!formData.get('zipFile') || formData.get('zipFile').size === 0) {
-                showError('ZIP file is required');
+                showError('Il file ZIP è richiesto');
                 return;
             }
 
             try {
-                showLoading('Uploading ZIP file...');
+                showLoading('Caricamento file ZIP in corso...');
                 const response = await axios.post('/api/v1/admin/apps/upload', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
@@ -523,103 +642,103 @@
                 if (response.data.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
                     form.reset();
-                    showSuccess('App uploaded successfully!');
+                    showSuccess('App caricata con successo!');
                     loadApps();
                 } else {
-                    showError('Error uploading app: ' + response.data.err.msg);
+                    showError('Errore nel caricamento dell\'app: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error uploading app: ' + err.message);
+                showError('Errore nel caricamento dell\'app: ' + err.message);
             }
         }
 
         async function startApp(appId) {
-            if (!confirm('Start this app?')) return;
+            if (!confirm('Avviare questa applicazione?')) return;
 
             try {
-                showLoading('Starting app...');
+                showLoading('Avvio applicazione in corso...');
                 const response = await axios.post('/api/v1/admin/apps/start', { id: appId });
 
                 if (response.data.ok) {
-                    showSuccess('App started successfully!');
+                    showSuccess('Applicazione avviata con successo!');
                     loadApps();
                 } else {
-                    showError('Error starting app: ' + response.data.err.msg);
+                    showError('Errore nell\'avvio dell\'applicazione: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error starting app: ' + err.message);
+                showError('Errore nell\'avvio dell\'applicazione: ' + err.message);
             }
         }
 
         async function stopApp(appId) {
-            if (!confirm('Stop this app?')) return;
+            if (!confirm('Fermare questa applicazione?')) return;
 
             try {
-                showLoading('Stopping app...');
+                showLoading('Arresto applicazione in corso...');
                 const response = await axios.post('/api/v1/admin/apps/stop', { id: appId });
 
                 if (response.data.ok) {
-                    showSuccess('App stopped successfully!');
+                    showSuccess('Applicazione fermata con successo!');
                     loadApps();
                 } else {
-                    showError('Error stopping app: ' + response.data.err.msg);
+                    showError('Errore nell\'arresto dell\'applicazione: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error stopping app: ' + err.message);
+                showError('Errore nell\'arresto dell\'applicazione: ' + err.message);
             }
         }
 
         async function restartApp(appId) {
-            if (!confirm('Restart this app?')) return;
+            if (!confirm('Riavviare questa applicazione?')) return;
 
             try {
-                showLoading('Restarting app...');
+                showLoading('Riavvio applicazione in corso...');
                 const response = await axios.post('/api/v1/admin/apps/restart', { id: appId });
 
                 if (response.data.ok) {
-                    showSuccess('App restarted successfully!');
+                    showSuccess('Applicazione riavviata con successo!');
                     loadApps();
                 } else {
-                    showError('Error restarting app: ' + response.data.err.msg);
+                    showError('Errore nel riavvio dell\'applicazione: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error restarting app: ' + err.message);
+                showError('Errore nel riavvio dell\'applicazione: ' + err.message);
             }
         }
 
         async function updateApp(appId) {
-            if (!confirm('Pull latest changes from GitHub?')) return;
+            if (!confirm('Scaricare gli ultimi aggiornamenti da GitHub?')) return;
 
             try {
-                showLoading('Updating app...');
+                showLoading('Aggiornamento applicazione in corso...');
                 const response = await axios.post('/api/v1/admin/apps/update', { id: appId });
 
                 if (response.data.ok) {
-                    showSuccess('App updated successfully!');
+                    showSuccess('Applicazione aggiornata con successo!');
                     loadApps();
                 } else {
-                    showError('Error updating app: ' + response.data.err.msg);
+                    showError('Errore nell\'aggiornamento dell\'applicazione: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error updating app: ' + err.message);
+                showError('Errore nell\'aggiornamento dell\'applicazione: ' + err.message);
             }
         }
 
         async function deleteApp(appId) {
-            if (!confirm('Delete this app? This action cannot be undone.')) return;
+            if (!confirm('Eliminare questa applicazione? Questa azione non può essere annullata.')) return;
 
             try {
-                showLoading('Deleting app...');
+                showLoading('Eliminazione applicazione in corso...');
                 const response = await axios.post('/api/v1/admin/apps/delete', { id: appId });
 
                 if (response.data.ok) {
-                    showSuccess('App deleted successfully!');
+                    showSuccess('Applicazione eliminata con successo!');
                     loadApps();
                 } else {
-                    showError('Error deleting app: ' + response.data.err.msg);
+                    showError('Errore nell\'eliminazione dell\'applicazione: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error deleting app: ' + err.message);
+                showError('Errore nell\'eliminazione dell\'applicazione: ' + err.message);
             }
         }
 
@@ -632,30 +751,32 @@
                     const logsResponse = app.containerId ?
                         await axios.get('/api/v1/admin/apps/logs', { params: { id: appId, tail: 50 } }) : null;
 
-                    const logs = logsResponse?.data?.ok ? logsResponse.data.data.logs : 'No logs available';
+                    const logs = logsResponse?.data?.ok ? logsResponse.data.data.logs : 'Nessun log disponibile';
+
+                    const statusLabel = app.status === 'running' ? 'IN ESECUZIONE' : app.status === 'stopped' ? 'FERMATA' : 'ERRORE';
 
                     document.getElementById('appDetailsContent').innerHTML = `
                         <div class="row">
                             <div class="col-md-6">
-                                <h6>Basic Information</h6>
+                                <h6>Informazioni di Base</h6>
                                 <p><strong>ID:</strong> ${app.id}</p>
-                                <p><strong>Name:</strong> ${app.name}</p>
-                                <p><strong>Type:</strong> ${app.type}</p>
-                                <p><strong>Source:</strong> ${app.source}</p>
+                                <p><strong>Nome:</strong> ${app.name}</p>
+                                <p><strong>Tipo:</strong> ${app.type}</p>
+                                <p><strong>Sorgente:</strong> ${app.source}</p>
                                 ${app.githubUrl ? `<p><strong>GitHub:</strong> <a href="${app.githubUrl}" target="_blank">${app.githubUrl}</a></p>` : ''}
                                 ${app.branch ? `<p><strong>Branch:</strong> ${app.branch}</p>` : ''}
                             </div>
                             <div class="col-md-6">
-                                <h6>Container Information</h6>
-                                <p><strong>Status:</strong> <span class="status-badge status-${app.status}">${app.status.toUpperCase()}</span></p>
-                                ${app.port ? `<p><strong>Port:</strong> ${app.port}</p>` : ''}
+                                <h6>Informazioni Container</h6>
+                                <p><strong>Stato:</strong> <span class="status-badge status-${app.status}">${statusLabel}</span></p>
+                                ${app.port ? `<p><strong>Porta:</strong> ${app.port}</p>` : ''}
                                 ${app.containerId ? `<p><strong>Container ID:</strong> <small>${app.containerId.substring(0, 12)}</small></p>` : ''}
-                                <p><strong>Docker Image:</strong> ${app.dockerImage}</p>
+                                <p><strong>Immagine Docker:</strong> ${app.dockerImage}</p>
                             </div>
                         </div>
                         ${app.containerId ? `
                             <div class="mt-4">
-                                <h6>Container Logs (last 50 lines)</h6>
+                                <h6>Log del Container (ultime 50 righe)</h6>
                                 <div class="log-viewer">${logs}</div>
                             </div>
                         ` : ''}
@@ -663,10 +784,10 @@
 
                     new bootstrap.Modal(document.getElementById('appDetailsModal')).show();
                 } else {
-                    showError('Error loading app details: ' + response.data.err.msg);
+                    showError('Errore nel caricamento dei dettagli dell\'applicazione: ' + response.data.err.msg);
                 }
             } catch (err) {
-                showError('Error loading app details: ' + err.message);
+                showError('Errore nel caricamento dei dettagli dell\'applicazione: ' + err.message);
             }
         }
 
