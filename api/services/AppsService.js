@@ -290,10 +290,13 @@ const AppsService = {
 
     if (settings.useSudo || !docker) {
       // Use shell commands for Docker operations
+      // Always use sudo if dockerode connection failed
+      const dockerPrefix = 'sudo docker';
+
       try {
         // Pull image
         sails.log.info(`Pulling Docker image: ${dockerImage}`);
-        execSync(`docker pull ${dockerImage}`, {
+        execSync(`${dockerPrefix} pull ${dockerImage}`, {
           stdio: 'pipe',
           encoding: 'utf8',
           timeout: 300000 // 5 minutes timeout
@@ -310,13 +313,13 @@ const AppsService = {
 
       // Remove existing container if exists
       try {
-        execSync(`docker rm -f ${containerName}`, { stdio: 'ignore' });
+        execSync(`${dockerPrefix} rm -f ${containerName}`, { stdio: 'ignore' });
       } catch (err) {
         // Container doesn't exist, ignore
       }
 
       // Run container
-      const dockerCmd = `docker run -d --name ${containerName} ${envFlags} -v "${appPath}:/app" -p ${port}:3000 --restart unless-stopped -w /app ${dockerImage} sh -c "${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}"`;
+      const dockerCmd = `${dockerPrefix} run -d --name ${containerName} ${envFlags} -v "${appPath}:/app" -p ${port}:3000 --restart unless-stopped -w /app ${dockerImage} sh -c "${app.buildCommand || 'npm install'} && ${app.startCommand || 'npm start'}"`;
 
       sails.log.info(`Starting container with command: ${dockerCmd}`);
       const containerId = execSync(dockerCmd, {
@@ -396,8 +399,8 @@ const AppsService = {
       const settings = await getDockerSettings();
 
       if (settings.useSudo || !docker) {
-        // Use shell command
-        execSync(`docker stop ${containerId}`, { stdio: 'inherit' });
+        // Use shell command with sudo
+        execSync(`sudo docker stop ${containerId}`, { stdio: 'inherit' });
         return true;
       } else {
         // Use dockerode
@@ -422,8 +425,8 @@ const AppsService = {
       const settings = await getDockerSettings();
 
       if (settings.useSudo || !docker) {
-        // Use shell command
-        execSync(`docker rm -f ${containerId}`, { stdio: 'inherit' });
+        // Use shell command with sudo
+        execSync(`sudo docker rm -f ${containerId}`, { stdio: 'inherit' });
         return true;
       } else {
         // Use dockerode
@@ -448,8 +451,8 @@ const AppsService = {
       const settings = await getDockerSettings();
 
       if (settings.useSudo || !docker) {
-        // Use shell command
-        const output = execSync(`docker inspect ${containerId}`, { encoding: 'utf8' });
+        // Use shell command with sudo
+        const output = execSync(`sudo docker inspect ${containerId}`, { encoding: 'utf8' });
         const info = JSON.parse(output)[0];
 
         return {
@@ -488,8 +491,8 @@ const AppsService = {
       const settings = await getDockerSettings();
 
       if (settings.useSudo || !docker) {
-        // Use shell command
-        const logs = execSync(`docker logs --tail ${tail} --timestamps ${containerId}`, {
+        // Use shell command with sudo
+        const logs = execSync(`sudo docker logs --tail ${tail} --timestamps ${containerId}`, {
           encoding: 'utf8',
           maxBuffer: 10 * 1024 * 1024 // 10MB buffer
         });
