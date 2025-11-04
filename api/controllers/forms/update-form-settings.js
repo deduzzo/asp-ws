@@ -11,6 +11,22 @@ module.exports = {
     notifications: {
       type: 'ref',
       description: 'Impostazioni notifiche'
+    },
+    enabled: {
+      type: 'boolean',
+      description: 'Abilita o disabilita il form'
+    },
+    validUntil: {
+      type: 'string',
+      description: 'Data di scadenza del form (ISO format)'
+    },
+    disabledMessage: {
+      type: 'string',
+      description: 'Messaggio da mostrare quando il form è disabilitato'
+    },
+    expiredMessage: {
+      type: 'string',
+      description: 'Messaggio da mostrare quando il form è scaduto'
     }
   },
 
@@ -85,6 +101,39 @@ module.exports = {
         };
       }
 
+      // Aggiorna enabled se fornito
+      if (inputs.enabled !== undefined) {
+        formData.enabled = inputs.enabled;
+      }
+
+      // Aggiorna validUntil se fornito
+      if (inputs.validUntil !== undefined) {
+        // Valida la data se fornita
+        if (inputs.validUntil && inputs.validUntil !== '') {
+          const validUntilDate = new Date(inputs.validUntil);
+          if (isNaN(validUntilDate.getTime())) {
+            return this.res.ApiResponse({
+              errType: 'BAD_REQUEST',
+              errMsg: 'Invalid validUntil date format'
+            });
+          }
+          formData.validUntil = inputs.validUntil;
+        } else {
+          // Se è una stringa vuota, rimuovi il campo
+          delete formData.validUntil;
+        }
+      }
+
+      // Aggiorna disabledMessage se fornito
+      if (inputs.disabledMessage !== undefined) {
+        formData.disabledMessage = inputs.disabledMessage;
+      }
+
+      // Aggiorna expiredMessage se fornito
+      if (inputs.expiredMessage !== undefined) {
+        formData.expiredMessage = inputs.expiredMessage;
+      }
+
       // Salva il file aggiornato
       try {
         fs.writeFileSync(jsonPath, JSON.stringify(formData, null, 2), 'utf8');
@@ -105,7 +154,11 @@ module.exports = {
         ipAddress: this.req.ip,
         context: {
           formId: formId,
-          notifications: inputs.notifications
+          notifications: inputs.notifications,
+          enabled: inputs.enabled,
+          validUntil: inputs.validUntil,
+          disabledMessage: inputs.disabledMessage,
+          expiredMessage: inputs.expiredMessage
         }
       };
 

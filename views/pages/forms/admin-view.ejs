@@ -122,7 +122,7 @@
 
             <div class="flex items-end">
               <button
-                @click="loadSubmissions()"
+                @click="currentPage = 1; loadSubmissions()"
                 class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 text-sm font-medium"
               >
                 Applica Filtri
@@ -471,15 +471,27 @@
             const data = await response.json();
 
             if (data.ok && data.data) {
-              this.submissions = data.data.submissions;
-              this.totalSubmissions = data.data.total;
-              this.totalPages = data.data.totalPages;
+              this.submissions = data.data.submissions || [];
+              this.totalSubmissions = data.data.total || 0;
+              this.totalPages = data.data.totalPages || 1;
+
+              // Se la pagina corrente è maggiore del totale pagine, torna all'ultima pagina
+              if (this.currentPage > this.totalPages && this.totalPages > 0) {
+                this.currentPage = this.totalPages;
+              }
             } else {
               console.error('Error loading submissions:', data);
+              this.submissions = [];
+              this.totalSubmissions = 0;
+              this.totalPages = 1;
             }
 
           } catch (err) {
             console.error('Error loading submissions:', err);
+            this.submissions = [];
+            this.totalSubmissions = 0;
+            this.totalPages = 1;
+            this.currentPage = 1;
           } finally {
             this.loading = false;
           }

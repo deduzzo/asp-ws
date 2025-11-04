@@ -28,7 +28,8 @@
       "Bash(git check-ignore:*)",
       "Bash(tree:*)",
       "Bash(git merge:*)",
-      "Bash(timeout 10 sails lift:*)"
+      "Bash(timeout 10 sails lift:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

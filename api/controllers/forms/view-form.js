@@ -68,7 +68,18 @@ module.exports = {
       const template = fs.readFileSync(viewPath, 'utf8');
 
       // Check if form is enabled (default to true if not specified)
-      const formEnabled = formDefinition.enabled !== false;
+      let formEnabled = formDefinition.enabled !== false;
+      let disabledMessage = formDefinition.disabledMessage || 'Questo modulo non è al momento disponibile. Riprova più tardi.';
+
+      // Check if form has expired (validUntil)
+      if (formEnabled && formDefinition.validUntil) {
+        const validUntilDate = new Date(formDefinition.validUntil);
+        const now = new Date();
+        if (now > validUntilDate) {
+          formEnabled = false;
+          disabledMessage = formDefinition.expiredMessage || 'Questo modulo non è più disponibile. Il termine per la compilazione è scaduto.';
+        }
+      }
 
       // Load global forms settings
       const globalSettings = await sails.helpers.formsSettings.with({
@@ -80,7 +91,7 @@ module.exports = {
         formTitle: formDefinition.title || 'Form',
         formDescription: formDefinition.description || '',
         formEnabled: formEnabled,
-        formDisabledMessage: formDefinition.disabledMessage || 'Questo modulo non è al momento disponibile. Riprova più tardi.',
+        formDisabledMessage: disabledMessage,
         recaptchaEnabled: formDefinition.recaptcha?.enabled || false,
         recaptchaSiteKey: sails.config.custom.recaptcha?.siteKey || '',
         globalSettings: globalSettings
