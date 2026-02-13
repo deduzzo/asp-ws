@@ -31,18 +31,17 @@ module.exports = {
         });
       }
 
-      if (app.containerId) {
-        // Check if container is already running
-        const status = await AppsService.getContainerStatus(app.containerId);
-        if (status.running) {
-          return this.res.ApiResponse({
-            errType: 'BAD_REQUEST',
-            errMsg: 'App is already running'
-          });
-        }
-        // Remove old container
-        await AppsService.removeContainer(app.containerId);
+      // Check by container name (more reliable than stale containerId)
+      const containerName = `asp-app-${inputs.id}`;
+      const status = await AppsService.getContainerStatus(containerName);
+      if (status.running) {
+        return this.res.ApiResponse({
+          errType: 'BAD_REQUEST',
+          errMsg: 'App is already running'
+        });
       }
+      // Remove old container if exists
+      try { await AppsService.removeContainer(containerName); } catch (err) { /* ignore */ }
 
       // Start container
       const containerInfo = await AppsService.startContainer(app);

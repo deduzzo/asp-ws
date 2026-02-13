@@ -31,15 +31,9 @@ module.exports = {
         });
       }
 
-      if (!app.containerId) {
-        return this.res.ApiResponse({
-          errType: 'BAD_REQUEST',
-          errMsg: 'App is not running'
-        });
-      }
-
-      // Stop container
-      await AppsService.stopContainer(app.containerId);
+      // Stop container by name (more reliable than stale containerId)
+      const containerName = `asp-app-${inputs.id}`;
+      await AppsService.stopContainer(containerName);
 
       // Update app configuration
       app.status = 'stopped';

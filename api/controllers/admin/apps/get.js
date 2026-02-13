@@ -31,10 +31,9 @@ module.exports = {
         });
       }
 
-      // Get container status if running
-      if (app.containerId) {
-        app.containerStatus = await AppsService.getContainerStatus(app.containerId);
-      }
+      // Get container status by name (more reliable than stale containerId)
+      const containerName = `asp-app-${inputs.id}`;
+      app.containerStatus = await AppsService.getContainerStatus(containerName);
 
       return this.res.ApiResponse({
         data: { app }

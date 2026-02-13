@@ -134,10 +134,20 @@ const AppsService = {
       return false; // App not found
     }
 
-    // Clean up app directory
+    // Clean up app directory (may be owned by root from Docker)
     const appPath = path.join(APPS_DIR, appId);
     if (await fs.pathExists(appPath)) {
-      await fs.remove(appPath);
+      try {
+        await fs.remove(appPath);
+      } catch (err) {
+        if (err.code === 'EACCES') {
+          // Files created by Docker are owned by root, use Docker to remove
+          sails.log.info(`[deleteApp] Using Docker to remove root-owned directory: ${appPath}`);
+          execSync(`sudo docker run --rm -v "${APPS_DIR}:/apps" node:22-alpine rm -rf "/apps/${appId}"`, { stdio: 'pipe' });
+        } else {
+          throw err;
+        }
+      }
     }
 
     await AppsService.saveApps(filteredApps);

@@ -31,14 +31,13 @@ module.exports = {
         });
       }
 
-      // Stop container if running
-      if (app.containerId) {
-        try {
-          await AppsService.stopContainer(app.containerId);
-          await AppsService.removeContainer(app.containerId);
-        } catch (err) {
-          sails.log.warn('Error stopping/removing container:', err);
-        }
+      // Stop container if running (use name, more reliable than stale containerId)
+      const containerName = `asp-app-${inputs.id}`;
+      try {
+        await AppsService.stopContainer(containerName);
+        await AppsService.removeContainer(containerName);
+      } catch (err) {
+        sails.log.warn('Error stopping/removing container:', err);
       }
 
       // Start container

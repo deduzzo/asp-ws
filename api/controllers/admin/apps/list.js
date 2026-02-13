@@ -15,12 +15,11 @@ module.exports = {
     try {
       const apps = await AppsService.getAllApps();
 
-      // Get status for each running app
+      // Get status for each app by container name (more reliable than containerId)
       for (const app of apps) {
-        if (app.containerId) {
-          const status = await AppsService.getContainerStatus(app.containerId);
-          app.containerStatus = status;
-        }
+        const containerName = `asp-app-${app.id}`;
+        const status = await AppsService.getContainerStatus(containerName);
+        app.containerStatus = status;
       }
 
       return this.res.ApiResponse({

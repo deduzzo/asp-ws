@@ -37,15 +37,9 @@ module.exports = {
         });
       }
 
-      if (!app.containerId) {
-        return this.res.ApiResponse({
-          errType: 'BAD_REQUEST',
-          errMsg: 'App has no container'
-        });
-      }
-
-      // Get logs
-      const logs = await AppsService.getContainerLogs(app.containerId, inputs.tail);
+      // Get logs by container name (more reliable than stale containerId)
+      const containerName = `asp-app-${inputs.id}`;
+      const logs = await AppsService.getContainerLogs(containerName, inputs.tail);
 
       return this.res.ApiResponse({
         data: { logs }

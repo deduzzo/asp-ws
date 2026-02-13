@@ -31,13 +31,12 @@ module.exports = {
         });
       }
 
-      // Remove container if exists
-      if (app.containerId) {
-        try {
-          await AppsService.removeContainer(app.containerId);
-        } catch (err) {
-          sails.log.warn('Error removing container:', err);
-        }
+      // Remove container by name (more reliable than stale containerId)
+      const containerName = `asp-app-${inputs.id}`;
+      try {
+        await AppsService.removeContainer(containerName);
+      } catch (err) {
+        sails.log.warn('Error removing container:', err);
       }
 
       // Invalidate proxy cache before deletion
