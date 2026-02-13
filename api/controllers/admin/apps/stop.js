@@ -45,6 +45,9 @@ module.exports = {
       app.status = 'stopped';
       await AppsService.saveApp(app);
 
+      // Invalidate proxy cache for stopped app
+      sails.hooks['apps-proxy'].invalidateProxy(inputs.id);
+
       return this.res.ApiResponse({
         data: { app }
       });

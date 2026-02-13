@@ -53,6 +53,9 @@ module.exports = {
       app.status = containerInfo.status;
       await AppsService.saveApp(app);
 
+      // Invalidate proxy cache so a new proxy is created with the new port
+      sails.hooks['apps-proxy'].invalidateProxy(inputs.id);
+
       return this.res.ApiResponse({
         data: { app }
       });

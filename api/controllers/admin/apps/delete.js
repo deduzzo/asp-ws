@@ -40,6 +40,9 @@ module.exports = {
         }
       }
 
+      // Invalidate proxy cache before deletion
+      sails.hooks['apps-proxy'].invalidateProxy(inputs.id);
+
       // Delete app
       await AppsService.deleteApp(inputs.id);
 

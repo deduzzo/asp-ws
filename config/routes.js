@@ -564,13 +564,8 @@ let routes = {
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
 
-  // Proxy routes for running apps (must be last to not interfere with other routes)
-  'GET /apps/:appId': { action: 'apps/proxy', skipAssets: true },
-  'GET /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
-  'POST /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
-  'PUT /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
-  'DELETE /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
-  'PATCH /apps/:appId/*': { action: 'apps/proxy', skipAssets: true },
+  // App proxy routes are handled by the apps-proxy hook (HTTP + WebSocket)
+  // See: api/hooks/apps-proxy.js
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato

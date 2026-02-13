@@ -9,8 +9,9 @@ Guida per sviluppare applicazioni containerizzate che possono essere gestite tra
 3. [Implementazione BASE_PATH](#implementazione-base_path)
 4. [Struttura Progetto](#struttura-progetto)
 5. [Esempio Completo](#esempio-completo)
-6. [Testing Locale](#testing-locale)
-7. [Deploy](#deploy)
+6. [WebSocket Support](#websocket-support)
+7. [Testing Locale](#testing-locale)
+8. [Deploy](#deploy)
 
 ## Introduzione
 
@@ -327,6 +328,180 @@ app.listen(PORT, () => {
 </body>
 </html>
 ```
+
+## WebSocket Support
+
+Il reverse proxy supporta connessioni WebSocket in aggiunta alle normali richieste HTTP. Questo permette alle app di usare librerie come Socket.io, ws, o qualsiasi altro protocollo basato su WebSocket.
+
+### Come Funziona
+
+Le connessioni WebSocket vengono automaticamente proxate attraverso `/apps/:appId/`. Quando il browser apre una connessione WebSocket verso `/apps/my-app/socket.io/...`, il proxy:
+
+1. Intercetta la richiesta di upgrade HTTP -> WebSocket
+2. La inoltra al container Docker sulla porta corretta
+3. Mantiene la connessione bidirezionale attiva
+
+Non serve configurazione aggiuntiva lato sistema: basta che la tua app ascolti connessioni WebSocket sulla porta 3000.
+
+### Esempio con Socket.io
+
+**Server (server.js):**
+
+```javascript
+const express = require('express');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const app = express();
+const httpServer = createServer(app);
+
+const BASE_PATH = process.env.BASE_PATH || '';
+
+// Socket.io con path configurato per il reverse proxy
+const io = new Server(httpServer, {
+  path: `${BASE_PATH}/socket.io/`,
+  cors: { origin: '*' }
+});
+
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('message', (data) => {
+    console.log('Message received:', data);
+    socket.emit('response', { echo: data, timestamp: Date.now() });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Servire file statici
+app.use(express.static('public'));
+
+// API REST di esempio
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'ok', connections: io.engine.clientsCount });
+});
+
+const PORT = process.env.PORT || 3000;
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}, BASE_PATH: ${BASE_PATH}`);
+});
+```
+
+**Client (public/index.html):**
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket App</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>WebSocket Demo</h1>
+  <div id="status">Connecting...</div>
+  <input type="text" id="message" placeholder="Type a message">
+  <button onclick="sendMessage()">Send</button>
+  <div id="messages"></div>
+
+  <script>
+    // Determina BASE_PATH dall'URL
+    const pathMatch = window.location.pathname.match(/^\/apps\/([^\/]+)/);
+    const APP_ID = pathMatch ? pathMatch[1] : '';
+    const BASE_PATH = APP_ID ? `/apps/${APP_ID}` : '';
+
+    // Connessione Socket.io con path corretto
+    const socket = io({
+      path: `${BASE_PATH}/socket.io/`
+    });
+
+    socket.on('connect', () => {
+      document.getElementById('status').textContent = 'Connected!';
+    });
+
+    socket.on('disconnect', () => {
+      document.getElementById('status').textContent = 'Disconnected';
+    });
+
+    socket.on('response', (data) => {
+      const div = document.createElement('div');
+      div.textContent = `Server: ${JSON.stringify(data)}`;
+      document.getElementById('messages').appendChild(div);
+    });
+
+    function sendMessage() {
+      const input = document.getElementById('message');
+      socket.emit('message', input.value);
+      input.value = '';
+    }
+  </script>
+</body>
+</html>
+```
+
+**package.json:**
+
+```json
+{
+  "name": "websocket-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "socket.io": "^4.7.0"
+  }
+}
+```
+
+### Esempio con ws (WebSocket nativo)
+
+Se preferisci WebSocket nativo senza Socket.io:
+
+**Server:**
+
+```javascript
+const express = require('express');
+const { createServer } = require('http');
+const { WebSocketServer } = require('ws');
+
+const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws) => {
+  ws.on('message', (data) => {
+    ws.send(`Echo: ${data}`);
+  });
+});
+
+app.use(express.static('public'));
+
+server.listen(process.env.PORT || 3000);
+```
+
+**Client:**
+
+```javascript
+const pathMatch = window.location.pathname.match(/^\/apps\/([^\/]+)/);
+const BASE_PATH = pathMatch ? `/apps/${pathMatch[1]}` : '';
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const ws = new WebSocket(`${protocol}//${window.location.host}${BASE_PATH}/`);
+
+ws.onmessage = (event) => console.log('Received:', event.data);
+ws.onopen = () => ws.send('Hello!');
+```
+
+### Note Importanti
+
+- **Il path Socket.io deve includere BASE_PATH**: sia lato server (`new Server(httpServer, { path: \`${BASE_PATH}/socket.io/\` })`) che lato client (`io({ path: \`${BASE_PATH}/socket.io/\` })`)
+- **WebSocket nativo non richiede path speciale**: il proxy riscrive automaticamente il percorso
+- **Una sola porta**: sia HTTP che WebSocket devono usare la stessa porta 3000 nel container
+- **Reconnection**: Socket.io gestisce automaticamente la riconnessione; con ws nativo dovrai implementarla manualmente
 
 ## Testing Locale
 

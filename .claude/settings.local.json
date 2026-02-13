@@ -29,7 +29,11 @@
       "Bash(tree:*)",
       "Bash(git merge:*)",
       "Bash(timeout 10 sails lift:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(npm ls:*)",
+      "Bash(git --version:*)",
+      "WebSearch",
+      "Bash(node -c:*)"
     ],
     "deny": [],
     "ask": []
