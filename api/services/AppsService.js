@@ -242,20 +242,120 @@ const AppsService = {
   },
 
   /**
+   * Get ports actually bound by Docker containers (not just apps.json)
+   * @returns {Set<number>} Set of used host ports
+   */
+  getDockerUsedPorts: async () => {
+    const usedPorts = new Set();
+    try {
+      const docker = await getDockerInstance();
+      const settings = await getDockerSettings();
+
+      let containers;
+      if (settings.useSudo || !docker) {
+        const output = execSync('sudo docker ps --format "{{.Ports}}"', { encoding: 'utf8' });
+        // Parse lines like "0.0.0.0:3100->3000/tcp, ..."
+        const portRegex = /0\.0\.0\.0:(\d+)->/g;
+        let match;
+        while ((match = portRegex.exec(output)) !== null) {
+          usedPorts.add(parseInt(match[1]));
+        }
+      } else {
+        containers = await docker.listContainers({ all: false });
+        for (const c of containers) {
+          if (c.Ports) {
+            for (const p of c.Ports) {
+              if (p.PublicPort) usedPorts.add(p.PublicPort);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      sails.log.warn('Error listing Docker ports:', err.message);
+    }
+    return usedPorts;
+  },
+
+  /**
    * Find available port for Docker container
+   * Checks both apps.json AND actual Docker containers
    * @returns {number} Available port
    */
   findAvailablePort: async () => {
     const apps = await AppsService.getAllApps();
-    const usedPorts = apps.map(app => app.port).filter(Boolean);
+    const appPorts = apps.map(app => app.port).filter(Boolean);
+    const dockerPorts = await AppsService.getDockerUsedPorts();
+
+    // Merge both sources
+    const usedPorts = new Set([...appPorts, ...dockerPorts]);
 
     // Start from port 3100 and find first available
     let port = 3100;
-    while (usedPorts.includes(port)) {
+    while (usedPorts.has(port)) {
       port++;
     }
 
     return port;
+  },
+
+  /**
+   * Sync apps.json with actual Docker container states.
+   * Called at server startup to recover state after restart.
+   */
+  syncContainerStates: async () => {
+    const apps = await AppsService.getAllApps();
+    if (apps.length === 0) return;
+
+    let changed = false;
+    for (const app of apps) {
+      const containerName = `asp-app-${app.id}`;
+      try {
+        const docker = await getDockerInstance();
+        const settings = await getDockerSettings();
+        let info;
+
+        if (settings.useSudo || !docker) {
+          const output = execSync(`sudo docker inspect ${containerName}`, { encoding: 'utf8', stdio: 'pipe' });
+          info = JSON.parse(output)[0];
+        } else {
+          const container = docker.getContainer(containerName);
+          info = await container.inspect();
+        }
+
+        const running = info.State.Running;
+        // Extract host port from PortBindings
+        let port = null;
+        const bindings = info.HostConfig && info.HostConfig.PortBindings && info.HostConfig.PortBindings['3000/tcp'];
+        if (bindings && bindings[0] && bindings[0].HostPort) {
+          port = parseInt(bindings[0].HostPort);
+        }
+
+        const newStatus = running ? 'running' : 'stopped';
+        if (app.status !== newStatus || app.port !== port || app.containerId !== info.Id) {
+          app.status = newStatus;
+          app.port = running ? port : null;
+          app.containerId = info.Id;
+          app.updatedAt = new Date().toISOString();
+          changed = true;
+          sails.log.info(`[apps-sync] App "${app.id}" synced: status=${newStatus}, port=${port}`);
+        }
+      } catch (err) {
+        // Container doesn't exist
+        if (app.status !== 'stopped') {
+          app.status = 'stopped';
+          app.port = null;
+          app.containerId = null;
+          app.updatedAt = new Date().toISOString();
+          changed = true;
+          sails.log.info(`[apps-sync] App "${app.id}" container not found, marked stopped`);
+        }
+      }
+    }
+
+    if (changed) {
+      await AppsService.saveApps(apps);
+      sails.log.info('[apps-sync] Apps state synchronized with Docker');
+    }
   },
 
   /**

@@ -36,4 +36,11 @@ module.exports.bootstrap = async function () {
       }
     ];
   }
+
+  // Sync app states with actual Docker containers
+  try {
+    await AppsService.syncContainerStates();
+  } catch (err) {
+    sails.log.warn('Error syncing app container states:', err.message);
+  }
 };
