@@ -3,6 +3,10 @@ set -e
 
 cd "$(dirname "$0")"
 
+# Carica nvm se disponibile (necessario per node/npm/pm2)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
 echo "=== Aggiornamento ASP-WS ==="
 echo ""
 
