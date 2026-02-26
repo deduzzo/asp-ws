@@ -33,7 +33,9 @@
       "Bash(npm ls:*)",
       "Bash(git --version:*)",
       "WebSearch",
-      "Bash(node -c:*)"
+      "Bash(node -c:*)",
+      "Bash(pm2 logs:*)",
+      "mcp__MCP_DOCKER__mcp-find"
     ],
     "deny": [],
     "ask": []

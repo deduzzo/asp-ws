@@ -3,6 +3,7 @@
 # Directory del progetto
 APP_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LOG_FILE="$APP_DIR/deploy.log"
+APP_NAME="asp-ws"
 
 # Funzione di logging
 log() {
@@ -23,14 +24,14 @@ log "Installazione dipendenze npm..."
 npm install --production || handle_error "Installazione dipendenze fallita"
 
 # Riavvio PM2 se usato
-if ./node_modules/.bin/pm2 list | grep -q "sails-app"; then
+if pm2 list | grep -q "$APP_NAME"; then
     log "Riavvio applicazione con PM2..."
-    ./node_modules/.bin/pm2 reload sails-app || handle_error "Riavvio PM2 fallito"
+    pm2 reload $APP_NAME || handle_error "Riavvio PM2 fallito"
 else
     # Prima installazione PM2
     log "Configurazione iniziale PM2..."
-    ./node_modules/.bin/pm2 start app.js --name "sails-app" || handle_error "Avvio PM2 fallito"
-    ./node_modules/.bin/pm2 save || handle_error "Salvataggio configurazione PM2 fallito"
+    pm2 start app.js --name "$APP_NAME" || handle_error "Avvio PM2 fallito"
+    pm2 save || handle_error "Salvataggio configurazione PM2 fallito"
 fi
 
 log "Deployment completato con successo"
