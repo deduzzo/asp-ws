@@ -48,13 +48,13 @@ module.exports = {
 
   // Strategia per richieste singole: Nominatim ufficiale con query strutturata (più preciso)
   _geoFromOfficialNominatim: async function (datiAssistito) {
-    const {street, cap, comune} = this._parseIndirizzo(datiAssistito);
-    console.log('[GEO] _parseIndirizzo result:', {street, cap, comune});
+    const {street, streetNoFrazione, frazione, cap, comune} = this._parseIndirizzo(datiAssistito);
+    console.log('[GEO] _parseIndirizzo result:', {street, streetNoFrazione, frazione, cap, comune});
 
-    // 1) Query strutturata con indirizzo parsato
+    // 1) Query strutturata con via senza frazione
     try {
       const params = new URLSearchParams({
-        street: street,
+        street: streetNoFrazione,
         city: comune,
         country: 'IT',
         format: 'jsonv2',
@@ -63,7 +63,7 @@ module.exports = {
         params.set('postalcode', cap);
       }
       const url1 = `${NOMINATIM_OFFICIAL}?${params}`;
-      console.log('[GEO] Step 1 - Strutturata:', url1);
+      console.log('[GEO] Step 1 - Strutturata (no frazione):', url1);
       await this._waitForOfficialRateLimit();
       const response = await axios.get(url1, NOMINATIM_HEADERS);
       console.log('[GEO] Step 1 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
@@ -75,11 +75,37 @@ module.exports = {
       console.log('[GEO] Step 1 - ERRORE:', err.message);
     }
 
-    // 2) Free-form con indirizzo parsato
+    // 2) Se c'è una frazione, prova strutturata con indirizzo completo (potrebbe essere parte del nome via)
+    if (frazione) {
+      try {
+        const params = new URLSearchParams({
+          street: street,
+          city: comune,
+          country: 'IT',
+          format: 'jsonv2',
+        });
+        if (cap) {
+          params.set('postalcode', cap);
+        }
+        const url1b = `${NOMINATIM_OFFICIAL}?${params}`;
+        console.log('[GEO] Step 1b - Strutturata (con frazione):', url1b);
+        await this._waitForOfficialRateLimit();
+        const response = await axios.get(url1b, NOMINATIM_HEADERS);
+        console.log('[GEO] Step 1b - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
+        if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+          console.log('[GEO] Step 1b - SUCCESSO precise:true', {lat: response.data[0].lat, lon: response.data[0].lon, display: response.data[0].display_name});
+          return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
+        }
+      } catch (err) {
+        console.log('[GEO] Step 1b - ERRORE:', err.message);
+      }
+    }
+
+    // 3) Free-form con via senza frazione
     try {
-      const q = `${street}, ${cap} ${comune}`;
+      const q = `${streetNoFrazione}, ${cap} ${comune}`;
       const url2 = `${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`;
-      console.log('[GEO] Step 2 - Free-form:', url2);
+      console.log('[GEO] Step 2 - Free-form (no frazione):', url2);
       await this._waitForOfficialRateLimit();
       const response = await axios.get(url2, NOMINATIM_HEADERS);
       console.log('[GEO] Step 2 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
@@ -91,7 +117,7 @@ module.exports = {
       console.log('[GEO] Step 2 - ERRORE:', err.message);
     }
 
-    // 3) Fallback: solo CAP + comune (approssimato)
+    // 4) Fallback: solo CAP + comune (approssimato)
     if (cap) {
       try {
         const q = `${cap}, ${comune}`;
@@ -115,16 +141,27 @@ module.exports = {
 
   // Strategia per operazioni massive: Nominatim privato (no rate limit)
   _geoFromPrivateNominatim: async function (datiAssistito) {
-    const {street, cap, comune} = this._parseIndirizzo(datiAssistito);
+    const {street, streetNoFrazione, frazione, cap, comune} = this._parseIndirizzo(datiAssistito);
 
-    // 1) Free-form con indirizzo parsato sul server privato
+    // 1) Free-form con via senza frazione sul server privato
     try {
-      const q = `${street}, ${cap} ${comune}`;
+      const q = `${streetNoFrazione}, ${cap} ${comune}`;
       const response = await axios.get(`${NOMINATIM_URL}?${new URLSearchParams({q, format: 'json'})}`);
       if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
         return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
       }
     } catch (_) { /* fallback */ }
+
+    // 1b) Se c'è frazione, prova con indirizzo completo
+    if (frazione) {
+      try {
+        const q = `${street}, ${cap} ${comune}`;
+        const response = await axios.get(`${NOMINATIM_URL}?${new URLSearchParams({q, format: 'json'})}`);
+        if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+          return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
+        }
+      } catch (_) { /* fallback */ }
+    }
 
     // 2) Fallback: solo CAP + comune sul server privato
     if (cap) {
@@ -152,8 +189,11 @@ module.exports = {
     return null;
   },
 
+  // Regex per riconoscere tipi di via italiani (usata per separare la frazione)
+  _STREET_TYPE_RE: /\b(VIA|V\.|VIALE|V\.LE|CORSO|C\.SO|PIAZZA|P\.ZZA|PIAZZALE|P\.LE|PIAZZETTA|LARGO|L\.GO|VICOLO|V\.LO|VICO|SALITA|DISCESA|TRAVERSA|TRAV\.|CONTRADA|C\.DA|STRADA|STR\.|RONCO|RIONE|BORGATA|LOCALITA|LOC\.|CALATA|RAMPA|GALLERIA|LUNGOMARE|CIRCONVALLAZIONE|VILLAGGIO|BIVIO|SS|S\.S\.|S\.P\.|SP)\b/i,
+
   // Parsa indirizzoResidenza dal formato TS: "PACE SALITA BISIGNANI 3, 98167 MESSINA (ME)"
-  // Restituisce { street, cap, comune } con valori puliti
+  // Restituisce { street, streetNoFrazione, frazione, cap, comune } con valori puliti
   _parseIndirizzo: function (datiAssistito) {
     const raw = (datiAssistito.indirizzoResidenza || '').trim();
     let street = raw;
@@ -161,16 +201,29 @@ module.exports = {
     const comune = (datiAssistito.comuneResidenza || '').replace(/\s*\([A-Z]{2}\)\s*$/, '').trim();
 
     // Se contiene una virgola seguita da un CAP (5 cifre), splitta
-    const match = raw.match(/^(.+?),\s*(\d{5})\s+.*/);
-    if (match) {
-      street = match[1].trim();
-      cap = match[2]; // CAP reale dall'indirizzo (es. 98167 invece di 98100 generico)
+    const matchCap = raw.match(/^(.+?),\s*(\d{5})\s+.*/);
+    if (matchCap) {
+      street = matchCap[1].trim();
+      cap = matchCap[2]; // CAP reale dall'indirizzo (es. 98167 invece di 98100 generico)
     }
 
     // Rimuovi eventuale suffisso "(ME)" o "(XX)" dalla street
     street = street.replace(/\s*\([A-Z]{2}\)\s*$/, '').trim();
 
-    return {street, cap, comune};
+    // Separa eventuale frazione dal nome via
+    // Es: "PACE SALITA BISIGNANI 3" -> frazione="PACE", streetNoFrazione="SALITA BISIGNANI 3"
+    let frazione = null;
+    let streetNoFrazione = street;
+
+    // Cerca la posizione del primo tipo via riconosciuto nella stringa
+    const matchStreetType = street.match(this._STREET_TYPE_RE);
+    if (matchStreetType && matchStreetType.index > 0) {
+      // Tutto prima del tipo via è la frazione
+      frazione = street.substring(0, matchStreetType.index).trim();
+      streetNoFrazione = street.substring(matchStreetType.index).trim();
+    }
+
+    return {street, streetNoFrazione, frazione, cap, comune};
   },
 
   _waitForOfficialRateLimit: async function () {
