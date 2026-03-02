@@ -35,7 +35,9 @@
       "WebSearch",
       "Bash(node -c:*)",
       "Bash(pm2 logs:*)",
-      "mcp__MCP_DOCKER__mcp-find"
+      "mcp__MCP_DOCKER__mcp-find",
+      "Bash(npx eslint:*)",
+      "Bash(pm2 list:*)"
     ],
     "deny": [],
     "ask": []
