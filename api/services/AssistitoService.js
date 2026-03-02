@@ -30,82 +30,111 @@ module.exports = {
       return null;
     }
   },
-  getGeoAssistito: async function (datiAssistito) {
-    // axios get q=${indirizzo} format=json
-    let indirizzo = datiAssistito.indirizzoResidenza;
-    let response;
-    if (indirizzo && indirizzo.trim().length > 0) {
-      try {
-        indirizzo = `${datiAssistito.indirizzoResidenza}, ${datiAssistito.capResidenza} ${datiAssistito.comuneResidenza}`;
-        const params = new URLSearchParams({
-          q: indirizzo,
-          format: 'json',
-        });
-        response = await axios.get(`${NOMINATIM_URL}?${params}`);
-      }catch (error) {
-        response = null;
-      }
-      if (response && response.status === 200 && response.data.length > 0) {
-        const data = response.data;
-        if (data.length > 0) {
-          return {
-            lat: data[0].lat,
-            lon: data[0].lon,
-            precise: true
-          };
-        } else {
-          return null; // Nessun risultato trovato
-        }
-      } else if (!response || response.data.length === 0) {
-        // fallback
-        try {
-          const cap = indirizzo.split(',')[1].trim();
-          const cap2 = datiAssistito.capResidenza;
-          if (cap2 !== '98100' || !cap.includes('98100')) {
-            if (cap && cap.trim().length > 0) {
-              const params1 = new URLSearchParams({
-                q: !cap.includes('98100') ? cap : cap2,
-              });
-              const response1 = await axios.get(`${NOMINATIM_URL}?${params1}`);
-              if (response1.status === 200 && response1.data.length > 0) {
-                const data = response1.data;
-                if (data.length > 0) {
-                  return {
-                    lat: data[0].lat,
-                    lon: data[0].lon,
-                    precise: false
-                  };
-                }
-              } else { // ultimo tentativo con api ufficiali
-                const params2 = new URLSearchParams({
-                  q: (!cap.includes('98100') ? cap : cap2) + `, ${datiAssistito.comuneResidenza}`,
-                });
-
-                const now = Date.now();
-                const timeToWait = Math.max(0, _lastNominatimRequest + 1000 - now);
-                if (timeToWait > 0) {
-                  await new Promise(resolve => setTimeout(resolve, timeToWait));
-                }
-                _lastNominatimRequest = Date.now();
-
-                const response2 = await axios.get(`${NOMINATIM_OFFICIAL}?${params2}&format=jsonv2`);
-                if (response2.status === 200 && response2.data.length > 0) {
-                  const data = response2.data;
-                  if (data.length > 0) {
-                    return {
-                      lat: data[0].lat,
-                      lon: data[0].lon,
-                      precise: false
-                    };
-                  }
-                }
-              }
-            }
-          }
-        } catch (error) {
-        }
-      }
+  getGeoAssistito: async function (datiAssistito, {bulk = false} = {}) {
+    const indirizzo = datiAssistito.indirizzoResidenza;
+    if (!indirizzo || indirizzo.trim().length === 0) {
+      return null;
     }
-    return null; // Nessun risultato trovato
+
+    if (bulk) {
+      return await this._geoFromPrivateNominatim(datiAssistito);
+    } else {
+      return await this._geoFromOfficialNominatim(datiAssistito);
+    }
+  },
+
+  // Strategia per richieste singole: Nominatim ufficiale con query strutturata (più preciso)
+  _geoFromOfficialNominatim: async function (datiAssistito) {
+    const {indirizzoResidenza, capResidenza, comuneResidenza} = datiAssistito;
+
+    // 1) Query strutturata con indirizzo completo
+    try {
+      const params = new URLSearchParams({
+        street: indirizzoResidenza,
+        city: comuneResidenza,
+        country: 'IT',
+        format: 'jsonv2',
+      });
+      if (capResidenza) {
+        params.set('postalcode', capResidenza);
+      }
+      await this._waitForOfficialRateLimit();
+      const response = await axios.get(`${NOMINATIM_OFFICIAL}?${params}`);
+      if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+        return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
+      }
+    } catch (_) { /* fallback */ }
+
+    // 2) Free-form con indirizzo completo
+    try {
+      const q = `${indirizzoResidenza}, ${capResidenza} ${comuneResidenza}`;
+      await this._waitForOfficialRateLimit();
+      const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`);
+      if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+        return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
+      }
+    } catch (_) { /* fallback */ }
+
+    // 3) Fallback: solo CAP + comune (approssimato)
+    if (capResidenza && capResidenza !== '98100') {
+      try {
+        const q = `${capResidenza}, ${comuneResidenza}`;
+        await this._waitForOfficialRateLimit();
+        const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`);
+        if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+          return {lat: response.data[0].lat, lon: response.data[0].lon, precise: false};
+        }
+      } catch (_) { /* nessun risultato */ }
+    }
+
+    return null;
+  },
+
+  // Strategia per operazioni massive: Nominatim privato (no rate limit)
+  _geoFromPrivateNominatim: async function (datiAssistito) {
+    const {indirizzoResidenza, capResidenza, comuneResidenza} = datiAssistito;
+
+    // 1) Free-form con indirizzo completo sul server privato
+    try {
+      const q = `${indirizzoResidenza}, ${capResidenza} ${comuneResidenza}`;
+      const response = await axios.get(`${NOMINATIM_URL}?${new URLSearchParams({q, format: 'json'})}`);
+      if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+        return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
+      }
+    } catch (_) { /* fallback */ }
+
+    // 2) Fallback: solo CAP + comune sul server privato
+    if (capResidenza && capResidenza !== '98100') {
+      try {
+        const q = `${capResidenza} ${comuneResidenza}`;
+        const response = await axios.get(`${NOMINATIM_URL}?${new URLSearchParams({q, format: 'json'})}`);
+        if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+          return {lat: response.data[0].lat, lon: response.data[0].lon, precise: false};
+        }
+      } catch (_) { /* fallback */ }
+    }
+
+    // 3) Ultimo fallback: ufficiale con rate limit (CAP + comune)
+    if (capResidenza && capResidenza !== '98100') {
+      try {
+        const q = `${capResidenza}, ${comuneResidenza}`;
+        await this._waitForOfficialRateLimit();
+        const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`);
+        if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+          return {lat: response.data[0].lat, lon: response.data[0].lon, precise: false};
+        }
+      } catch (_) { /* nessun risultato */ }
+    }
+
+    return null;
+  },
+
+  _waitForOfficialRateLimit: async function () {
+    const now = Date.now();
+    const timeToWait = Math.max(0, _lastNominatimRequest + 1100 - now);
+    if (timeToWait > 0) {
+      await new Promise(resolve => setTimeout(resolve, timeToWait));
+    }
+    _lastNominatimRequest = Date.now();
   }
 };

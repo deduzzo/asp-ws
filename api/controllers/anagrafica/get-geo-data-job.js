@@ -53,7 +53,7 @@ module.exports = {
 
         for (let assistito of data) {
           if (inputs.forceUpdate) {
-            let geoloc = await getGeoAssistito(assistito);
+            let geoloc = await getGeoAssistito(assistito, {bulk: true});
             if (geoloc) {
               assistito.lat = geoloc.lat;
               assistito.long = geoloc.lon;
