@@ -3,6 +3,7 @@ const configData = require('../../config/custom/private_nar_ts_config.json');
 const keys = require('../../config/custom/private_encrypt_key.json');
 const NOMINATIM_URL = 'https://nominatim.app.robertodedomenico.it/search.php';
 const NOMINATIM_OFFICIAL = 'https://nominatim.openstreetmap.org/search.php';
+const NOMINATIM_HEADERS = {headers: {'User-Agent': 'ASP-Messina-WS/1.0 (assistiti-geocoding)'}};
 let _lastNominatimRequest = 0;
 
 module.exports = {
@@ -64,7 +65,7 @@ module.exports = {
       const url1 = `${NOMINATIM_OFFICIAL}?${params}`;
       console.log('[GEO] Step 1 - Strutturata:', url1);
       await this._waitForOfficialRateLimit();
-      const response = await axios.get(url1);
+      const response = await axios.get(url1, NOMINATIM_HEADERS);
       console.log('[GEO] Step 1 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
       if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
         console.log('[GEO] Step 1 - SUCCESSO precise:true', {lat: response.data[0].lat, lon: response.data[0].lon, display: response.data[0].display_name});
@@ -80,7 +81,7 @@ module.exports = {
       const url2 = `${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`;
       console.log('[GEO] Step 2 - Free-form:', url2);
       await this._waitForOfficialRateLimit();
-      const response = await axios.get(url2);
+      const response = await axios.get(url2, NOMINATIM_HEADERS);
       console.log('[GEO] Step 2 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
       if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
         console.log('[GEO] Step 2 - SUCCESSO precise:true', {lat: response.data[0].lat, lon: response.data[0].lon, display: response.data[0].display_name});
@@ -97,7 +98,7 @@ module.exports = {
         const url3 = `${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`;
         console.log('[GEO] Step 3 - Fallback CAP:', url3);
         await this._waitForOfficialRateLimit();
-        const response = await axios.get(url3);
+        const response = await axios.get(url3, NOMINATIM_HEADERS);
         console.log('[GEO] Step 3 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
         if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
           console.log('[GEO] Step 3 - SUCCESSO precise:false', {lat: response.data[0].lat, lon: response.data[0].lon});
@@ -141,7 +142,7 @@ module.exports = {
       try {
         const q = `${cap}, ${comune}`;
         await this._waitForOfficialRateLimit();
-        const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`);
+        const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`, NOMINATIM_HEADERS);
         if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
           return {lat: response.data[0].lat, lon: response.data[0].lon, precise: false};
         }
