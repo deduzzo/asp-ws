@@ -155,7 +155,7 @@ module.exports = {
         let timeout = false;
         let otherError = null;
         const assistito = await Promise.race([
-          AssistitoService.getAssistitoFromCf(inputs.codiceFiscale),
+          AssistitoService.getAssistitoFromCf(inputs.codiceFiscale, true, true, !!inputs.forzaAggiornamentoTs),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca su TS')), 20000))
         ]).catch(err => {
           // Check if this is a timeout error or another type of error

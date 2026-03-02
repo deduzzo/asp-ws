@@ -6,11 +6,14 @@ const NOMINATIM_OFFICIAL = 'https://nominatim.openstreetmap.org/search.php';
 let _lastNominatimRequest = 0;
 
 module.exports = {
-  getAssistitoFromCf: async function (cf, fallback = true, geoloc = true) {
+  getAssistitoFromCf: async function (cf, fallback = true, geoloc = true, forceNewToken = false) {
     const {ImpostazioniServiziTerzi} = await import('aziendasanitaria-utils/src/config/ImpostazioniServiziTerzi.js');
     const {Nar2} = await import('aziendasanitaria-utils/src/narTsServices/Nar2.js');
     let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
     let nar2 = new Nar2(impostazioniServizi, {...keys});
+    if (forceNewToken) {
+      await nar2.getToken({newToken: true});
+    }
     let data = await nar2.getDatiAssistitoCompleti(cf, {fallback: fallback});
     if (data.ok) {
       let datiAssistito = data.dati({dateToUnix: true});
