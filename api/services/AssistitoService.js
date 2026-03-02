@@ -32,7 +32,9 @@ module.exports = {
   },
   getGeoAssistito: async function (datiAssistito, {bulk = false} = {}) {
     const indirizzo = datiAssistito.indirizzoResidenza;
+    console.log('[GEO] getGeoAssistito chiamato', {indirizzo, bulk, capResidenza: datiAssistito.capResidenza, comuneResidenza: datiAssistito.comuneResidenza});
     if (!indirizzo || indirizzo.trim().length === 0) {
+      console.log('[GEO] Indirizzo vuoto, skip');
       return null;
     }
 
@@ -46,6 +48,7 @@ module.exports = {
   // Strategia per richieste singole: Nominatim ufficiale con query strutturata (più preciso)
   _geoFromOfficialNominatim: async function (datiAssistito) {
     const {street, cap, comune} = this._parseIndirizzo(datiAssistito);
+    console.log('[GEO] _parseIndirizzo result:', {street, cap, comune});
 
     // 1) Query strutturata con indirizzo parsato
     try {
@@ -58,35 +61,54 @@ module.exports = {
       if (cap) {
         params.set('postalcode', cap);
       }
+      const url1 = `${NOMINATIM_OFFICIAL}?${params}`;
+      console.log('[GEO] Step 1 - Strutturata:', url1);
       await this._waitForOfficialRateLimit();
-      const response = await axios.get(`${NOMINATIM_OFFICIAL}?${params}`);
+      const response = await axios.get(url1);
+      console.log('[GEO] Step 1 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
       if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+        console.log('[GEO] Step 1 - SUCCESSO precise:true', {lat: response.data[0].lat, lon: response.data[0].lon, display: response.data[0].display_name});
         return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
       }
-    } catch (_) { /* fallback */ }
+    } catch (err) {
+      console.log('[GEO] Step 1 - ERRORE:', err.message);
+    }
 
     // 2) Free-form con indirizzo parsato
     try {
       const q = `${street}, ${cap} ${comune}`;
+      const url2 = `${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`;
+      console.log('[GEO] Step 2 - Free-form:', url2);
       await this._waitForOfficialRateLimit();
-      const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`);
+      const response = await axios.get(url2);
+      console.log('[GEO] Step 2 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
       if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+        console.log('[GEO] Step 2 - SUCCESSO precise:true', {lat: response.data[0].lat, lon: response.data[0].lon, display: response.data[0].display_name});
         return {lat: response.data[0].lat, lon: response.data[0].lon, precise: true};
       }
-    } catch (_) { /* fallback */ }
+    } catch (err) {
+      console.log('[GEO] Step 2 - ERRORE:', err.message);
+    }
 
     // 3) Fallback: solo CAP + comune (approssimato)
     if (cap) {
       try {
         const q = `${cap}, ${comune}`;
+        const url3 = `${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`;
+        console.log('[GEO] Step 3 - Fallback CAP:', url3);
         await this._waitForOfficialRateLimit();
-        const response = await axios.get(`${NOMINATIM_OFFICIAL}?${new URLSearchParams({q, format: 'jsonv2'})}`);
+        const response = await axios.get(url3);
+        console.log('[GEO] Step 3 - Status:', response.status, 'Risultati:', Array.isArray(response.data) ? response.data.length : 'non-array');
         if (response.status === 200 && Array.isArray(response.data) && response.data.length > 0) {
+          console.log('[GEO] Step 3 - SUCCESSO precise:false', {lat: response.data[0].lat, lon: response.data[0].lon});
           return {lat: response.data[0].lat, lon: response.data[0].lon, precise: false};
         }
-      } catch (_) { /* nessun risultato */ }
+      } catch (err) {
+        console.log('[GEO] Step 3 - ERRORE:', err.message);
+      }
     }
 
+    console.log('[GEO] Nessun risultato da nessuno step');
     return null;
   },
 
