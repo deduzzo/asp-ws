@@ -134,6 +134,12 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
+  'POST /api/v1/anagrafica/ricerca-nar2': {
+    action: 'anagrafica/ricerca-nar2',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
   'POST /api/v1/anagrafica/ricerca-massiva': {
     action: 'anagrafica/ricerca-massiva',
     scopi: ['asp5-anagrafica'],

@@ -37,7 +37,8 @@
       "Bash(pm2 logs:*)",
       "mcp__MCP_DOCKER__mcp-find",
       "Bash(npx eslint:*)",
-      "Bash(pm2 list:*)"
+      "Bash(pm2 list:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
