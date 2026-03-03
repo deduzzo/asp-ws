@@ -74,33 +74,33 @@ module.exports = {
       }
     }
 
+    // Costruisci i parametri per Nar2
+    let params = {};
+    if (inputs.codiceFiscale) {
+      params.codiceFiscale = inputs.codiceFiscale;
+    }
+    if (inputs.nome) {
+      params.nome = inputs.nome;
+    }
+    if (inputs.cognome) {
+      params.cognome = inputs.cognome;
+    }
+    // Converti la data di nascita nel formato YYYY-MM-DD richiesto da Nar2
+    if (inputs.dataNascita) {
+      if (moment(inputs.dataNascita, 'DD/MM/YYYY', true).isValid()) {
+        params.dataNascita = moment(inputs.dataNascita, 'DD/MM/YYYY').format('YYYY-MM-DD');
+      } else if (moment(inputs.dataNascita, 'YYYY-MM-DD', true).isValid()) {
+        params.dataNascita = inputs.dataNascita;
+      } else if (moment(inputs.dataNascita, 'YYYY', true).isValid()) {
+        params.dataNascita = `${inputs.dataNascita}-01-01`;
+      }
+    }
+
     try {
       const {ImpostazioniServiziTerzi} = await import('aziendasanitaria-utils/src/config/ImpostazioniServiziTerzi.js');
       const {Nar2} = await import('aziendasanitaria-utils/src/narTsServices/Nar2.js');
       let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
       let nar2 = new Nar2(impostazioniServizi, {...keys});
-
-      // Costruisci i parametri per Nar2 usando le costanti Nar2.PARAMS
-      let params = {};
-      if (inputs.codiceFiscale) {
-        params[Nar2.PARAMS.CODICE_FISCALE] = inputs.codiceFiscale;
-      }
-      if (inputs.nome) {
-        params[Nar2.PARAMS.NOME] = inputs.nome;
-      }
-      if (inputs.cognome) {
-        params[Nar2.PARAMS.COGNOME] = inputs.cognome;
-      }
-      // Converti la data di nascita nel formato YYYY-MM-DD richiesto da Nar2
-      if (inputs.dataNascita) {
-        if (moment(inputs.dataNascita, 'DD/MM/YYYY', true).isValid()) {
-          params[Nar2.PARAMS.DATA_NASCITA] = moment(inputs.dataNascita, 'DD/MM/YYYY').format('YYYY-MM-DD');
-        } else if (moment(inputs.dataNascita, 'YYYY-MM-DD', true).isValid()) {
-          params[Nar2.PARAMS.DATA_NASCITA] = inputs.dataNascita;
-        } else if (moment(inputs.dataNascita, 'YYYY', true).isValid()) {
-          params[Nar2.PARAMS.DATA_NASCITA] = `${inputs.dataNascita}-01-01`;
-        }
-      }
 
       let timeout = false;
       const result = await Promise.race([
