@@ -232,6 +232,10 @@
                             <i class="bi bi-ladder me-2"></i>
                             Livelli
                         </a>
+                        <a class="nav-link" href="#" data-section="extra-data">
+                            <i class="bi bi-collection me-2"></i>
+                            Extra Data
+                        </a>
                     </nav>
 
                     <div class="mt-auto">
@@ -488,6 +492,222 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Extra Data Section -->
+                    <div id="extra-data-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-collection me-2 text-primary"></i>Extra Data Assistiti</h2>
+                            <button class="btn btn-primary" onclick="showCreateExtraDataCategoriaModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Nuova Categoria
+                            </button>
+                        </div>
+
+                        <!-- Categorie -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Categorie</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading" id="extra-data-loading">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Caricamento...</span>
+                                    </div>
+                                    <p class="mt-2">Caricamento categorie...</p>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="extra-data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Codice</th>
+                                                <th>Descrizione</th>
+                                                <th>Scope Lettura</th>
+                                                <th>Scope Scrittura</th>
+                                                <th>Campi</th>
+                                                <th>Stato</th>
+                                                <th>Azioni</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="extra-data-tbody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guida Scope e Wildcard -->
+                        <div class="card mb-4">
+                            <div class="card-header py-2 d-flex justify-content-between align-items-center" style="cursor: pointer;"
+                                 onclick="document.getElementById('scopeGuideBody').style.display = document.getElementById('scopeGuideBody').style.display === 'none' ? 'block' : 'none'">
+                                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Guida Scope e Wildcard</h5>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="card-body" id="scopeGuideBody" style="display: none;">
+                                <h6><i class="bi bi-key me-2"></i>Come funzionano gli scope</h6>
+                                <p class="small text-muted">Quando crei una categoria, vengono generati automaticamente 2 scope (lettura e scrittura). Un utente vede i dati extra solo se ha lo scope di lettura corrispondente.</p>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr><th>Categoria</th><th>Scope Lettura</th><th>Scope Scrittura</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td><code>CONTATTI</code></td><td><code>anagrafica-contatti-read</code></td><td><code>anagrafica-contatti-write</code></td></tr>
+                                            <tr><td><code>HL7_ALLERGIE</code></td><td><code>anagrafica-hl7_allergie-read</code></td><td><code>anagrafica-hl7_allergie-write</code></td></tr>
+                                            <tr><td><code>HL7_TERAPIE_CRONICHE</code></td><td><code>anagrafica-hl7_terapie_croniche-read</code></td><td><code>anagrafica-hl7_terapie_croniche-write</code></td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h6 class="mt-3"><i class="bi bi-asterisk me-2"></i>Scope Wildcard</h6>
+                                <p class="small text-muted">Puoi creare scope con il carattere <code>*</code> per assegnare accesso a gruppi di categorie in un colpo solo. Gli scope wildcard vanno creati manualmente nella sezione <strong>Scopi</strong> e assegnati agli utenti.</p>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr><th>Scope Wildcard</th><th>Cosa matcha</th><th>Esempio</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><code>anagrafica-hl7_*-read</code></td>
+                                                <td>Tutte le categorie <code>HL7_*</code></td>
+                                                <td>Legge allergie, terapie, patologie, parametri vitali, ecc.</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>anagrafica-hl7_*-write</code></td>
+                                                <td>Scrittura su tutte le categorie <code>HL7_*</code></td>
+                                                <td>Modifica tutti i dati sanitari HL7</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>anagrafica-*-read</code></td>
+                                                <td>Tutte le categorie extra data</td>
+                                                <td>Legge contatti, dati HL7, qualsiasi categoria</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>anagrafica-*-write</code></td>
+                                                <td>Scrittura su tutte le categorie</td>
+                                                <td>Accesso completo in scrittura</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="alert alert-light border mt-3 mb-0 small">
+                                    <strong><i class="bi bi-lightbulb me-1"></i>Esempio pratico:</strong><br>
+                                    Un medico deve leggere tutti i dati sanitari HL7 ma non i contatti personali?<br>
+                                    <span class="text-muted">Assegna:</span> <code>anagrafica-hl7_*-read</code> + <code>anagrafica-hl7_*-write</code><br><br>
+                                    Un operatore amministrativo deve solo gestire i contatti?<br>
+                                    <span class="text-muted">Assegna:</span> <code>anagrafica-contatti-read</code> + <code>anagrafica-contatti-write</code><br><br>
+                                    Un supervisore deve vedere tutto ma non modificare?<br>
+                                    <span class="text-muted">Assegna:</span> <code>anagrafica-*-read</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gestione Valori Assistito -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Gestione Dati Assistito</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Ricerca assistito -->
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                            <input type="text" class="form-control" id="extraDataSearchCf"
+                                                   placeholder="Cerca per codice fiscale o STP..."
+                                                   onkeyup="if(event.key==='Enter') searchAssistitoExtraData()">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn-primary w-100" onclick="searchAssistitoExtraData()">
+                                            <i class="bi bi-search me-1"></i>Cerca
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Risultati ricerca -->
+                                <div id="extraDataSearchResults" style="display: none;">
+                                    <div class="list-group mb-3" id="extraDataSearchList">
+                                    </div>
+                                </div>
+
+                                <!-- Dati assistito selezionato -->
+                                <div id="extraDataAssistitoPanel" style="display: none;">
+                                    <div class="alert alert-info d-flex align-items-center mb-3">
+                                        <i class="bi bi-person-badge me-2 fs-4"></i>
+                                        <div>
+                                            <strong id="extraDataAssistitoInfo"></strong>
+                                            <input type="hidden" id="extraDataAssistitoId">
+                                        </div>
+                                        <button class="btn btn-outline-secondary btn-sm ms-auto" onclick="clearAssistitoExtraData()">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="loading" id="extra-data-valori-loading" style="display: none;">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">Caricamento dati...</span>
+                                    </div>
+
+                                    <div id="extraDataCategorieContainer">
+                                    </div>
+
+                                    <!-- Storico inline via popover -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extra Data Categoria Modal -->
+    <div class="modal fade" id="extraDataCategoriaModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="extraDataCategoriaModalTitle">Nuova Categoria Extra Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="extraDataCategoriaForm">
+                        <input type="hidden" id="extraDataCategoriaId" name="id">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="extraDataCodice" class="form-label">Codice *</label>
+                                <input type="text" class="form-control" id="extraDataCodice" name="codice" required
+                                       placeholder="es. CONTATTI" style="text-transform: uppercase;">
+                                <div class="form-text">Codice univoco della categoria (verrà convertito in maiuscolo)</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="extraDataDescrizione" class="form-label">Descrizione</label>
+                                <input type="text" class="form-control" id="extraDataDescrizione" name="descrizione"
+                                       placeholder="es. Dati di contatto">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="extraDataAttivo" name="attivo" checked>
+                                    <label class="form-check-label" for="extraDataAttivo">Categoria attiva</label>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Definizione Campi</h6>
+                        <p class="text-muted small">Definisci i campi ammessi per questa categoria.</p>
+                        <div id="extraDataCampiContainer">
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addExtraDataCampo()">
+                            <i class="bi bi-plus me-1"></i>Aggiungi Campo
+                        </button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-primary" onclick="saveExtraDataCategoria()">Salva</button>
                 </div>
             </div>
         </div>
@@ -726,6 +946,598 @@
                 `;
 
                 return row;
+            };
+        });
+    </script>
+
+    <!-- Extra Data Extension -->
+    <style>
+        .storico-popover { max-width: 400px; }
+        .storico-popover .popover-body { max-height: 300px; overflow-y: auto; padding: 0; }
+        .info-popover { max-width: 450px; }
+        .info-popover .popover-body { font-size: 0.85rem; }
+        .info-popover .popover-body code { background: #f0f0f0; padding: 2px 4px; border-radius: 3px; word-break: break-all; white-space: pre-wrap; }
+        .extra-info-btn { color: #0d6efd; text-decoration: none; }
+        .storico-entry { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 0.8rem; }
+        .storico-entry:last-child { border-bottom: none; }
+        .btn-storico { opacity: 0.5; transition: opacity 0.2s; }
+        .btn-storico:hover { opacity: 1; }
+        .btn-storico.has-history { opacity: 1; color: #0d6efd; }
+    </style>
+    <script>
+        // === Extra Data Categorie ===
+
+        async function loadExtraDataCategorie() {
+            const loading = document.getElementById('extra-data-loading');
+            const tbody = document.getElementById('extra-data-tbody');
+            loading.style.display = 'block';
+            tbody.innerHTML = '';
+            try {
+                const data = await adminPanel.apiCall('/api/v1/admin/extra-data-categorie');
+                (data.categorie || []).forEach(cat => tbody.appendChild(createExtraDataCategoriaRow(cat)));
+            } catch (error) {
+                console.error('Error loading extra data categorie:', error);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function createExtraDataCategoriaRow(cat) {
+            const row = document.createElement('tr');
+            const statusBadge = cat.attivo ? '<span class="badge bg-success">Attiva</span>' : '<span class="badge bg-danger">Disattiva</span>';
+            const campi = (cat.campi || []).map(c => `<span class="badge bg-secondary me-1">${c.chiave}</span>`).join('');
+            row.innerHTML = `
+                <td><strong>${cat.codice}</strong></td>
+                <td>${cat.descrizione || '-'}</td>
+                <td><code>${cat.scopoLettura}</code></td>
+                <td><code>${cat.scopoScrittura}</code></td>
+                <td>${campi || '-'}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" onclick="editExtraDataCategoria(${cat.id})" title="Modifica"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-outline-danger" onclick="deleteExtraDataCategoria(${cat.id}, '${cat.codice}')" title="Elimina"><i class="bi bi-trash"></i></button>
+                    </div>
+                </td>`;
+            return row;
+        }
+
+        function addExtraDataCampo(chiave, tipo, obbligatorio, etichetta, note, esempio, schema) {
+            const container = document.getElementById('extraDataCampiContainer');
+            const div = document.createElement('div');
+            div.className = 'campo-row border rounded p-2 mb-2';
+            const escQ = (s) => (s||'').replace(/"/g, '&quot;');
+            const isJson = tipo === 'json';
+            const hasSchema = isJson && schema && Array.isArray(schema) && schema.length > 0;
+
+            div.innerHTML = `
+                <div class="row align-items-center mb-1">
+                    <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Chiave" value="${escQ(chiave)}" data-field="chiave" required></div>
+                    <div class="col-md-2"><select class="form-select form-select-sm" data-field="tipo" onchange="toggleSchemaSection(this)">
+                        <option value="string" ${(tipo||'string')==='string'?'selected':''}>Testo</option>
+                        <option value="number" ${tipo==='number'?'selected':''}>Numero</option>
+                        <option value="boolean" ${tipo==='boolean'?'selected':''}>Booleano</option>
+                        <option value="date" ${tipo==='date'?'selected':''}>Data</option>
+                        <option value="json" ${tipo==='json'?'selected':''}>JSON</option>
+                    </select></div>
+                    <div class="col-md-3"><input type="text" class="form-control form-control-sm" placeholder="Etichetta" value="${escQ(etichetta)}" data-field="etichetta"></div>
+                    <div class="col-md-2"><div class="form-check"><input class="form-check-input" type="checkbox" data-field="obbligatorio" ${obbligatorio?'checked':''}><label class="form-check-label small">Obb.</label></div></div>
+                    <div class="col-md-2"><button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.campo-row').remove()"><i class="bi bi-trash"></i></button></div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-md-6"><input type="text" class="form-control form-control-sm" placeholder="Note" value="${escQ(note)}" data-field="note"></div>
+                    <div class="col-md-6"><input type="text" class="form-control form-control-sm" placeholder="Esempio" value="${escQ(esempio)}" data-field="esempio"></div>
+                </div>
+                <div class="schema-section" style="display: ${isJson ? 'block' : 'none'};">
+                    <div class="border rounded p-2 mt-1" style="background: #f8f9fa;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-primary"><i class="bi bi-diagram-3 me-1"></i>Schema sotto-campi</small>
+                            <button type="button" class="btn btn-outline-primary btn-sm py-0" onclick="addSchemaField(this)"><i class="bi bi-plus me-1"></i>Campo</button>
+                        </div>
+                        <div class="schema-fields"></div>
+                    </div>
+                </div>`;
+            container.appendChild(div);
+
+            // Popola schema esistente
+            if (hasSchema) {
+                const schemaContainer = div.querySelector('.schema-fields');
+                schema.forEach(sf => addSchemaFieldRow(schemaContainer, sf));
+            }
+        }
+
+        function toggleSchemaSection(selectEl) {
+            const campoRow = selectEl.closest('.campo-row');
+            const schemaSection = campoRow.querySelector('.schema-section');
+            schemaSection.style.display = selectEl.value === 'json' ? 'block' : 'none';
+        }
+
+        function addSchemaField(btn) {
+            const schemaContainer = btn.closest('.schema-section').querySelector('.schema-fields');
+            addSchemaFieldRow(schemaContainer, {});
+        }
+
+        function addSchemaFieldRow(container, sf) {
+            const row = document.createElement('div');
+            row.className = 'row g-1 mb-1 align-items-center schema-field-row';
+            const escQ = (s) => (s||'').replace(/"/g, '&quot;');
+            const valoriStr = (sf.valori && Array.isArray(sf.valori)) ? sf.valori.join(', ') : '';
+            const isEnum = sf.tipo === 'enum';
+            row.innerHTML = `
+                <div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Chiave" value="${escQ(sf.chiave)}" data-sf="chiave"></div>
+                <div class="col-md-2"><select class="form-select form-select-sm" data-sf="tipo" onchange="this.closest('.schema-field-row').querySelector('.sf-valori-wrap').style.display = this.value==='enum'?'block':'none'">
+                    <option value="string" ${(sf.tipo||'string')==='string'?'selected':''}>Testo</option>
+                    <option value="number" ${sf.tipo==='number'?'selected':''}>Numero</option>
+                    <option value="date" ${sf.tipo==='date'?'selected':''}>Data</option>
+                    <option value="enum" ${sf.tipo==='enum'?'selected':''}>Enum</option>
+                </select></div>
+                <div class="col-md-2"><input type="text" class="form-control form-control-sm" placeholder="Etichetta" value="${escQ(sf.etichetta)}" data-sf="etichetta"></div>
+                <div class="col-md-1"><div class="form-check mt-1"><input class="form-check-input" type="checkbox" data-sf="obbligatorio" ${sf.obbligatorio?'checked':''}><label class="form-check-label small">*</label></div></div>
+                <div class="col-md-4 sf-valori-wrap" style="display:${isEnum?'block':'none'}"><input type="text" class="form-control form-control-sm" placeholder="Valori enum (separati da virgola)" value="${escQ(valoriStr)}" data-sf="valori"></div>
+                <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="this.closest('.schema-field-row').remove()"><i class="bi bi-x"></i></button></div>`;
+            container.appendChild(row);
+        }
+
+        function getCampiFromForm() {
+            return Array.from(document.querySelectorAll('#extraDataCampiContainer .campo-row')).map(row => {
+                const chiave = row.querySelector('[data-field="chiave"]').value.trim();
+                if (!chiave) return null;
+                const campo = {
+                    chiave,
+                    tipo: row.querySelector('[data-field="tipo"]').value,
+                    etichetta: row.querySelector('[data-field="etichetta"]').value.trim() || chiave,
+                    obbligatorio: row.querySelector('[data-field="obbligatorio"]').checked
+                };
+                const note = row.querySelector('[data-field="note"]').value.trim();
+                const esempio = row.querySelector('[data-field="esempio"]').value.trim();
+                if (note) campo.note = note;
+                if (esempio) campo.esempio = esempio;
+
+                // Raccogli schema per campi json
+                if (campo.tipo === 'json') {
+                    const schemaRows = row.querySelectorAll('.schema-field-row');
+                    if (schemaRows.length > 0) {
+                        campo.schema = [];
+                        schemaRows.forEach(sr => {
+                            const sfChiave = sr.querySelector('[data-sf="chiave"]').value.trim();
+                            if (!sfChiave) return;
+                            const sf = {
+                                chiave: sfChiave,
+                                tipo: sr.querySelector('[data-sf="tipo"]').value,
+                                etichetta: sr.querySelector('[data-sf="etichetta"]').value.trim() || sfChiave,
+                                obbligatorio: sr.querySelector('[data-sf="obbligatorio"]').checked
+                            };
+                            if (sf.tipo === 'enum') {
+                                const valoriStr = sr.querySelector('[data-sf="valori"]').value.trim();
+                                if (valoriStr) sf.valori = valoriStr.split(',').map(v => v.trim()).filter(Boolean);
+                            }
+                            campo.schema.push(sf);
+                        });
+                    }
+                }
+                return campo;
+            }).filter(Boolean);
+        }
+
+        function showCreateExtraDataCategoriaModal() {
+            document.getElementById('extraDataCategoriaModalTitle').textContent = 'Nuova Categoria Extra Data';
+            document.getElementById('extraDataCategoriaForm').reset();
+            document.getElementById('extraDataCategoriaId').value = '';
+            document.getElementById('extraDataCodice').disabled = false;
+            document.getElementById('extraDataAttivo').checked = true;
+            document.getElementById('extraDataCampiContainer').innerHTML = '';
+            new bootstrap.Modal(document.getElementById('extraDataCategoriaModal')).show();
+        }
+
+        async function editExtraDataCategoria(id) {
+            try {
+                const data = await adminPanel.apiCall('/api/v1/admin/extra-data-categorie');
+                const cat = (data.categorie || []).find(c => c.id === id);
+                if (!cat) { adminPanel.showToast('Errore', 'Categoria non trovata', 'danger'); return; }
+                document.getElementById('extraDataCategoriaModalTitle').textContent = 'Modifica Categoria';
+                document.getElementById('extraDataCategoriaId').value = cat.id;
+                document.getElementById('extraDataCodice').value = cat.codice;
+                document.getElementById('extraDataCodice').disabled = true;
+                document.getElementById('extraDataDescrizione').value = cat.descrizione || '';
+                document.getElementById('extraDataAttivo').checked = cat.attivo;
+                document.getElementById('extraDataCampiContainer').innerHTML = '';
+                let campiParsed = cat.campi;
+                if (typeof campiParsed === 'string') { try { campiParsed = JSON.parse(campiParsed); } catch(e) { campiParsed = []; } }
+                (campiParsed || []).forEach(c => {
+                    let schema = c.schema;
+                    if (typeof schema === 'string') { try { schema = JSON.parse(schema); } catch(e) { schema = null; } }
+                    addExtraDataCampo(c.chiave, c.tipo, c.obbligatorio, c.etichetta, c.note, c.esempio, schema);
+                });
+                new bootstrap.Modal(document.getElementById('extraDataCategoriaModal')).show();
+            } catch (error) { console.error('Error editing categoria:', error); }
+        }
+
+        async function saveExtraDataCategoria() {
+            const id = document.getElementById('extraDataCategoriaId').value;
+            const campi = getCampiFromForm();
+            if (campi.length === 0) { adminPanel.showToast('Attenzione', 'Aggiungi almeno un campo', 'warning'); return; }
+            const payload = { codice: document.getElementById('extraDataCodice').value.trim().toUpperCase(), campi, attivo: document.getElementById('extraDataAttivo').checked };
+            const desc = document.getElementById('extraDataDescrizione').value.trim();
+            if (desc) payload.descrizione = desc;
+            if (!payload.codice) { adminPanel.showToast('Attenzione', 'Il codice \u00e8 obbligatorio', 'warning'); return; }
+            try {
+                if (id) { await adminPanel.apiCall(`/api/v1/admin/extra-data-categorie/${id}`, 'PUT', payload); }
+                else { await adminPanel.apiCall('/api/v1/admin/extra-data-categorie', 'POST', payload); }
+                adminPanel.showToast('Successo', id ? 'Categoria aggiornata' : 'Categoria creata. Scope creati.', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('extraDataCategoriaModal')).hide();
+                loadExtraDataCategorie();
+            } catch (error) { console.error('Error saving categoria:', error); }
+        }
+
+        async function deleteExtraDataCategoria(id, codice) {
+            if (!confirm(`Eliminare "${codice}" e tutti i dati associati?`)) return;
+            try { await adminPanel.apiCall(`/api/v1/admin/extra-data-categorie/${id}`, 'DELETE'); adminPanel.showToast('Successo', 'Categoria eliminata', 'success'); loadExtraDataCategorie(); }
+            catch (error) { console.error('Error deleting categoria:', error); }
+        }
+
+        // === Valori Assistito ===
+
+        let _storicoCache = {}; // chiave "CAT:campo" -> array entries
+
+        async function searchAssistitoExtraData() {
+            const cf = document.getElementById('extraDataSearchCf').value.trim();
+            if (cf.length < 3) { adminPanel.showToast('Attenzione', 'Inserisci almeno 3 caratteri', 'warning'); return; }
+            try {
+                const data = await adminPanel.apiCall('/api/v1/admin/extra-data-valori/search-assistito', 'POST', { cf });
+                const list = document.getElementById('extraDataSearchList');
+                const container = document.getElementById('extraDataSearchResults');
+                list.innerHTML = '';
+                if (!data.assistiti || data.assistiti.length === 0) {
+                    list.innerHTML = '<div class="list-group-item text-muted">Nessun assistito trovato</div>';
+                    container.style.display = 'block'; return;
+                }
+                data.assistiti.forEach(a => {
+                    const item = document.createElement('a');
+                    item.href = '#';
+                    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                    item.innerHTML = `<div><strong>${a.cognome || ''} ${a.nome || ''}</strong> <span class="text-muted ms-2">${a.cf}</span></div><span class="badge bg-primary rounded-pill">ID: ${a.id}</span>`;
+                    item.addEventListener('click', (e) => { e.preventDefault(); selectAssistitoExtraData(a); });
+                    list.appendChild(item);
+                });
+                container.style.display = 'block';
+            } catch (error) { console.error('Error searching:', error); }
+        }
+
+        async function selectAssistitoExtraData(assistito) {
+            document.getElementById('extraDataSearchResults').style.display = 'none';
+            document.getElementById('extraDataAssistitoId').value = assistito.id;
+            document.getElementById('extraDataAssistitoInfo').textContent = `${assistito.cognome || ''} ${assistito.nome || ''} - ${assistito.cf} (ID: ${assistito.id})`;
+            document.getElementById('extraDataAssistitoPanel').style.display = 'block';
+            await loadExtraDataValori(assistito.id);
+        }
+
+        function clearAssistitoExtraData() {
+            document.getElementById('extraDataAssistitoPanel').style.display = 'none';
+            document.getElementById('extraDataAssistitoId').value = '';
+            document.getElementById('extraDataCategorieContainer').innerHTML = '';
+            document.getElementById('extraDataSearchCf').value = '';
+            _storicoCache = {};
+            _schemaCache = {};
+        }
+
+        async function loadExtraDataValori(assistitoId) {
+            const loading = document.getElementById('extra-data-valori-loading');
+            const container = document.getElementById('extraDataCategorieContainer');
+            loading.style.display = 'block';
+            container.innerHTML = '';
+            _storicoCache = {};
+            _schemaCache = {};
+
+            try {
+                // Carica valori e storico in parallelo
+                const [valData, storicoData] = await Promise.all([
+                    adminPanel.apiCall(`/api/v1/admin/extra-data-valori/${assistitoId}`),
+                    adminPanel.apiCall(`/api/v1/admin/extra-data-valori/${assistitoId}/storico?limit=200`).catch(() => ({ storico: [] }))
+                ]);
+
+                const categorie = valData.categorie || [];
+                const storico = storicoData.storico || [];
+
+                // Raggruppa storico per "CATEGORIA:chiave"
+                storico.forEach(s => {
+                    const key = `${s.categoria}:${s.chiave}`;
+                    if (!_storicoCache[key]) _storicoCache[key] = [];
+                    _storicoCache[key].push(s);
+                });
+
+                if (categorie.length === 0) {
+                    container.innerHTML = '<div class="alert alert-warning">Nessuna categoria configurata. Crea prima una categoria.</div>';
+                    return;
+                }
+
+                categorie.forEach(cat => {
+                    const card = document.createElement('div');
+                    card.className = 'card mb-3';
+
+                    let campiHtml = '';
+                    (cat.campi || []).forEach(campo => {
+                        const valore = cat.valori[campo.chiave] || '';
+                        const reqBadge = campo.obbligatorio ? '<span class="badge bg-danger ms-1">*</span>' : '';
+                        const isJson = campo.tipo === 'json';
+                        const inputType = campo.tipo === 'number' ? 'number' : (campo.tipo === 'date' ? 'date' : 'text');
+                        const storicoKey = `${cat.codice}:${campo.chiave}`;
+                        const hasHistory = _storicoCache[storicoKey] && _storicoCache[storicoKey].length > 0;
+                        const historyBtnClass = hasHistory ? 'btn-storico has-history' : 'btn-storico';
+                        // Per JSON formatta il valore per leggibilità
+                        let displayValore = valore;
+                        if (isJson && valore) {
+                            try { displayValore = JSON.stringify(JSON.parse(valore), null, 2); } catch(e) { displayValore = valore; }
+                        }
+                        const escapedValore = (displayValore || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                        const colSize = isJson ? 'col-12' : 'col-md-6';
+                        const placeholder = campo.esempio || campo.etichetta || campo.chiave;
+                        const hasInfo = campo.note || campo.esempio;
+                        // Escape per HTML dentro attributo
+                        const escHtml = (s) => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        let tooltipContent = '';
+                        if (campo.note) tooltipContent += `<div class='mb-1'><strong>Note:</strong><br>${escHtml(campo.note)}</div>`;
+                        if (campo.esempio) tooltipContent += `<div><strong>Esempio:</strong><br><code>${escHtml(campo.esempio)}</code></div>`;
+
+                        const infoBtnHtml = hasInfo
+                            ? `<button type="button" class="btn btn-link btn-sm p-0 ms-1 extra-info-btn" style="font-size:0.75rem; vertical-align:middle;"
+                                   data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="focus"
+                                   data-bs-placement="top" data-bs-custom-class="info-popover"
+                                   data-bs-title="${escHtml(campo.etichetta || campo.chiave)}"
+                                   data-bs-content="${tooltipContent}">
+                                   <i class="bi bi-info-circle"></i></button>` : '';
+
+                        // JSON con schema → form strutturato a tabella
+                        if (isJson && campo.schema && Array.isArray(campo.schema)) {
+                            let items = [];
+                            if (valore) { try { items = JSON.parse(valore); } catch(e) { items = []; } }
+                            if (!Array.isArray(items)) items = [];
+                            const schemaId = `schema_${cat.codice}_${campo.chiave}`;
+                            _schemaCache[schemaId] = campo.schema;
+
+                            // Header tabella
+                            let thHtml = campo.schema.map(sf =>
+                                `<th class="small">${sf.etichetta || sf.chiave}${sf.obbligatorio ? ' <span class="text-danger">*</span>' : ''}</th>`
+                            ).join('');
+
+                            // Righe esistenti
+                            let rowsHtml = '';
+                            items.forEach((item, idx) => {
+                                let tdsHtml = campo.schema.map(sf => {
+                                    const val = item[sf.chiave] || '';
+                                    return `<td>${renderSchemaInput(schemaId, idx, sf, val)}</td>`;
+                                }).join('');
+                                rowsHtml += `<tr data-schema-row="${schemaId}">${tdsHtml}<td><button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td></tr>`;
+                            });
+
+                            campiHtml += `
+                                <div class="col-12 mb-2">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <label class="form-label small fw-bold mb-0">
+                                            ${campo.etichetta || campo.chiave}${reqBadge} <span class="badge bg-info ms-1">Strutturato</span>${infoBtnHtml}
+                                        </label>
+                                        <button class="btn btn-outline-secondary ${historyBtnClass} btn-sm ms-2 py-0" type="button"
+                                                onclick="showStoricoPopover(this, '${cat.codice}', '${campo.chiave}')"
+                                                title="Storico modifiche">
+                                            <i class="bi bi-clock-history"></i>${hasHistory ? ' ' + _storicoCache[storicoKey].length : ''}
+                                        </button>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered mb-1" id="table_${schemaId}">
+                                            <thead class="table-light"><tr>${thHtml}<th style="width:40px"></th></tr></thead>
+                                            <tbody id="tbody_${schemaId}">${rowsHtml}</tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addSchemaRow('${schemaId}', '${cat.codice}', '${campo.chiave}')">
+                                        <i class="bi bi-plus me-1"></i>Aggiungi
+                                    </button>
+                                    <input type="hidden" data-categoria="${cat.codice}" data-chiave="${campo.chiave}" data-original="${escapedValore}" data-schema-id="${schemaId}">
+                                </div>`;
+                        } else {
+                            // Campo semplice (string, number, date) o JSON senza schema
+                            const inputHtml = isJson
+                                ? `<textarea class="form-control" rows="4" style="font-family: monospace; font-size: 0.8rem;"
+                                       placeholder='${placeholder}'
+                                       data-categoria="${cat.codice}"
+                                       data-chiave="${campo.chiave}"
+                                       data-original="${escapedValore}">${displayValore}</textarea>`
+                                : `<input type="${inputType}" class="form-control"
+                                       value="${escapedValore}"
+                                       placeholder="${placeholder}"
+                                       data-categoria="${cat.codice}"
+                                       data-chiave="${campo.chiave}"
+                                       data-original="${escapedValore}">`;
+
+                            campiHtml += `
+                                <div class="${colSize} mb-2">
+                                    <label class="form-label small fw-bold mb-0">
+                                        ${campo.etichetta || campo.chiave}${reqBadge}${isJson ? ' <span class="badge bg-info ms-1">JSON</span>' : ''}${infoBtnHtml}
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        ${inputHtml}
+                                        <button class="btn btn-outline-secondary ${historyBtnClass}" type="button"
+                                                onclick="showStoricoPopover(this, '${cat.codice}', '${campo.chiave}')"
+                                                title="Storico modifiche">
+                                            <i class="bi bi-clock-history"></i>${hasHistory ? ' ' + _storicoCache[storicoKey].length : ''}
+                                        </button>
+                                        ${valore ? `<button class="btn btn-outline-danger" type="button"
+                                            onclick="deleteExtraDataValore(${assistitoId}, '${cat.codice}', '${campo.chiave}')"
+                                            title="Elimina"><i class="bi bi-trash"></i></button>` : ''}
+                                    </div>
+                                </div>`;
+                        }
+                    });
+
+                    card.innerHTML = `
+                        <div class="card-header py-2" style="background: #f0f4ff;">
+                            <h6 class="mb-0">
+                                <i class="bi bi-folder2-open me-2"></i>${cat.codice}
+                                <small class="text-muted fw-normal ms-2">${cat.descrizione || ''}</small>
+                            </h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row">${campiHtml}</div>
+                            <div class="text-end mt-1">
+                                <button class="btn btn-primary btn-sm" onclick="saveExtraDataValori(${assistitoId}, '${cat.codice}')">
+                                    <i class="bi bi-check-lg me-1"></i>Salva
+                                </button>
+                            </div>
+                        </div>`;
+                    container.appendChild(card);
+                });
+
+                // Inizializza popover info per note/esempio
+                container.querySelectorAll('.extra-info-btn').forEach(btn => {
+                    new bootstrap.Popover(btn, { sanitize: false });
+                });
+            } catch (error) {
+                console.error('Error loading extra data:', error);
+                container.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Errore: ${error.message || 'sconosciuto'}</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Popover storico per campo
+        let _activePopover = null;
+
+        function showStoricoPopover(btn, categoria, chiave) {
+            // Chiudi popover precedente
+            if (_activePopover) { _activePopover.dispose(); _activePopover = null; }
+
+            const key = `${categoria}:${chiave}`;
+            const entries = _storicoCache[key] || [];
+
+            let html;
+            if (entries.length === 0) {
+                html = '<div class="p-3 text-muted text-center small">Nessuna modifica registrata</div>';
+            } else {
+                html = entries.map(s => {
+                    const date = s.createdAt ? new Date(s.createdAt).toLocaleString('it-IT') : '-';
+                    let opIcon, opColor;
+                    switch (s.operazione) {
+                        case 'CREATE': opIcon = 'plus-circle'; opColor = '#198754'; break;
+                        case 'UPDATE': opIcon = 'pencil'; opColor = '#ffc107'; break;
+                        case 'DELETE': opIcon = 'trash'; opColor = '#dc3545'; break;
+                        default: opIcon = 'circle'; opColor = '#6c757d';
+                    }
+                    const oldVal = s.vecchioValore ? `<span class="text-decoration-line-through text-muted">${s.vecchioValore}</span> &rarr; ` : '';
+                    const newVal = s.nuovoValore || '<em class="text-muted">eliminato</em>';
+                    return `<div class="storico-entry">
+                        <div class="d-flex justify-content-between">
+                            <span><i class="bi bi-${opIcon}" style="color:${opColor}"></i> <strong>${s.operazione}</strong></span>
+                            <small class="text-muted">${date}</small>
+                        </div>
+                        <div>${oldVal}${newVal}</div>
+                        <small class="text-muted">${s.utente || ''}</small>
+                    </div>`;
+                }).join('');
+            }
+
+            _activePopover = new bootstrap.Popover(btn, {
+                html: true,
+                content: html,
+                title: `<i class="bi bi-clock-history me-1"></i>Storico: ${chiave}`,
+                placement: 'left',
+                trigger: 'focus',
+                customClass: 'storico-popover',
+                sanitize: false
+            });
+            _activePopover.show();
+        }
+
+        // Cache degli schema per renderSchemaInput e addSchemaRow
+        let _schemaCache = {};
+
+        function renderSchemaInput(schemaId, rowIdx, sf, val) {
+            const name = `${schemaId}_${rowIdx}_${sf.chiave}`;
+            const req = sf.obbligatorio ? 'required' : '';
+            const escaped = (val || '').toString().replace(/"/g, '&quot;');
+            if (sf.tipo === 'enum' && sf.valori) {
+                let opts = `<option value="">--</option>`;
+                sf.valori.forEach(v => { opts += `<option value="${v}" ${val === v ? 'selected' : ''}>${v}</option>`; });
+                return `<select class="form-select form-select-sm" data-sf="${sf.chiave}" ${req}>${opts}</select>`;
+            } else if (sf.tipo === 'date') {
+                return `<input type="date" class="form-control form-control-sm" data-sf="${sf.chiave}" value="${escaped}" ${req}>`;
+            } else if (sf.tipo === 'number') {
+                return `<input type="number" class="form-control form-control-sm" data-sf="${sf.chiave}" value="${escaped}" ${req} step="any">`;
+            }
+            return `<input type="text" class="form-control form-control-sm" data-sf="${sf.chiave}" value="${escaped}" ${req} placeholder="${sf.etichetta || sf.chiave}">`;
+        }
+
+        function addSchemaRow(schemaId, catCode, chiave) {
+            const schema = _schemaCache[schemaId];
+            if (!schema) return;
+            const tbody = document.getElementById(`tbody_${schemaId}`);
+            const idx = tbody.rows.length;
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-schema-row', schemaId);
+            let tds = schema.map(sf => `<td>${renderSchemaInput(schemaId, idx, sf, '')}</td>`).join('');
+            tds += `<td><button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="this.closest('tr').remove()"><i class="bi bi-trash"></i></button></td>`;
+            tr.innerHTML = tds;
+            tbody.appendChild(tr);
+        }
+
+        function collectSchemaData(schemaId) {
+            const schema = _schemaCache[schemaId];
+            if (!schema) return null;
+            const rows = document.querySelectorAll(`tr[data-schema-row="${schemaId}"]`);
+            const items = [];
+            rows.forEach(row => {
+                const item = {};
+                schema.forEach(sf => {
+                    const el = row.querySelector(`[data-sf="${sf.chiave}"]`);
+                    if (el) {
+                        const v = el.value.trim();
+                        if (v) item[sf.chiave] = v;
+                    }
+                });
+                // Includi solo righe con almeno un campo compilato
+                if (Object.keys(item).length > 0) items.push(item);
+            });
+            return items;
+        }
+
+        async function saveExtraDataValori(assistitoId, categoriaCode) {
+            // Raccogli input, textarea e campi schema
+            const fields = document.querySelectorAll(`input[data-categoria="${categoriaCode}"], textarea[data-categoria="${categoriaCode}"]`);
+            const valori = {};
+            let hasChanges = false;
+            fields.forEach(el => {
+                const chiave = el.getAttribute('data-chiave');
+                const schemaIdAttr = el.getAttribute('data-schema-id');
+                let current;
+                if (schemaIdAttr) {
+                    // Campo con schema strutturato → serializza la tabella
+                    const items = collectSchemaData(schemaIdAttr);
+                    current = JSON.stringify(items);
+                } else {
+                    current = el.value.trim();
+                }
+                if (current !== el.getAttribute('data-original')) { valori[chiave] = current; hasChanges = true; }
+            });
+            if (!hasChanges) { adminPanel.showToast('Info', 'Nessuna modifica', 'info'); return; }
+            try {
+                await adminPanel.apiCall(`/api/v1/admin/extra-data-valori/${assistitoId}`, 'POST', { categoria: categoriaCode, valori });
+                adminPanel.showToast('Successo', `${categoriaCode} salvato`, 'success');
+                await loadExtraDataValori(assistitoId);
+            } catch (error) { console.error('Error saving:', error); }
+        }
+
+        async function deleteExtraDataValore(assistitoId, categoriaCode, chiave) {
+            if (!confirm(`Eliminare "${chiave}"?`)) return;
+            try {
+                await adminPanel.apiCall(`/api/v1/admin/extra-data-valori/${assistitoId}`, 'DELETE', { categoria: categoriaCode, chiave });
+                adminPanel.showToast('Successo', `"${chiave}" eliminato`, 'success');
+                await loadExtraDataValori(assistitoId);
+            } catch (error) { console.error('Error deleting:', error); }
+        }
+
+        // Hook switchSection
+        document.addEventListener('DOMContentLoaded', function() {
+            const orig = AdminPanel.prototype.switchSection;
+            AdminPanel.prototype.switchSection = function(section) {
+                orig.call(this, section);
+                if (section === 'extra-data') loadExtraDataCategorie();
             };
         });
     </script>

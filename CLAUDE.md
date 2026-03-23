@@ -49,10 +49,39 @@ sails console
 
 The application uses three separate MySQL databases:
 - **auth**: Authentication and authorization (users, roles, scopes, domains)
-- **anagrafica**: Patient registry data
+- **anagrafica**: Patient registry data and extra data
 - **log**: Application logging
 
-Database connections are configured in `config/datastores.js`. Models specify which datastore to use via the `datastore` attribute.
+Database connections are configured in `config/datastores.js`. Models specify which datastore to use via the `datastore` attribute. The setting `migrate: 'safe'` is used — tables are never auto-created by Sails, migrations are handled by the custom migration system.
+
+### Migration System
+
+The application has a custom SQL migration system that runs automatically on `sails lift`.
+
+**How it works:**
+1. SQL files in `migrations/` are executed in alphabetical order at startup via `config/bootstrap.js`
+2. Each database has a `_migrations` table that tracks which migrations have been executed
+3. A migration is never re-executed once registered
+4. If a migration fails, it's logged but doesn't block the others — it will be retried on next lift
+
+**File naming convention:**
+```
+YYYYMMDD_NNN_descrizione.sql
+```
+Example: `20260323_001_extra_data.sql`
+
+**Required header** — every file must declare the target database:
+```sql
+-- database: anagrafica
+```
+Valid databases: `anagrafica`, `auth`, `log`
+
+**Helper:** `api/helpers/run-migrations.js` — called from `config/bootstrap.js`
+
+**Datastore-to-model mapping** (used internally for `sendNativeQuery`):
+- `anagrafica` → `Anagrafica_Assistiti`
+- `auth` → `Auth_Utenti`
+- `log` → `Log`
 
 ### Authentication & Authorization
 
@@ -74,8 +103,60 @@ Database connections are configured in `config/datastores.js`. Models specify wh
    - User has required scopes
    - User belongs to required domain
    - User account is active
+   - Exposes `req.tokenData` (username, scopi, ambito, livello) for controllers
+
+5. **Wildcard scopes**: Scope matching supports `*` wildcard via `api/helpers/scope-matches.js`:
+   - `anagrafica-hl7_*-read` matches all HL7 categories
+   - `anagrafica-*-read` matches all extra data categories
+   - Always use `sails.helpers.scopeMatches(userScopi, requiredScope)` instead of `includes()`
 
 Routes are protected in `config/routes.js` by specifying `scopi`, `ambito`, and `minAuthLevel` properties.
+
+### Extra Data System
+
+A flexible system for adding dynamic data to patients (assistiti), organized by categories with versioning and scope-based access control.
+
+**Models** (database `anagrafica`):
+- `Anagrafica_ExtraDataCategorie` → `extra_data_categorie` — category definitions with field schemas
+- `Anagrafica_ExtraDataValori` → `extra_data_valori` — current values per assistito/category/key
+- `Anagrafica_ExtraDataStorico` → `extra_data_storico` — audit trail of all changes
+
+**Scope convention:**
+- Pattern: `anagrafica-{codice_lowercase}-read` / `anagrafica-{codice_lowercase}-write`
+- Category `HL7_ALLERGIE` → `anagrafica-hl7_allergie-read`, `anagrafica-hl7_allergie-write`
+- Scopes are auto-created in `Auth_Scopi` when a category is created via admin endpoint
+- Wildcard scopes (e.g., `anagrafica-hl7_*-read`) must be created manually
+
+**Field types supported:** `string`, `number`, `boolean`, `date`, `json`
+- Use `json` type for multi-value data (e.g., list of allergies, medications)
+
+**Default HL7 categories** (created by migration `20260323_002`):
+- `HL7_CONTATTI_EMERGENZA` — individual fields (nome, relazione, telefono)
+- `HL7_ALLERGIE` — JSON list [{sostanza, tipo, criticita, reazione...}]
+- `HL7_PATOLOGIE_CRONICHE` — JSON list [{codice_icd9, descrizione, stato_clinico...}]
+- `HL7_ESENZIONI` — JSON list [{codice_esenzione, tipo, data_inizio...}]
+- `HL7_TERAPIE_CRONICHE` — JSON list [{farmaco, dosaggio, frequenza...}]
+- `HL7_PARAMETRI_VITALI` — individual fields (pressione, FC, peso, SpO2...)
+- `HL7_CONSENSI` — JSON list [{tipo_consenso, stato, data_rilascio...}]
+
+**Public API endpoints** (use `cf` as key, scope `asp5-anagrafica` + category scope):
+- `GET /api/v1/anagrafica/extra-data/:cf` — get extra data
+- `POST /api/v1/anagrafica/extra-data/:cf` — set values (body: `{categoria, valori}`)
+- `DELETE /api/v1/anagrafica/extra-data/:cf` — delete values (body: `{categoria, chiavi}`)
+- `GET /api/v1/anagrafica/extra-data/:cf/storico` — change history
+- `GET /api/v1/anagrafica/extra-data-categorie/summary` — categories with field names
+
+**Admin API endpoints** (use assistito `id`, scope `admin-manage`, superAdmin):
+- `GET/POST/PUT/DELETE /api/v1/admin/extra-data-categorie` — CRUD categories
+- `POST /api/v1/admin/extra-data-valori/search-assistito` — search by CF
+- `GET /api/v1/admin/extra-data-valori/:assistitoId` — get all values + field definitions
+- `POST /api/v1/admin/extra-data-valori/:assistitoId` — set values
+- `DELETE /api/v1/admin/extra-data-valori/:assistitoId` — delete value
+- `GET /api/v1/admin/extra-data-valori/:assistitoId/storico` — full history (no scope filter)
+
+**Auto-include in search:** The `ricerca.js` controller automatically includes `extraData` in search results, filtered by user scopes.
+
+**Helper:** `api/helpers/get-extra-data-for-assistiti.js` — bulk fetch extra data for multiple assistiti, filtered by scope.
 
 ### API Response Format
 
@@ -103,6 +184,8 @@ This ensures consistent response structure:
 }
 ```
 
+**Note:** Sails native validation errors (400) have a different format (`{problems: [...]}`) without the `err` field. The admin UI `apiCall` handles both formats.
+
 ### Logging
 
 All API requests and responses are automatically logged using the `log` helper (`api/helpers/log.js`). Logs include:
@@ -117,8 +200,11 @@ All API requests and responses are automatically logged using the `log` helper (
 
 Controllers are organized by domain in subdirectories:
 - `api/controllers/anagrafica/`: Patient registry operations
+- `api/controllers/anagrafica/extra-data/`: Extra data CRUD (public API, keyed by CF)
 - `api/controllers/login/`: Authentication endpoints
 - `api/controllers/admin/`: Administrative functions
+- `api/controllers/admin/extra-data-categorie/`: Category CRUD (admin)
+- `api/controllers/admin/extra-data-valori/`: Extra data values management (admin, keyed by ID)
 - `api/controllers/cambio-medico/`: Doctor change functionality
 - `api/controllers/stats/`: Statistics endpoints
 
@@ -132,6 +218,14 @@ Key services in `api/services/`:
 - **MailService**: Email sending via nodemailer
 - **JobManager**: Background job management
 
+### Helpers
+
+Key helpers in `api/helpers/`:
+- **log**: Log to database
+- **run-migrations**: Execute pending SQL migrations from `migrations/`
+- **get-extra-data-for-assistiti**: Bulk fetch extra data filtered by scope
+- **scope-matches**: Wildcard scope matching (sync helper)
+
 ### Configuration
 
 Important config files:
@@ -139,9 +233,10 @@ Important config files:
 - `config/policies.js`: Policy mappings (most routes use `is-token-verified`)
 - `config/datastores.js`: Database connections
 - `config/custom.js`: Custom app config (JWT settings, base URL)
-- `config/bootstrap.js`: Initialization logic run on server start
+- `config/bootstrap.js`: Initialization logic — runs migrations, then swagger setup, then Docker sync
 - `config/auth.js`: Basic auth credentials for Swagger UI
 - `config/swaggergenerator.js`: Swagger documentation generation
+- `config/models.js`: `migrate: 'safe'`, `schema: true`
 
 ### Domain Login
 
@@ -151,9 +246,23 @@ The application supports Active Directory/LDAP authentication via the `domain-lo
 
 Swagger docs are available at `/docs` (protected by basic auth). The dynamic stats (total patients, last update, geolocation percentage) are injected into the Swagger spec at runtime via the `/api/v1/stats/info` endpoint.
 
+Tags are defined once in a controller with `tags: - name: TagName` and referenced in others with just `tags: - TagName`. Extra data endpoints use the tag `Gestione Extra data Assistiti`.
+
+### Admin UI
+
+The admin panel at `/admin` (protected by basic auth) provides:
+- **Dashboard**: Stats overview
+- **Utenti**: User CRUD with scope assignment, OTP config
+- **Scopi**: Scope management (including wildcard scopes)
+- **Ambiti**: Domain management
+- **Livelli**: Access level listing
+- **Extra Data**: Category management + per-assistito value editing with inline history popovers
+
+The panel uses Bootstrap 5, is a single-page EJS template (`views/pages/admin/index.ejs`) with JS in `assets/js/admin.js` and inline extensions in the template.
+
 ## Key Patterns
 
-1. **Username Domain Stripping**: For asp.messina.it logins, the domain suffix is stripped from usernames (see git commit messages)
+1. **Username Domain Stripping**: For asp.messina.it logins, the domain suffix is stripped from usernames
 
 2. **Model Globals**: Models are automatically globalized by Sails (e.g., `Anagrafica_Assistiti`, `Auth_Utenti`) and can be accessed anywhere without requiring them
 
@@ -162,6 +271,14 @@ Swagger docs are available at `/docs` (protected by basic auth). The dynamic sta
 4. **Custom Response**: Always use `res.ApiResponse()` instead of `res.json()` for API endpoints
 
 5. **Private Config Files**: JWT secrets and other sensitive data are stored in `config/custom/private_*.json` files (not in git)
+
+6. **Scope Matching**: Always use `sails.helpers.scopeMatches(userScopi, requiredScope)` for scope checks — never `userScopi.includes()` directly, to support wildcards
+
+7. **Extra Data CF Key**: Public extra data endpoints use codice fiscale (`cf`) as key since `customToJSON` in `Anagrafica_Assistiti` strips the `id` field from responses
+
+8. **JSON Fields**: Multi-value healthcare data (allergies, medications, conditions) is stored as JSON strings in extra data values. Controllers handle `typeof === 'string'` parsing for query string compatibility.
+
+9. **Migration Idempotency**: All migration INSERTs use `WHERE NOT EXISTS` to be safely re-runnable
 
 ## Testing
 

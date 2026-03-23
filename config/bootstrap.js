@@ -29,6 +29,16 @@ module.exports.bootstrap = async function () {
   // ]);
   // ```
 
+  // Esegui migrazioni SQL pendenti
+  try {
+    const migrationResult = await sails.helpers.runMigrations();
+    if (migrationResult.errors && migrationResult.errors.length > 0) {
+      sails.log.warn('Alcune migrazioni hanno avuto errori:', migrationResult.errors);
+    }
+  } catch (err) {
+    sails.log.error('Errore durante l\'esecuzione delle migrazioni:', err.message);
+  }
+
   if (sails.config['swagger-generator'] && sails.config['swagger-generator'].swagger) {
     sails.config['swagger-generator'].swagger.servers = [
       {

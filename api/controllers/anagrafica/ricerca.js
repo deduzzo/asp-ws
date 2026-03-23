@@ -210,6 +210,26 @@ module.exports = {
       } else {
         outData.assistiti = assistiti;
       }
+
+      // Auto-include extra data filtrati per scope utente
+      try {
+        const userScopi = (this.req.tokenData && this.req.tokenData.scopi) || [];
+        const assistitiIds = outData.assistiti.map(a => a.id);
+        if (assistitiIds.length > 0 && userScopi.length > 0) {
+          const extraDataMap = await sails.helpers.getExtraDataForAssistiti.with({
+            assistitoIds: assistitiIds,
+            userScopi
+          });
+          for (const a of outData.assistiti) {
+            if (extraDataMap[a.id]) {
+              a.extraData = extraDataMap[a.id];
+            }
+          }
+        }
+      } catch (extraErr) {
+        sails.log.error('Errore nel recupero extra data per ricerca:', extraErr);
+      }
+
       return res.ApiResponse({
         data: outData
       });

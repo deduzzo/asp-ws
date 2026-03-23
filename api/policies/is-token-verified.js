@@ -49,8 +49,10 @@ module.exports = async function (req, res, proceed) {
           errMsg: 'Errore nel token, token non valido'
         });
     }
-    else
+    else {
       req.user = tokenData.decoded.username;
+      req.tokenData = tokenData.decoded;
+    }
   } catch (err) {
     // log
     await sails.helpers.log.with({

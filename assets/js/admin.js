@@ -216,7 +216,10 @@ class AdminPanel {
     document.querySelectorAll('.nav-link[data-section]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        this.switchSection(e.target.getAttribute('data-section'));
+        const navLink = e.target.closest('[data-section]');
+        if (navLink) {
+          this.switchSection(navLink.getAttribute('data-section'));
+        }
       });
     });
 
@@ -302,16 +305,19 @@ class AdminPanel {
       console.log(`API Response:`, result);
 
       if (!result.ok) {
+        // Handle Sails native validation errors (400) which have a different format
+        if (!result.err) {
+          const message = result.problems
+            ? result.problems.join('; ')
+            : (result.message || 'Errore di validazione');
+          throw new Error(message);
+        }
+
         // Check if token is expired or invalid
         if (result.err.code === 'TOKEN_SCADUTO' || result.err.code === 'TOKEN_NON_VALIDO') {
           console.error('Token error detected:', result.err);
-
-          // Don't automatically logout - it might be a configuration issue
-          // Just show an error and let the user manually logout if needed
           console.warn('API call failed due to token error. This might be a configuration issue.');
           console.warn('Token will remain in localStorage. User can logout manually if needed.');
-
-          // Throw error so calling function knows it failed
           throw new Error('Token error: ' + result.err.msg);
         }
         throw new Error(result.err.msg || 'Errore sconosciuto');

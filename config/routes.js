@@ -481,6 +481,96 @@ let routes = {
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
 
+  // Admin API routes for extra data categorie
+  'GET /api/v1/admin/extra-data-categorie': {
+    action: 'admin/extra-data-categorie/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/anagrafica/extra-data-categorie/summary': {
+    action: 'anagrafica/extra-data/summary',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/admin/extra-data-categorie': {
+    action: 'admin/extra-data-categorie/create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/extra-data-categorie/:id': {
+    action: 'admin/extra-data-categorie/update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/extra-data-categorie/:id': {
+    action: 'admin/extra-data-categorie/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+
+  // Extra data per assistito (chiave: codice fiscale)
+  'GET /api/v1/anagrafica/extra-data/:cf': {
+    action: 'anagrafica/extra-data/get',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/anagrafica/extra-data/:cf': {
+    action: 'anagrafica/extra-data/set',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'DELETE /api/v1/anagrafica/extra-data/:cf': {
+    action: 'anagrafica/extra-data/delete',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/anagrafica/extra-data/:cf/storico': {
+    action: 'anagrafica/extra-data/storico',
+    scopi: ['asp5-anagrafica'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+
+  // Admin API routes for extra data valori (gestione assistiti)
+  'POST /api/v1/admin/extra-data-valori/search-assistito': {
+    action: 'admin/extra-data-valori/search-assistito',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/admin/extra-data-valori/:assistitoId': {
+    action: 'admin/extra-data-valori/get',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/extra-data-valori/:assistitoId': {
+    action: 'admin/extra-data-valori/set',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/extra-data-valori/:assistitoId': {
+    action: 'admin/extra-data-valori/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/admin/extra-data-valori/:assistitoId/storico': {
+    action: 'admin/extra-data-valori/storico',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+
   // Admin interface for Docker apps
   'GET /admin/apps': {
     fn: function(req, res, next) {
