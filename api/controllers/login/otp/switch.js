@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /otp/switch:
+ * /switch:
  *   tags:
  *     - Otp
  */

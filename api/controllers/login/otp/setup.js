@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /otp/setup:
+ * /setup:
  *   tags:
  *     - Otp
  * tags:

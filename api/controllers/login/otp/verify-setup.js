@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /otp/verify-setup:
+ * /verify-setup:
  *   tags:
  *     - Otp
  */
