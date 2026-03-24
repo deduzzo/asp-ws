@@ -128,6 +128,22 @@ let routes = {
   'POST /api/v1/login/verify-token': {
     action: 'login/verify-token',
   },
+  'POST /api/v1/login/cambio-password': {
+    action: 'login/cambio-password',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/login/otp/setup': {
+    action: 'login/otp/setup',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/login/otp/verify-setup': {
+    action: 'login/otp/verify-setup',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/login/otp/switch': {
+    action: 'login/otp/switch',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
   'POST /api/v1/anagrafica/ricerca': {
     action: 'anagrafica/ricerca',
     scopi: ['asp5-anagrafica'],

@@ -28,6 +28,7 @@ module.exports = {
     otp: {type: 'string', columnType: 'varchar(100)', allowNull: true},
     otp_exp: {type: 'number', allowNull: true},
     otp_type: {type: 'string', columnType: 'varchar(10)', allowNull: true},
+    otp_required: {type: 'boolean', defaultsTo: false},
     scopi: {
       collection: 'auth_scopi',
       via : 'utente',

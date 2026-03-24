@@ -59,8 +59,13 @@ module.exports = {
     otp_type: {
       type: 'string',
       allowNull: true,
-      isIn: ['mail'],
-      description: 'Type of OTP authentication (mail)'
+      isIn: ['mail', 'totp'],
+      description: 'Type of OTP authentication (mail, totp)'
+    },
+    otp_required: {
+      type: 'boolean',
+      defaultsTo: false,
+      description: 'Whether user is required to have OTP enabled (cannot self-disable)'
     }
 
   },
@@ -116,6 +121,7 @@ module.exports = {
         attivo: inputs.attivo,
         otp_enabled: inputs.otp_enabled || false,
         otp_type: inputs.otp_enabled ? inputs.otp_type : null,
+        otp_required: inputs.otp_required || false,
         otp: null,
         otp_exp: null,
         otp_key: null
@@ -157,6 +163,7 @@ module.exports = {
           attivo: completeUser.attivo,
           otp_enabled: completeUser.otp_enabled,
           otp_type: completeUser.otp_type,
+          otp_required: completeUser.otp_required,
           ambito: completeUser.ambito,
           livello: completeUser.livello,
           scopi: completeUser.scopi

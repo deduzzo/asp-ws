@@ -236,6 +236,33 @@ module.exports = {
               });
             }
             break;
+          case 'totp':
+            if (!inputs.otp) {
+              return res.ApiResponse({
+                data: {
+                  otpExpire: null,
+                  otpType: 'autenticator'
+                }
+              });
+            }
+            if (!utente.otp_key) {
+              return res.ApiResponse({
+                errType: ERROR_TYPES.ERRORE_GENERICO,
+                errMsg: 'TOTP non configurato per questo utente'
+              });
+            }
+            {
+              const {authenticator} = require('otplib');
+              authenticator.options = {window: 1};
+              const totpValid = authenticator.check(inputs.otp, utente.otp_key);
+              if (!totpValid) {
+                return res.ApiResponse({
+                  errType: ERROR_TYPES.NON_AUTORIZZATO,
+                  errMsg: 'Codice TOTP non valido'
+                });
+              }
+            }
+            break;
           default: // errore, tipo otp non valido
             return res.ApiResponse({
               errType: ERROR_TYPES.NON_AUTORIZZATO,
