@@ -57,12 +57,12 @@ module.exports = {
       const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
 
       await sails.helpers.log.with({
-        livello: 'info',
+        level: 'info',
         tag: 'OTP_SETUP',
-        azione: 'otp-setup',
-        ip: req.ip,
-        utente: username,
-        parametri: 'Secret TOTP generato'
+        message: 'Secret TOTP generato',
+        action: 'otp-setup',
+        ipAddress: req.ip,
+        user: username
       });
 
       return res.ApiResponse({

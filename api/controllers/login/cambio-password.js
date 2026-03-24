@@ -100,12 +100,12 @@ module.exports = {
       });
 
       await sails.helpers.log.with({
-        livello: 'info',
+        level: 'info',
         tag: 'CAMBIO_PASSWORD',
-        azione: 'cambio-password',
-        ip: req.ip,
-        utente: username,
-        parametri: 'Password cambiata con successo'
+        message: 'Password cambiata con successo',
+        action: 'cambio-password',
+        ipAddress: req.ip,
+        user: username
       });
 
       return res.ApiResponse({

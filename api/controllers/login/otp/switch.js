@@ -85,12 +85,12 @@ module.exports = {
       });
 
       await sails.helpers.log.with({
-        livello: 'info',
+        level: 'info',
         tag: 'OTP_SWITCH',
-        azione: 'otp-switch',
-        ip: req.ip,
-        utente: username,
-        parametri: `Metodo OTP cambiato da ${utente.otp_type} a ${inputs.nuovoTipo}`
+        message: `Metodo OTP cambiato da ${utente.otp_type} a ${inputs.nuovoTipo}`,
+        action: 'otp-switch',
+        ipAddress: req.ip,
+        user: username
       });
 
       return res.ApiResponse({

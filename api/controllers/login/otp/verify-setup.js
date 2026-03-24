@@ -70,12 +70,12 @@ module.exports = {
       });
 
       await sails.helpers.log.with({
-        livello: 'info',
+        level: 'info',
         tag: 'OTP_VERIFY_SETUP',
-        azione: 'otp-verify-setup',
-        ip: req.ip,
-        utente: username,
-        parametri: 'TOTP attivato con successo'
+        message: 'TOTP attivato con successo',
+        action: 'otp-verify-setup',
+        ipAddress: req.ip,
+        user: username
       });
 
       return res.ApiResponse({
