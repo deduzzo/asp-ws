@@ -252,9 +252,9 @@ module.exports = {
               });
             }
             {
-              const {authenticator} = require('otplib');
-              authenticator.options = {window: 1};
-              const totpValid = authenticator.check(inputs.otp, utente.otp_key);
+              const {verifySync} = require('otplib');
+              const totpResult = verifySync({secret: utente.otp_key, token: inputs.otp});
+              const totpValid = totpResult.valid;
               if (!totpValid) {
                 return res.ApiResponse({
                   errType: ERROR_TYPES.NON_AUTORIZZATO,

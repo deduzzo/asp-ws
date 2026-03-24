@@ -10,7 +10,7 @@
  */
 
 const {ERROR_TYPES} = require('../../../responses/ApiResponse');
-const {authenticator} = require('otplib');
+const {generateSecret, generateURI} = require('otplib');
 const QRCode = require('qrcode');
 
 module.exports = {
@@ -43,7 +43,7 @@ module.exports = {
       }
 
       // Genera il secret TOTP
-      const secret = authenticator.generateSecret();
+      const secret = generateSecret();
 
       // Salva il secret (non attiva ancora il TOTP)
       await Auth_Utenti.updateOne({id: utente.id}).set({
@@ -51,7 +51,7 @@ module.exports = {
       });
 
       // Genera l'URI otpauth:// per il QR code
-      const otpauthUrl = authenticator.keyuri(username, 'ASP Messina', secret);
+      const otpauthUrl = generateURI({secret, issuer: 'ASP Messina', label: username});
 
       // Genera il QR code come data URL
       const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);

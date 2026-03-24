@@ -7,7 +7,7 @@
  */
 
 const {ERROR_TYPES} = require('../../../responses/ApiResponse');
-const {authenticator} = require('otplib');
+const {verifySync} = require('otplib');
 
 module.exports = {
   friendlyName: 'OtpVerifySetup',
@@ -52,9 +52,9 @@ module.exports = {
         });
       }
 
-      // Verifica il codice TOTP con tolleranza ±1 window (30s)
-      authenticator.options = {window: 1};
-      const isValid = authenticator.check(inputs.codice, utente.otp_key);
+      // Verifica il codice TOTP
+      const result = verifySync({secret: utente.otp_key, token: inputs.codice});
+      const isValid = result.valid;
 
       if (!isValid) {
         return res.ApiResponse({
