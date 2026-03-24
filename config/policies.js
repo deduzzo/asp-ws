@@ -21,5 +21,7 @@ module.exports.policies = {
   'admin/*': ['is-token-verified'],
   'admin/index': true, // Allow public access to admin interface page (auth handled in frontend)
   'cambio-medico/*': ['is-token-verified'],
+  'login/otp/*': ['is-token-verified'],
+  'login/cambio-password': ['is-token-verified'],
   //'*': ['logger'],
 };
