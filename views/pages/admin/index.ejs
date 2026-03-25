@@ -236,6 +236,16 @@
                             <i class="bi bi-collection me-2"></i>
                             Extra Data
                         </a>
+                        <hr class="opacity-25 my-2">
+                        <small class="text-white-50 px-3 mb-1 d-block">MPI</small>
+                        <a class="nav-link" href="#" data-section="mpi-apps">
+                            <i class="bi bi-box-seam me-2"></i>
+                            Applicazioni MPI
+                        </a>
+                        <a class="nav-link" href="#" data-section="mpi-records">
+                            <i class="bi bi-person-badge me-2"></i>
+                            Record MPI
+                        </a>
                     </nav>
 
                     <div class="mt-auto">
@@ -659,6 +669,207 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MPI APPLICAZIONI SECTION ===== -->
+    <div id="mpi-apps-section" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-box-seam me-2 text-primary"></i>Applicazioni MPI</h2>
+            <button class="btn btn-primary" onclick="showCreateMpiAppModal()">
+                <i class="bi bi-plus-circle me-1"></i>Nuova App
+            </button>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="loading" id="mpi-apps-loading">
+                    <div class="spinner-border" role="status"></div>
+                    <p class="mt-2">Caricamento...</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Codice</th>
+                                <th>Nome</th>
+                                <th>Versione</th>
+                                <th>Contatto</th>
+                                <th>Stato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mpi-apps-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MPI RECORDS SECTION ===== -->
+    <div id="mpi-records-section" class="content-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-person-badge me-2 text-primary"></i>Record MPI</h2>
+        </div>
+
+        <!-- Ricerca -->
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-search me-2"></i>Ricerca Record MPI</h6></div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-2">
+                        <input type="text" class="form-control form-control-sm" id="mpiSearchCf" placeholder="Codice Fiscale">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control form-control-sm" id="mpiSearchCognome" placeholder="Cognome">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" class="form-control form-control-sm" id="mpiSearchNome" placeholder="Nome">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" id="mpiSearchStato">
+                            <option value="">Tutti gli stati</option>
+                            <option value="aperto">Aperto</option>
+                            <option value="identificato">Identificato</option>
+                            <option value="annullato">Annullato</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" id="mpiSearchApp">
+                            <option value="">Tutte le app</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary btn-sm w-100" onclick="searchMpiRecords()">
+                            <i class="bi bi-search me-1"></i>Cerca
+                        </button>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" id="mpiSearchMpiId" placeholder="UUID (mpiId)">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" id="mpiSearchIdEsterno" placeholder="ID Esterno">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risultati -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Risultati</h6>
+                <small class="text-muted" id="mpiRecordsCount"></small>
+            </div>
+            <div class="card-body">
+                <div class="loading" id="mpi-records-loading" style="display:none;">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Ricerca...</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>MPI ID</th>
+                                <th>App</th>
+                                <th>ID Esterno</th>
+                                <th>Stato</th>
+                                <th>CF</th>
+                                <th>Cognome</th>
+                                <th>Nome</th>
+                                <th>Creato</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mpi-records-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dettaglio Record -->
+        <div class="card" id="mpi-record-detail" style="display:none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-person-vcard me-2"></i>Dettaglio Record</h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="closeMpiRecordDetail()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="card-body" id="mpi-record-detail-body"></div>
+        </div>
+    </div>
+
+    <!-- MPI App Modal -->
+    <div class="modal fade" id="mpiAppModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mpiAppModalTitle">Nuova Applicazione MPI</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="mpiAppForm">
+                        <input type="hidden" id="mpiAppId" name="id">
+                        <div class="mb-3">
+                            <label for="mpiAppCodice" class="form-label">Codice *</label>
+                            <input type="text" class="form-control" id="mpiAppCodice" name="codice" required
+                                   placeholder="es. PS_PAPARDO" style="text-transform: uppercase;">
+                            <div class="form-text">Identificativo univoco. Determina gli scopi: mpi-{codice}-read/write</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="mpiAppNome" class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="mpiAppNome" name="nome" required
+                                   placeholder="es. Pronto Soccorso Papardo">
+                        </div>
+                        <div class="mb-3">
+                            <label for="mpiAppDescrizione" class="form-label">Descrizione</label>
+                            <textarea class="form-control" id="mpiAppDescrizione" name="descrizione" rows="2"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="mpiAppVersione" class="form-label">Versione</label>
+                                <input type="text" class="form-control" id="mpiAppVersione" name="versione" placeholder="es. 1.0.0">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="mpiAppContatto" class="form-label">Contatto</label>
+                                <input type="text" class="form-control" id="mpiAppContatto" name="contatto" placeholder="Email o nome">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-primary" onclick="saveMpiApp()">Salva</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MPI Link Modal -->
+    <div class="modal fade" id="mpiLinkModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Collega ad Assistito</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="mpiLinkMpiId">
+                    <div class="mb-3">
+                        <label for="mpiLinkCf" class="form-label">Codice Fiscale *</label>
+                        <input type="text" class="form-control" id="mpiLinkCf" required
+                               placeholder="Inserisci il CF dell'assistito" style="text-transform: uppercase;">
+                    </div>
+                    <div id="mpiLinkResult" style="display:none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-success" onclick="confirmMpiLink()">
+                        <i class="bi bi-link-45deg me-1"></i>Collega
+                    </button>
                 </div>
             </div>
         </div>
