@@ -493,19 +493,21 @@ let routes = {
   'POST /api/v1/admin-op/cambio-password': {
     action: 'admin/cambio-password',
     scopi: ['admin-manage'],
-    ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin-op/reset-otp': {
     action: 'admin/reset-otp',
     scopi: ['admin-manage'],
-    ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'POST /api/v1/admin-op/search-user': {
     action: 'admin/search-user',
     scopi: ['admin-manage'],
-    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin-op/registra-utente': {
+    action: 'admin/registra-utente',
+    scopi: ['admin-manage'],
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
 

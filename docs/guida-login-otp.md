@@ -489,7 +489,7 @@ Content-Type: application/json
 
 ## Amministrazione Utenti
 
-Questi endpoint sono riservati agli **amministratori** (superAdmin, livello 99) e richiedono lo scope `admin-manage` e ambito `api`.
+Questi endpoint sono riservati agli **amministratori** (superAdmin, livello 99) e richiedono lo scope `admin-manage`. Non e' richiesto un ambito specifico: qualsiasi ambito e' accettato.
 
 Tutti gli endpoint richiedono autenticazione tramite token JWT con i permessi appropriati:
 
@@ -698,6 +698,117 @@ POST /api/v1/admin-op/cambio-password
 
 ---
 
+### Registrazione Utente (Admin)
+
+Permette di registrare un nuovo utente con username, mail, ambito, livello e scopi. La password viene **generata automaticamente** (16 caratteri, forte) e restituita nella risposta. Per utenti di dominio (Active Directory) la password non viene generata.
+
+```
+POST /api/v1/admin-op/registra-utente
+```
+
+#### Parametri
+
+| Campo               | Tipo     | Obbligatorio | Descrizione |
+|---------------------|----------|:------------:|-------------|
+| `username`          | string   | Si           | Username per il nuovo utente |
+| `mail`              | string   | Si           | Indirizzo email (deve essere un'email valida) |
+| `ambito`            | number   | Si           | ID dell'ambito da assegnare (ottenibile da `/admin/domains`) |
+| `livello`           | number   | Si           | ID del livello di accesso (ottenibile da `/admin/levels`) |
+| `scopi`             | number[] | No           | Array di ID degli scopi da assegnare (default: `[]`) |
+| `allow_domain_login`| boolean  | No           | Se abilitare il login tramite dominio AD (default: `false`) |
+| `domain`            | string   | No           | Dominio AD (es. `"asp.messina.it"`). Richiesto se `allow_domain_login` e' `true`. |
+
+#### Esempio richiesta — utente standard
+
+```json
+{
+  "username": "mario.rossi",
+  "mail": "mario.rossi@email.it",
+  "ambito": 1,
+  "livello": 1,
+  "scopi": [1, 5]
+}
+```
+
+#### Esempio richiesta — utente di dominio
+
+```json
+{
+  "username": "mario.rossi",
+  "mail": "mario.rossi@asp.messina.it",
+  "ambito": 2,
+  "livello": 1,
+  "scopi": [1],
+  "allow_domain_login": true,
+  "domain": "asp.messina.it"
+}
+```
+
+#### Risposta successo — utente standard (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "id": 42,
+    "username": "mario.rossi",
+    "mail": "mario.rossi@email.it",
+    "domain": null,
+    "allow_domain_login": false,
+    "attivo": true,
+    "password": "aB3$kLm9@xPq2!Rw",
+    "ambito": {
+      "id": 1,
+      "ambito": "api",
+      "is_dominio": false
+    },
+    "livello": {
+      "id": 1,
+      "livello": "user",
+      "descrizione": "Utente standard"
+    },
+    "scopi": [
+      { "id": 1, "scopo": "asp5-anagrafica", "attivo": true },
+      { "id": 5, "scopo": "cambio-medico", "attivo": true }
+    ]
+  }
+}
+```
+
+**Nota:** Il campo `password` viene restituito **solo per utenti non di dominio**. Conservare e comunicare questa password all'utente in modo sicuro, in quanto non sara' piu' recuperabile.
+
+#### Risposta successo — utente di dominio (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "id": 43,
+    "username": "mario.rossi",
+    "mail": "mario.rossi@asp.messina.it",
+    "domain": "asp.messina.it",
+    "allow_domain_login": true,
+    "attivo": true,
+    "ambito": { "id": 2, "ambito": "asp.messina.it", "is_dominio": true },
+    "livello": { "id": 1, "livello": "user", "descrizione": "Utente standard" },
+    "scopi": [{ "id": 1, "scopo": "asp5-anagrafica", "attivo": true }]
+  }
+}
+```
+
+**Nota:** Per gli utenti di dominio non viene restituita alcuna password, in quanto l'autenticazione e' gestita dal dominio Active Directory.
+
+#### Possibili errori
+
+| Codice | Messaggio | Causa |
+|--------|-----------|-------|
+| `GIA_PRESENTE` | Un utente con questo username esiste già | Username duplicato |
+| `ERRORE_GENERICO` | Il dominio è richiesto per il login con dominio | `allow_domain_login: true` senza `domain` |
+
+---
+
 ### Reset OTP (Admin)
 
 Resetta completamente la configurazione OTP di un utente: disabilita l'OTP e rimuove tutti i dati associati (secret TOTP, codice email, scadenza). Dopo il reset, l'utente potra' effettuare il login senza OTP e, se necessario, riconfigurare l'OTP autonomamente.
@@ -819,6 +930,18 @@ curl -X POST https://ws.asp.messina.it/api/v1/admin-op/reset-otp \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"id":1}'
+
+# Registra nuovo utente
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"username":"mario.rossi","mail":"mario.rossi@email.it","ambito":1,"livello":1,"scopi":[1,5]}'
+
+# Registra utente di dominio
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"username":"mario.rossi","mail":"mario.rossi@asp.messina.it","ambito":2,"livello":1,"scopi":[1],"allow_domain_login":true,"domain":"asp.messina.it"}'
 ```
 
 ---
