@@ -490,19 +490,19 @@ let routes = {
   },
 
   // Admin API routes for password, OTP and user search
-  'POST /api/v1/admin/cambio-password': {
+  'POST /api/v1/admin-op/cambio-password': {
     action: 'admin/cambio-password',
     scopi: ['admin-manage'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
-  'POST /api/v1/admin/reset-otp': {
+  'POST /api/v1/admin-op/reset-otp': {
     action: 'admin/reset-otp',
     scopi: ['admin-manage'],
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
-  'POST /api/v1/admin/search-user': {
+  'POST /api/v1/admin-op/search-user': {
     action: 'admin/search-user',
     scopi: ['admin-manage'],
     ambito: 'api',

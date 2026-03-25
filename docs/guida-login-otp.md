@@ -503,7 +503,7 @@ Content-Type: application/json
 Permette di cercare utenti con filtri opzionali. Se non viene specificato alcun filtro, restituisce tutti gli utenti.
 
 ```
-POST /api/v1/admin/search-user
+POST /api/v1/admin-op/search-user
 ```
 
 #### Parametri
@@ -624,14 +624,14 @@ Permette a un amministratore di cambiare la password di qualsiasi utente. **Non 
 Se non viene fornita una password, il sistema ne genera automaticamente una forte di 16 caratteri.
 
 ```
-POST /api/v1/admin/cambio-password
+POST /api/v1/admin-op/cambio-password
 ```
 
 #### Parametri
 
 | Campo      | Tipo   | Obbligatorio | Descrizione |
 |------------|--------|:------------:|-------------|
-| `id`       | number | Si           | ID dell'utente (ottenibile da `/admin/search-user`) |
+| `id`       | number | Si           | ID dell'utente (ottenibile da `/admin-op/search-user`) |
 | `password` | string | No           | La nuova password. Se omessa, viene generata automaticamente. |
 
 #### Esempio richiesta — con password specifica
@@ -703,14 +703,14 @@ POST /api/v1/admin/cambio-password
 Resetta completamente la configurazione OTP di un utente: disabilita l'OTP e rimuove tutti i dati associati (secret TOTP, codice email, scadenza). Dopo il reset, l'utente potra' effettuare il login senza OTP e, se necessario, riconfigurare l'OTP autonomamente.
 
 ```
-POST /api/v1/admin/reset-otp
+POST /api/v1/admin-op/reset-otp
 ```
 
 #### Parametri
 
 | Campo | Tipo   | Obbligatorio | Descrizione |
 |-------|--------|:------------:|-------------|
-| `id`  | number | Si           | ID dell'utente (ottenibile da `/admin/search-user`) |
+| `id`  | number | Si           | ID dell'utente (ottenibile da `/admin-op/search-user`) |
 
 #### Esempio richiesta
 
@@ -758,21 +758,21 @@ Dopo il reset, l'utente:
 ```
 ADMIN                                     SERVER
   |                                         |
-  |  POST /admin/search-user               |
+  |  POST /admin-op/search-user               |
   |  { "username": "mario" }               |
   |---------------------------------------->|
   |  <-- 200 { utenti: [...] }            |
   |                                         |
   |  [Admin individua utente id=1]         |
   |                                         |
-  |  POST /admin/cambio-password           |
+  |  POST /admin-op/cambio-password           |
   |  { "id": 1 }                           |
   |---------------------------------------->|
   |  <-- 200 { password: "aB3$..." }      |
   |                                         |
   |  [Admin comunica password all'utente]  |
   |                                         |
-  |  POST /admin/reset-otp                 |
+  |  POST /admin-op/reset-otp                 |
   |  { "id": 1 }                           |
   |---------------------------------------->|
   |  <-- 200 { message: "OTP resettato" } |
@@ -785,37 +785,37 @@ ADMIN                                     SERVER
 
 ```bash
 # Cerca utenti per username
-curl -X POST https://ws.asp.messina.it/api/v1/admin/search-user \
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/search-user \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"username":"mario"}'
 
 # Cerca tutti gli utenti (nessun filtro)
-curl -X POST https://ws.asp.messina.it/api/v1/admin/search-user \
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/search-user \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{}'
 
 # Cerca con filtri combinati
-curl -X POST https://ws.asp.messina.it/api/v1/admin/search-user \
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/search-user \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"username":"rossi","scopo":"anagrafica"}'
 
 # Cambio password con password specifica
-curl -X POST https://ws.asp.messina.it/api/v1/admin/cambio-password \
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/cambio-password \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"id":1,"password":"NuovaPassword456@"}'
 
 # Cambio password con generazione automatica
-curl -X POST https://ws.asp.messina.it/api/v1/admin/cambio-password \
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/cambio-password \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"id":1}'
 
 # Reset OTP
-curl -X POST https://ws.asp.messina.it/api/v1/admin/reset-otp \
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/reset-otp \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"id":1}'
