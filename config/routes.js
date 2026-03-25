@@ -494,19 +494,22 @@ let routes = {
     action: 'admin/cambio-password',
     scopi: ['admin-manage'],
     ambito: 'api',
-    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin,
+    swagger: { tags: ['Admin'] }
   },
   'POST /api/v1/admin-op/reset-otp': {
     action: 'admin/reset-otp',
     scopi: ['admin-manage'],
     ambito: 'api',
-    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin,
+    swagger: { tags: ['Admin'] }
   },
   'POST /api/v1/admin-op/search-user': {
     action: 'admin/search-user',
     scopi: ['admin-manage'],
     ambito: 'api',
-    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin,
+    swagger: { tags: ['Admin'] }
   },
 
   // Admin API routes for levels
