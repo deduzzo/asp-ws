@@ -10,9 +10,10 @@
 6. [Switch metodo OTP (mail ↔ totp)](#switch-metodo-otp)
 7. [Cambio Password](#cambio-password)
 8. [Verifica Token](#verifica-token)
-9. [Codici di errore](#codici-di-errore)
-10. [Diagrammi di flusso](#diagrammi-di-flusso)
-11. [Esempi completi](#esempi-completi)
+9. [Amministrazione Utenti](#amministrazione-utenti)
+10. [Codici di errore](#codici-di-errore)
+11. [Diagrammi di flusso](#diagrammi-di-flusso)
+12. [Esempi completi](#esempi-completi)
 
 ---
 
@@ -482,6 +483,342 @@ Content-Type: application/json
     "enabledScopes": ["asp5-anagrafica", "cambio-medico"]
   }
 }
+```
+
+---
+
+## Amministrazione Utenti
+
+Questi endpoint sono riservati agli **amministratori** (superAdmin, livello 99) e richiedono lo scope `admin-manage` e ambito `api`.
+
+Tutti gli endpoint richiedono autenticazione tramite token JWT con i permessi appropriati:
+
+```
+Authorization: Bearer <token_jwt_superadmin>
+Content-Type: application/json
+```
+
+### Ricerca Utenti
+
+Permette di cercare utenti con filtri opzionali. Se non viene specificato alcun filtro, restituisce tutti gli utenti.
+
+```
+POST /api/v1/admin/search-user
+```
+
+#### Parametri
+
+| Campo      | Tipo   | Obbligatorio | Descrizione |
+|------------|--------|:------------:|-------------|
+| `username` | string | No           | Filtro per username (ricerca contains, es. `"mario"` trova `"mario.rossi"`) |
+| `dominio`  | string | No           | Filtro per dominio (ricerca contains, es. `"asp"` trova `"asp.messina.it"`) |
+| `ambito`   | string | No           | Filtro per nome ambito (ricerca contains, es. `"api"`) |
+| `scopo`    | string | No           | Filtro per nome scopo (ricerca contains, es. `"anagrafica"` trova utenti con scopo `"asp5-anagrafica"`) |
+
+#### Esempio richiesta — cerca per username
+
+```json
+{
+  "username": "mario"
+}
+```
+
+#### Esempio richiesta — tutti gli utenti di un ambito
+
+```json
+{
+  "ambito": "api"
+}
+```
+
+#### Esempio richiesta — filtri combinati
+
+```json
+{
+  "username": "rossi",
+  "dominio": "asp",
+  "scopo": "anagrafica"
+}
+```
+
+#### Esempio richiesta — tutti gli utenti (nessun filtro)
+
+```json
+{}
+```
+
+#### Risposta successo (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "count": 2,
+    "utenti": [
+      {
+        "id": 1,
+        "username": "mario.rossi",
+        "mail": "mario.rossi@asp.messina.it",
+        "domain": "asp.messina.it",
+        "allow_domain_login": true,
+        "attivo": true,
+        "otp_enabled": true,
+        "otp_type": "mail",
+        "otp_required": false,
+        "ambito": {
+          "id": 1,
+          "ambito": "api",
+          "is_dominio": false
+        },
+        "livello": {
+          "id": 1,
+          "livello": "user",
+          "descrizione": "Utente standard"
+        },
+        "scopi": [
+          { "id": 1, "scopo": "asp5-anagrafica", "attivo": true },
+          { "id": 5, "scopo": "cambio-medico", "attivo": true }
+        ]
+      },
+      {
+        "id": 7,
+        "username": "mario.rossi2",
+        "mail": "mario.rossi2@email.it",
+        "domain": null,
+        "allow_domain_login": false,
+        "attivo": true,
+        "otp_enabled": false,
+        "otp_type": null,
+        "otp_required": false,
+        "ambito": {
+          "id": 2,
+          "ambito": "asp.messina.it",
+          "is_dominio": true
+        },
+        "livello": {
+          "id": 2,
+          "livello": "admin",
+          "descrizione": "Amministratore"
+        },
+        "scopi": [
+          { "id": 1, "scopo": "asp5-anagrafica", "attivo": true }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Note:**
+- Il campo `id` dell'utente e' necessario per gli endpoint di cambio password e reset OTP
+- I dati sensibili (hash_password, otp_key, otp) non vengono mai restituiti
+- I filtri `ambito` e `scopo` sono applicati post-query sui nomi testuali (non sugli ID)
+
+---
+
+### Cambio Password (Admin)
+
+Permette a un amministratore di cambiare la password di qualsiasi utente. **Non disponibile per utenti di dominio** (la password del dominio e' gestita dal dominio stesso, es. Active Directory).
+
+Se non viene fornita una password, il sistema ne genera automaticamente una forte di 16 caratteri.
+
+```
+POST /api/v1/admin/cambio-password
+```
+
+#### Parametri
+
+| Campo      | Tipo   | Obbligatorio | Descrizione |
+|------------|--------|:------------:|-------------|
+| `id`       | number | Si           | ID dell'utente (ottenibile da `/admin/search-user`) |
+| `password` | string | No           | La nuova password. Se omessa, viene generata automaticamente. |
+
+#### Esempio richiesta — con password specifica
+
+```json
+{
+  "id": 1,
+  "password": "NuovaPassword456@"
+}
+```
+
+#### Esempio richiesta — genera password automatica
+
+```json
+{
+  "id": 1
+}
+```
+
+#### Risposta successo con password specifica (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "message": "Password cambiata con successo",
+    "username": "mario.rossi"
+  }
+}
+```
+
+#### Risposta successo con password generata (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "message": "Password cambiata con successo",
+    "username": "mario.rossi",
+    "password": "aB3$kLm9@xPq2!Rw"
+  }
+}
+```
+
+**Nota:** Il campo `password` viene restituito **solo** quando la password e' stata generata automaticamente. Conservare e comunicare questa password all'utente in modo sicuro, in quanto non sara' piu' recuperabile.
+
+#### Requisiti complessita' password (se fornita)
+
+- Almeno **8 caratteri**
+- Almeno **1 lettera maiuscola** (A-Z)
+- Almeno **1 lettera minuscola** (a-z)
+- Almeno **1 numero** (0-9)
+- Almeno **1 carattere speciale** (es. `!@#$%^&*()`)
+
+#### Possibili errori
+
+| Codice | Messaggio | Causa |
+|--------|-----------|-------|
+| `NON_TROVATO` | Utente non trovato | L'ID fornito non corrisponde ad alcun utente |
+| `ERRORE_GENERICO` | Il cambio password non è disponibile per utenti di dominio... | L'utente usa login di dominio (Active Directory) |
+| `ERRORE_GENERICO` | La password non rispetta i requisiti di complessità: ... | La password fornita non rispetta i requisiti |
+
+---
+
+### Reset OTP (Admin)
+
+Resetta completamente la configurazione OTP di un utente: disabilita l'OTP e rimuove tutti i dati associati (secret TOTP, codice email, scadenza). Dopo il reset, l'utente potra' effettuare il login senza OTP e, se necessario, riconfigurare l'OTP autonomamente.
+
+```
+POST /api/v1/admin/reset-otp
+```
+
+#### Parametri
+
+| Campo | Tipo   | Obbligatorio | Descrizione |
+|-------|--------|:------------:|-------------|
+| `id`  | number | Si           | ID dell'utente (ottenibile da `/admin/search-user`) |
+
+#### Esempio richiesta
+
+```json
+{
+  "id": 1
+}
+```
+
+#### Risposta successo (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "message": "OTP resettato con successo",
+    "username": "mario.rossi"
+  }
+}
+```
+
+**Cosa viene resettato:**
+- `otp_enabled` → `false`
+- `otp_type` → `null`
+- `otp` → `null` (codice email hashato)
+- `otp_exp` → `null` (scadenza)
+- `otp_key` → `null` (secret TOTP)
+
+Dopo il reset, l'utente:
+1. Potra' effettuare il login senza OTP
+2. Potra' riconfigurare il TOTP tramite `/login/otp/setup` + `/login/otp/verify-setup`
+3. L'amministratore potra' riabilitare l'OTP via mail tramite l'endpoint di aggiornamento utente
+
+#### Possibili errori
+
+| Codice | Messaggio | Causa |
+|--------|-----------|-------|
+| `NON_TROVATO` | Utente non trovato | L'ID fornito non corrisponde ad alcun utente |
+
+---
+
+### Flusso tipico amministrativo
+
+```
+ADMIN                                     SERVER
+  |                                         |
+  |  POST /admin/search-user               |
+  |  { "username": "mario" }               |
+  |---------------------------------------->|
+  |  <-- 200 { utenti: [...] }            |
+  |                                         |
+  |  [Admin individua utente id=1]         |
+  |                                         |
+  |  POST /admin/cambio-password           |
+  |  { "id": 1 }                           |
+  |---------------------------------------->|
+  |  <-- 200 { password: "aB3$..." }      |
+  |                                         |
+  |  [Admin comunica password all'utente]  |
+  |                                         |
+  |  POST /admin/reset-otp                 |
+  |  { "id": 1 }                           |
+  |---------------------------------------->|
+  |  <-- 200 { message: "OTP resettato" } |
+  |                                         |
+```
+
+---
+
+### Esempi cURL (Admin)
+
+```bash
+# Cerca utenti per username
+curl -X POST https://ws.asp.messina.it/api/v1/admin/search-user \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"username":"mario"}'
+
+# Cerca tutti gli utenti (nessun filtro)
+curl -X POST https://ws.asp.messina.it/api/v1/admin/search-user \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{}'
+
+# Cerca con filtri combinati
+curl -X POST https://ws.asp.messina.it/api/v1/admin/search-user \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"username":"rossi","scopo":"anagrafica"}'
+
+# Cambio password con password specifica
+curl -X POST https://ws.asp.messina.it/api/v1/admin/cambio-password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"id":1,"password":"NuovaPassword456@"}'
+
+# Cambio password con generazione automatica
+curl -X POST https://ws.asp.messina.it/api/v1/admin/cambio-password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"id":1}'
+
+# Reset OTP
+curl -X POST https://ws.asp.messina.it/api/v1/admin/reset-otp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"id":1}'
 ```
 
 ---
