@@ -705,6 +705,90 @@ let routes = {
 
   // App proxy routes are handled by the apps-proxy hook (HTTP + WebSocket)
   // See: api/hooks/apps-proxy.js
+
+  // ===== MPI (Master Patient Index) =====
+
+  // MPI Record CRUD
+  'POST /api/v1/mpi/record': {
+    action: 'mpi/create',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/mpi/record/by-idesterno/:idEsterno': {
+    action: 'mpi/get-by-idesterno',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/mpi/record/by-assistito/:cf': {
+    action: 'mpi/get-by-assistito',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/mpi/record/:mpiId': {
+    action: 'mpi/get',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'PUT /api/v1/mpi/record/:mpiId': {
+    action: 'mpi/update',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/mpi/record/:mpiId/link': {
+    action: 'mpi/link',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/mpi/record/:mpiId/annulla': {
+    action: 'mpi/annulla',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/mpi/record/:mpiId/storico': {
+    action: 'mpi/storico',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/mpi/ricerca': {
+    action: 'mpi/ricerca',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+
+  // MPI Extra Data
+  'GET /api/v1/mpi/record/:mpiId/extra-data': {
+    action: 'mpi/extra-data/get',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/mpi/record/:mpiId/extra-data': {
+    action: 'mpi/extra-data/set',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'DELETE /api/v1/mpi/record/:mpiId/extra-data': {
+    action: 'mpi/extra-data/delete',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'GET /api/v1/mpi/record/:mpiId/extra-data/storico': {
+    action: 'mpi/extra-data/storico',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+
+  // Admin MPI Applicazioni
+  'GET /api/v1/admin/mpi/applicazioni': {
+    action: 'admin/mpi/applicazioni-list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/mpi/applicazioni': {
+    action: 'admin/mpi/applicazioni-create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/mpi/applicazioni/:id': {
+    action: 'admin/mpi/applicazioni-update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/mpi/applicazioni/:id': {
+    action: 'admin/mpi/applicazioni-delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato
