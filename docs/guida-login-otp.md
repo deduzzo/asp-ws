@@ -714,7 +714,7 @@ POST /api/v1/admin-op/registra-utente
 | `mail`              | string   | Si           | Indirizzo email (deve essere un'email valida) |
 | `ambito`            | number   | Si           | ID dell'ambito da assegnare (ottenibile da `/admin/domains`) |
 | `livello`           | number   | Si           | ID del livello di accesso (ottenibile da `/admin/levels`) |
-| `scopi`             | number[] | No           | Array di ID degli scopi da assegnare (default: `[]`) |
+| `scopi`             | string   | No           | ID degli scopi separati da spazio (es. `"1 5 8"`) |
 | `allow_domain_login`| boolean  | No           | Se abilitare il login tramite dominio AD (default: `false`) |
 | `domain`            | string   | No           | Dominio AD (es. `"asp.messina.it"`). Richiesto se `allow_domain_login` e' `true`. |
 
@@ -726,7 +726,7 @@ POST /api/v1/admin-op/registra-utente
   "mail": "mario.rossi@email.it",
   "ambito": 1,
   "livello": 1,
-  "scopi": [1, 5]
+  "scopi": "1 5"
 }
 ```
 
@@ -738,7 +738,7 @@ POST /api/v1/admin-op/registra-utente
   "mail": "mario.rossi@asp.messina.it",
   "ambito": 2,
   "livello": 1,
-  "scopi": [1],
+  "scopi": "1",
   "allow_domain_login": true,
   "domain": "asp.messina.it"
 }
@@ -824,19 +824,35 @@ POST /api/v1/admin-op/modifica-utente
 
 #### Parametri
 
-| Campo  | Tipo     | Obbligatorio | Descrizione |
-|--------|----------|:------------:|-------------|
-| `id`   | number   | Si           | ID dell'utente (ottenibile da `/admin-op/search-user`) |
-| `scopi`| number[] | Si           | Nuovo array completo di ID scopi. **Sostituisce** tutti gli scopi precedenti. |
+| Campo  | Tipo   | Obbligatorio | Descrizione |
+|--------|--------|:------------:|-------------|
+| `id`   | number | Si           | ID dell'utente (ottenibile da `/admin-op/search-user`) |
+| `scopi`| string | Si           | Scopi separati da spazio. Due modalita' supportate (vedi sotto). |
 
-**Attenzione:** Passare un array vuoto `[]` rimuove tutti gli scopi dall'utente.
+**Due modalita' di modifica:**
 
-#### Esempio richiesta — assegna scopi
+1. **Sostituzione completa** — solo ID numerici: `"1 5 8"` → sostituisce tutti gli scopi con quelli indicati
+2. **Modalita' incrementale (chmod)** — con prefisso `+` o `-`: `"+1 -3 +8"` → aggiunge/rimuove singoli scopi
+
+La modalita' viene determinata automaticamente: se almeno un elemento ha `+` o `-`, e' incrementale. Altrimenti e' sostituzione completa.
+
+**Avvisi:** Se si aggiunge uno scopo gia' presente o si rimuove uno non assegnato, l'operazione viene comunque eseguita ma la risposta include un campo `avvisi` con i dettagli.
+
+#### Esempio richiesta — sostituzione completa
 
 ```json
 {
   "id": 1,
-  "scopi": [1, 5, 8]
+  "scopi": "1 5 8"
+}
+```
+
+#### Esempio richiesta — modalita' incrementale (aggiunta e rimozione)
+
+```json
+{
+  "id": 1,
+  "scopi": "+8 -3 +12"
 }
 ```
 
@@ -845,7 +861,7 @@ POST /api/v1/admin-op/modifica-utente
 ```json
 {
   "id": 1,
-  "scopi": []
+  "scopi": ""
 }
 ```
 
@@ -884,13 +900,34 @@ POST /api/v1/admin-op/modifica-utente
 }
 ```
 
+#### Risposta con avvisi (HTTP 200)
+
+Se si tenta di aggiungere uno scopo gia' presente o rimuovere uno non assegnato:
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "id": 1,
+    "username": "mario.rossi",
+    "avvisi": [
+      "Lo scopo 1 (asp5-anagrafica) era già assegnato",
+      "Lo scopo 99 (test-scope) non era assegnato"
+    ],
+    "scopi": [...]
+  }
+}
+```
+
 #### Possibili errori
 
 | Codice | Messaggio | Causa |
 |--------|-----------|-------|
 | `NON_TROVATO` | Utente non trovato | L'ID fornito non corrisponde ad alcun utente |
 | `NON_TROVATO` | Scopo con id X non trovato | Uno degli ID scopi forniti non esiste |
-| `ERRORE_GENERICO` | Il campo scopi deve essere un array di ID | Formato scopi non valido |
+| `ERRORE_GENERICO` | In modalità incrementale ogni elemento deve iniziare con + o - | Mix di formati non consentito |
+| `ERRORE_GENERICO` | Formato non valido: ... | Formato entry non riconosciuto |
 
 ---
 
@@ -1020,25 +1057,25 @@ curl -X POST https://ws.asp.messina.it/api/v1/admin-op/reset-otp \
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"username":"mario.rossi","mail":"mario.rossi@email.it","ambito":1,"livello":1,"scopi":[1,5]}'
+  -d '{"username":"mario.rossi","mail":"mario.rossi@email.it","ambito":1,"livello":1,"scopi":"1 5"}'
 
 # Registra utente di dominio
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"username":"mario.rossi","mail":"mario.rossi@asp.messina.it","ambito":2,"livello":1,"scopi":[1],"allow_domain_login":true,"domain":"asp.messina.it"}'
+  -d '{"username":"mario.rossi","mail":"mario.rossi@asp.messina.it","ambito":2,"livello":1,"scopi":"1","allow_domain_login":true,"domain":"asp.messina.it"}'
 
-# Modifica scopi utente
+# Modifica scopi utente (sostituzione completa)
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/modifica-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"id":1,"scopi":[1,5,8]}'
+  -d '{"id":1,"scopi":"1 5 8"}'
 
-# Rimuovi tutti gli scopi
+# Modifica scopi utente (modalità chmod)
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/modifica-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"id":1,"scopi":[]}'
+  -d '{"id":1,"scopi":"+8 -3"}'
 ```
 
 ---

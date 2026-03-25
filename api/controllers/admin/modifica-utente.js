@@ -10,7 +10,7 @@ const {ERROR_TYPES} = require('../../responses/ApiResponse');
 
 module.exports = {
   friendlyName: 'Admin modifica utente',
-  description: 'Modifica gli scopi assegnati a un utente. La chiave utente è username+ambito, quindi ambito e username non sono modificabili.',
+  description: 'Modifica gli scopi assegnati a un utente. Supporta modalità chmod (+id aggiunge, -id rimuove) o sostituzione completa.',
   inputs: {
     id: {
       type: 'number',
@@ -18,9 +18,9 @@ module.exports = {
       description: 'ID dell\'utente da modificare (ottenibile da /admin-op/search-user)'
     },
     scopi: {
-      type: 'ref',
+      type: 'string',
       required: true,
-      description: 'Nuovo array completo di ID degli scopi da assegnare. Sostituisce tutti gli scopi precedenti.'
+      description: 'Scopi separati da spazio. Con +/- (es. "+1 -3 +8"): modalità incrementale. Senza prefisso (es. "1 5 8"): sostituzione completa.'
     }
   },
 
@@ -38,37 +38,98 @@ module.exports = {
         });
       }
 
-      // Verifica che sia un array
-      if (!Array.isArray(inputs.scopi)) {
-        return this.res.ApiResponse({
-          errType: ERROR_TYPES.ERRORE_GENERICO,
-          errMsg: 'Il campo scopi deve essere un array di ID'
-        });
-      }
+      const avvisi = [];
+      const scopiAttuali = utente.scopi.map(s => s.id);
+      let scopiFinali;
 
-      // Verifica che gli scopi esistano
-      for (const scopoId of inputs.scopi) {
-        const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
-        if (!scopoRecord) {
-          return this.res.ApiResponse({
-            errType: ERROR_TYPES.NON_TROVATO,
-            errMsg: `Scopo con id ${scopoId} non trovato`
-          });
+      // Parsing: split per spazi
+      const entries = inputs.scopi.trim().split(/\s+/).filter(s => s.length > 0);
+
+      if (entries.length === 0) {
+        // Stringa vuota o solo spazi: rimuovi tutti gli scopi
+        scopiFinali = [];
+      } else {
+        // Determina modalità: se almeno un elemento ha +/-, modalità chmod
+        const isChmodMode = entries.some(s => s.startsWith('+') || s.startsWith('-'));
+
+        if (isChmodMode) {
+          scopiFinali = [...scopiAttuali];
+
+          for (const entry of entries) {
+            if (entry.startsWith('+')) {
+              const scopoId = parseInt(entry.substring(1), 10);
+              if (isNaN(scopoId)) {
+                return this.res.ApiResponse({
+                  errType: ERROR_TYPES.ERRORE_GENERICO,
+                  errMsg: `Formato non valido: ${entry}`
+                });
+              }
+              const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
+              if (!scopoRecord) {
+                return this.res.ApiResponse({
+                  errType: ERROR_TYPES.NON_TROVATO,
+                  errMsg: `Scopo con id ${scopoId} non trovato`
+                });
+              }
+              if (scopiFinali.includes(scopoId)) {
+                avvisi.push(`Lo scopo ${scopoId} (${scopoRecord.scopo}) era già assegnato`);
+              } else {
+                scopiFinali.push(scopoId);
+              }
+            } else if (entry.startsWith('-')) {
+              const scopoId = parseInt(entry.substring(1), 10);
+              if (isNaN(scopoId)) {
+                return this.res.ApiResponse({
+                  errType: ERROR_TYPES.ERRORE_GENERICO,
+                  errMsg: `Formato non valido: ${entry}`
+                });
+              }
+              if (!scopiFinali.includes(scopoId)) {
+                const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
+                const nome = scopoRecord ? scopoRecord.scopo : scopoId;
+                avvisi.push(`Lo scopo ${scopoId} (${nome}) non era assegnato`);
+              } else {
+                scopiFinali = scopiFinali.filter(id => id !== scopoId);
+              }
+            } else {
+              return this.res.ApiResponse({
+                errType: ERROR_TYPES.ERRORE_GENERICO,
+                errMsg: `In modalità incrementale ogni elemento deve iniziare con + o -. Trovato: ${entry}`
+              });
+            }
+          }
+        } else {
+          // Modalità sostituzione completa
+          scopiFinali = [];
+          for (const entry of entries) {
+            const id = parseInt(entry, 10);
+            if (isNaN(id)) {
+              return this.res.ApiResponse({
+                errType: ERROR_TYPES.ERRORE_GENERICO,
+                errMsg: `ID scopo non valido: ${entry}`
+              });
+            }
+            const scopoRecord = await Auth_Scopi.findOne({id});
+            if (!scopoRecord) {
+              return this.res.ApiResponse({
+                errType: ERROR_TYPES.NON_TROVATO,
+                errMsg: `Scopo con id ${id} non trovato`
+              });
+            }
+            scopiFinali.push(id);
+          }
         }
       }
 
-      // Rimuovi tutte le associazioni scopi esistenti
+      // Applica le modifiche
       await Auth_UtentiScopi.destroy({utente: utente.id});
-
-      // Crea le nuove associazioni
-      for (const scopoId of inputs.scopi) {
+      for (const scopoId of scopiFinali) {
         await Auth_UtentiScopi.create({
           utente: utente.id,
           scopo: scopoId
         });
       }
 
-      // Recupera dati aggiornati
       const updatedUser = await Auth_Utenti.findOne({id: utente.id})
         .populate('ambito')
         .populate('livello')
@@ -84,27 +145,32 @@ module.exports = {
         context: {
           targetUserId: utente.id,
           targetUsername: utente.username,
-          oldScopi: utente.scopi.map(s => s.id),
-          newScopi: inputs.scopi
+          modalita: entries.some(s => s.startsWith('+') || s.startsWith('-')) ? 'incrementale' : 'sostituzione',
+          oldScopi: scopiAttuali,
+          newScopi: scopiFinali
         }
       });
 
-      return this.res.ApiResponse({
-        data: {
-          id: updatedUser.id,
-          username: updatedUser.username,
-          mail: updatedUser.mail,
-          domain: updatedUser.domain,
-          allow_domain_login: updatedUser.allow_domain_login,
-          attivo: updatedUser.attivo,
-          otp_enabled: updatedUser.otp_enabled,
-          otp_type: updatedUser.otp_type,
-          otp_required: updatedUser.otp_required,
-          ambito: updatedUser.ambito,
-          livello: updatedUser.livello,
-          scopi: updatedUser.scopi
-        }
-      });
+      const risposta = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        mail: updatedUser.mail,
+        domain: updatedUser.domain,
+        allow_domain_login: updatedUser.allow_domain_login,
+        attivo: updatedUser.attivo,
+        otp_enabled: updatedUser.otp_enabled,
+        otp_type: updatedUser.otp_type,
+        otp_required: updatedUser.otp_required,
+        ambito: updatedUser.ambito,
+        livello: updatedUser.livello,
+        scopi: updatedUser.scopi
+      };
+
+      if (avvisi.length > 0) {
+        risposta.avvisi = avvisi;
+      }
+
+      return this.res.ApiResponse({data: risposta});
 
     } catch (err) {
       sails.log.error('Errore admin modifica utente:', err);

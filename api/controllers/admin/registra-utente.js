@@ -35,9 +35,8 @@ module.exports = {
       description: 'ID del livello di accesso da assegnare'
     },
     scopi: {
-      type: 'ref',
-      defaultsTo: [],
-      description: 'Array di ID degli scopi da assegnare'
+      type: 'string',
+      description: 'ID degli scopi separati da spazio (es. "1 5 8")'
     },
     allow_domain_login: {
       type: 'boolean',
@@ -80,16 +79,19 @@ module.exports = {
         });
       }
 
+      // Parsing scopi da stringa a array di ID
+      const scopiIds = inputs.scopi
+        ? inputs.scopi.trim().split(/\s+/).map(s => parseInt(s, 10)).filter(n => !isNaN(n))
+        : [];
+
       // Verifica che gli scopi esistano
-      if (inputs.scopi && inputs.scopi.length > 0) {
-        for (const scopoId of inputs.scopi) {
-          const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
-          if (!scopoRecord) {
-            return this.res.ApiResponse({
-              errType: ERROR_TYPES.NON_TROVATO,
-              errMsg: `Scopo con id ${scopoId} non trovato`
-            });
-          }
+      for (const scopoId of scopiIds) {
+        const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
+        if (!scopoRecord) {
+          return this.res.ApiResponse({
+            errType: ERROR_TYPES.NON_TROVATO,
+            errMsg: `Scopo con id ${scopoId} non trovato`
+          });
         }
       }
 
@@ -146,13 +148,11 @@ module.exports = {
       }).fetch();
 
       // Associa scopi
-      if (inputs.scopi && inputs.scopi.length > 0) {
-        for (const scopoId of inputs.scopi) {
-          await Auth_UtentiScopi.create({
-            utente: newUser.id,
-            scopo: scopoId
-          });
-        }
+      for (const scopoId of scopiIds) {
+        await Auth_UtentiScopi.create({
+          utente: newUser.id,
+          scopo: scopoId
+        });
       }
 
       // Recupera dati completi con populate

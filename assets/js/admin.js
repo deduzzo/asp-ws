@@ -401,6 +401,7 @@ class AdminPanel {
     ).join('');
 
     row.innerHTML = `
+            <td><small class="text-muted">${user.id}</small></td>
             <td><strong>${user.username}</strong>${otpBadge}</td>
             <td>${user.mail}</td>
             <td>${user.ambito.ambito || '-'}</td>
