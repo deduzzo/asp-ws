@@ -23,5 +23,7 @@ module.exports.policies = {
   'cambio-medico/*': ['is-token-verified'],
   'login/otp/*': ['is-token-verified'],
   'login/cambio-password': ['is-token-verified'],
+  'mpi/*': ['is-token-verified'],
+  'mpi/extra-data/*': ['is-token-verified'],
   //'*': ['logger'],
 };
