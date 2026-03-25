@@ -14,6 +14,9 @@ const {ERROR_TYPES} = require('../../responses/ApiResponse');
 module.exports = {
   friendlyName: 'Admin search user',
   description: 'Cerca utenti per username con filtri opzionali su dominio, ambiti e scopi.',
+  swagger: {
+    tags: ['Admin']
+  },
   inputs: {
     username: {
       type: 'string',

@@ -12,6 +12,9 @@ const crypto = require('crypto');
 module.exports = {
   friendlyName: 'Admin cambio password',
   description: 'Permette a un admin di cambiare la password di un utente. Se non viene fornita una password, ne genera una casuale forte.',
+  swagger: {
+    tags: ['Admin']
+  },
   inputs: {
     id: {
       type: 'number',

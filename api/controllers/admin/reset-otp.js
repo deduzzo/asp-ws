@@ -11,6 +11,9 @@ const {ERROR_TYPES} = require('../../responses/ApiResponse');
 module.exports = {
   friendlyName: 'Admin reset OTP',
   description: 'Resetta la configurazione OTP di un utente, disabilitandola e rimuovendo tutti i dati OTP.',
+  swagger: {
+    tags: ['Admin']
+  },
   inputs: {
     id: {
       type: 'number',
