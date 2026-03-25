@@ -953,6 +953,7 @@
                 ).join('');
 
                 row.innerHTML = `
+                    <td>${user.id}</td>
                     <td><strong>${user.username}</strong>${otpBadge}</td>
                     <td>${user.mail}</td>
                     <td>${user.ambito.ambito || '-'}</td>
