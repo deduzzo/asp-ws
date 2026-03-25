@@ -11,7 +11,7 @@ const crypto = require('crypto');
 
 module.exports = {
   friendlyName: 'Admin registra utente',
-  description: 'Registra un nuovo utente con username, mail, ambito e scopi. La password viene generata automaticamente e restituita.',
+  description: 'Registra un nuovo utente con username, mail, ambito e scopi per nome. La password viene generata automaticamente e restituita.',
   inputs: {
     username: {
       type: 'string',
@@ -25,18 +25,18 @@ module.exports = {
       description: 'Indirizzo email del nuovo utente'
     },
     ambito: {
-      type: 'number',
+      type: 'string',
       required: true,
-      description: 'ID dell\'ambito da assegnare'
+      description: 'Nome dell\'ambito da assegnare (es. "api", "login")'
     },
     livello: {
-      type: 'number',
+      type: 'string',
       required: true,
-      description: 'ID del livello di accesso da assegnare'
+      description: 'Nome del livello di accesso (es. "user", "admin", "superAdmin")'
     },
     scopi: {
       type: 'string',
-      description: 'ID degli scopi separati da spazio (es. "1 5 8")'
+      description: 'Nomi degli scopi separati da spazio (es. "asp5-anagrafica cambio-medico")'
     },
     allow_domain_login: {
       type: 'boolean',
@@ -52,8 +52,26 @@ module.exports = {
 
   fn: async function (inputs) {
     try {
+      // Risolvi ambito per nome
+      const ambitoRecord = await Auth_Ambiti.findOne({ambito: inputs.ambito});
+      if (!ambitoRecord) {
+        return this.res.ApiResponse({
+          errType: ERROR_TYPES.NON_TROVATO,
+          errMsg: `Ambito "${inputs.ambito}" non trovato`
+        });
+      }
+
+      // Risolvi livello per nome
+      const livelloRecord = await Auth_Livelli.findOne({livello: inputs.livello});
+      if (!livelloRecord) {
+        return this.res.ApiResponse({
+          errType: ERROR_TYPES.NON_TROVATO,
+          errMsg: `Livello "${inputs.livello}" non trovato`
+        });
+      }
+
       // Verifica unicità username + ambito
-      const existingUser = await Auth_Utenti.findOne({username: inputs.username, ambito: inputs.ambito});
+      const existingUser = await Auth_Utenti.findOne({username: inputs.username, ambito: ambitoRecord.id});
       if (existingUser) {
         return this.res.ApiResponse({
           errType: ERROR_TYPES.GIA_PRESENTE,
@@ -61,38 +79,21 @@ module.exports = {
         });
       }
 
-      // Verifica che l'ambito esista
-      const ambitoRecord = await Auth_Ambiti.findOne({id: inputs.ambito});
-      if (!ambitoRecord) {
-        return this.res.ApiResponse({
-          errType: ERROR_TYPES.NON_TROVATO,
-          errMsg: 'Ambito non trovato'
-        });
-      }
-
-      // Verifica che il livello esista
-      const livelloRecord = await Auth_Livelli.findOne({id: inputs.livello});
-      if (!livelloRecord) {
-        return this.res.ApiResponse({
-          errType: ERROR_TYPES.NON_TROVATO,
-          errMsg: 'Livello non trovato'
-        });
-      }
-
-      // Parsing scopi da stringa a array di ID
-      const scopiIds = inputs.scopi
-        ? inputs.scopi.trim().split(/\s+/).map(s => parseInt(s, 10)).filter(n => !isNaN(n))
+      // Parsing scopi per nome
+      const scopiNomi = inputs.scopi
+        ? inputs.scopi.trim().split(/\s+/).filter(s => s.length > 0)
         : [];
 
-      // Verifica che gli scopi esistano
-      for (const scopoId of scopiIds) {
-        const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
+      const scopiIds = [];
+      for (const nome of scopiNomi) {
+        const scopoRecord = await Auth_Scopi.findOne({scopo: nome});
         if (!scopoRecord) {
           return this.res.ApiResponse({
             errType: ERROR_TYPES.NON_TROVATO,
-            errMsg: `Scopo con id ${scopoId} non trovato`
+            errMsg: `Scopo "${nome}" non trovato`
           });
         }
+        scopiIds.push(scopoRecord.id);
       }
 
       // Validazione dominio
@@ -136,8 +137,8 @@ module.exports = {
         hash_password: inputs.allow_domain_login ? null : hashPassword,
         allow_domain_login: inputs.allow_domain_login,
         domain: inputs.domain || null,
-        ambito: inputs.ambito,
-        livello: inputs.livello,
+        ambito: ambitoRecord.id,
+        livello: livelloRecord.id,
         attivo: true,
         otp_enabled: false,
         otp_type: null,
@@ -183,7 +184,6 @@ module.exports = {
         scopi: completeUser.scopi
       };
 
-      // Restituisci password solo per utenti non di dominio
       if (!inputs.allow_domain_login) {
         risposta.password = password;
       }

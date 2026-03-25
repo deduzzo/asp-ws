@@ -712,9 +712,9 @@ POST /api/v1/admin-op/registra-utente
 |---------------------|----------|:------------:|-------------|
 | `username`          | string   | Si           | Username per il nuovo utente |
 | `mail`              | string   | Si           | Indirizzo email (deve essere un'email valida) |
-| `ambito`            | number   | Si           | ID dell'ambito da assegnare (ottenibile da `/admin/domains`) |
-| `livello`           | number   | Si           | ID del livello di accesso (ottenibile da `/admin/levels`) |
-| `scopi`             | string   | No           | ID degli scopi separati da spazio (es. `"1 5 8"`) |
+| `ambito`            | string   | Si           | Nome dell'ambito (es. `"api"`, `"login"`) |
+| `livello`           | string   | Si           | Nome del livello di accesso (es. `"user"`, `"admin"`, `"superAdmin"`) |
+| `scopi`             | string   | No           | Nomi degli scopi separati da spazio (es. `"asp5-anagrafica cambio-medico"`) |
 | `allow_domain_login`| boolean  | No           | Se abilitare il login tramite dominio AD (default: `false`) |
 | `domain`            | string   | No           | Dominio AD (es. `"asp.messina.it"`). Richiesto se `allow_domain_login` e' `true`. |
 
@@ -724,9 +724,9 @@ POST /api/v1/admin-op/registra-utente
 {
   "username": "mario.rossi",
   "mail": "mario.rossi@email.it",
-  "ambito": 1,
-  "livello": 1,
-  "scopi": "1 5"
+  "ambito": "api",
+  "livello": "user",
+  "scopi": "asp5-anagrafica cambio-medico"
 }
 ```
 
@@ -736,9 +736,9 @@ POST /api/v1/admin-op/registra-utente
 {
   "username": "mario.rossi",
   "mail": "mario.rossi@asp.messina.it",
-  "ambito": 2,
-  "livello": 1,
-  "scopi": "1",
+  "ambito": "login",
+  "livello": "user",
+  "scopi": "asp5-anagrafica",
   "allow_domain_login": true,
   "domain": "asp.messina.it"
 }
@@ -805,9 +805,9 @@ POST /api/v1/admin-op/registra-utente
 | Codice | Messaggio | Causa |
 |--------|-----------|-------|
 | `GIA_PRESENTE` | Un utente con questo username e ambito esiste già | Coppia username+ambito duplicata |
-| `NON_TROVATO` | Ambito non trovato | L'ID ambito fornito non esiste |
-| `NON_TROVATO` | Livello non trovato | L'ID livello fornito non esiste |
-| `NON_TROVATO` | Scopo con id X non trovato | Uno degli ID scopi forniti non esiste |
+| `NON_TROVATO` | Ambito "X" non trovato | Il nome ambito fornito non esiste |
+| `NON_TROVATO` | Livello "X" non trovato | Il nome livello fornito non esiste |
+| `NON_TROVATO` | Scopo "X" non trovato | Uno dei nomi scopi forniti non esiste |
 | `ERRORE_GENERICO` | Il dominio è richiesto per il login con dominio | `allow_domain_login: true` senza `domain` |
 
 **Nota importante:** La chiave univoca di un utente e' la coppia `username + ambito`. Lo stesso username puo' esistere in ambiti diversi. Per modificare l'ambito di un utente, e' necessario creare un nuovo utente e cancellare quello precedente.
@@ -827,12 +827,12 @@ POST /api/v1/admin-op/modifica-utente
 | Campo  | Tipo   | Obbligatorio | Descrizione |
 |--------|--------|:------------:|-------------|
 | `id`   | number | Si           | ID dell'utente (ottenibile da `/admin-op/search-user`) |
-| `scopi`| string | Si           | Scopi separati da spazio. Due modalita' supportate (vedi sotto). |
+| `scopi`| string | Si           | Nomi scopi separati da spazio. Due modalita' supportate (vedi sotto). |
 
 **Due modalita' di modifica:**
 
-1. **Sostituzione completa** — solo ID numerici: `"1 5 8"` → sostituisce tutti gli scopi con quelli indicati
-2. **Modalita' incrementale (chmod)** — con prefisso `+` o `-`: `"+1 -3 +8"` → aggiunge/rimuove singoli scopi
+1. **Sostituzione completa** — nomi senza prefisso: `"asp5-anagrafica cambio-medico"` → sostituisce tutti gli scopi
+2. **Modalita' incrementale (chmod)** — con prefisso `+` o `-`: `"+flusso-m -esenzioni +cambio-medico"` → aggiunge/rimuove singoli scopi
 
 La modalita' viene determinata automaticamente: se almeno un elemento ha `+` o `-`, e' incrementale. Altrimenti e' sostituzione completa.
 
@@ -843,7 +843,7 @@ La modalita' viene determinata automaticamente: se almeno un elemento ha `+` o `
 ```json
 {
   "id": 1,
-  "scopi": "1 5 8"
+  "scopi": "asp5-anagrafica cambio-medico admin-manage"
 }
 ```
 
@@ -852,7 +852,7 @@ La modalita' viene determinata automaticamente: se almeno un elemento ha `+` o `
 ```json
 {
   "id": 1,
-  "scopi": "+8 -3 +12"
+  "scopi": "+flusso-m -esenzioni +cambio-medico"
 }
 ```
 
@@ -1057,25 +1057,25 @@ curl -X POST https://ws.asp.messina.it/api/v1/admin-op/reset-otp \
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"username":"mario.rossi","mail":"mario.rossi@email.it","ambito":1,"livello":1,"scopi":"1 5"}'
+  -d '{"username":"mario.rossi","mail":"mario.rossi@email.it","ambito":"api","livello":"user","scopi":"asp5-anagrafica cambio-medico"}'
 
 # Registra utente di dominio
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"username":"mario.rossi","mail":"mario.rossi@asp.messina.it","ambito":2,"livello":1,"scopi":"1","allow_domain_login":true,"domain":"asp.messina.it"}'
+  -d '{"username":"mario.rossi","mail":"mario.rossi@asp.messina.it","ambito":"login","livello":"user","scopi":"asp5-anagrafica","allow_domain_login":true,"domain":"asp.messina.it"}'
 
 # Modifica scopi utente (sostituzione completa)
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/modifica-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"id":1,"scopi":"1 5 8"}'
+  -d '{"id":1,"scopi":"asp5-anagrafica cambio-medico admin-manage"}'
 
 # Modifica scopi utente (modalità chmod)
 curl -X POST https://ws.asp.messina.it/api/v1/admin-op/modifica-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
-  -d '{"id":1,"scopi":"+8 -3"}'
+  -d '{"id":1,"scopi":"+flusso-m -esenzioni"}'
 ```
 
 ---

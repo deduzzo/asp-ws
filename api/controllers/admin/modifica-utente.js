@@ -10,7 +10,7 @@ const {ERROR_TYPES} = require('../../responses/ApiResponse');
 
 module.exports = {
   friendlyName: 'Admin modifica utente',
-  description: 'Modifica gli scopi assegnati a un utente. Supporta modalità chmod (+id aggiunge, -id rimuove) o sostituzione completa.',
+  description: 'Modifica gli scopi assegnati a un utente. Supporta modalità chmod (+nome aggiunge, -nome rimuove) o sostituzione completa per nome.',
   inputs: {
     id: {
       type: 'number',
@@ -20,7 +20,7 @@ module.exports = {
     scopi: {
       type: 'string',
       required: true,
-      description: 'Scopi separati da spazio. Con +/- (es. "+1 -3 +8"): modalità incrementale. Senza prefisso (es. "1 5 8"): sostituzione completa.'
+      description: 'Scopi separati da spazio. Con +/- (es. "+flusso-m -esenzioni"): modalità incrementale. Senza prefisso (es. "flusso-m esenzioni"): sostituzione completa.'
     }
   },
 
@@ -38,58 +38,59 @@ module.exports = {
         });
       }
 
+      // Helper: risolvi nome o ID scopo → record
+      const resolveScopo = async (nomeOId) => {
+        // Prova prima come ID numerico
+        const asNum = parseInt(nomeOId, 10);
+        if (!isNaN(asNum) && String(asNum) === nomeOId) {
+          return await Auth_Scopi.findOne({id: asNum});
+        }
+        // Altrimenti cerca per nome
+        return await Auth_Scopi.findOne({scopo: nomeOId});
+      };
+
       const avvisi = [];
-      const scopiAttuali = utente.scopi.map(s => s.id);
+      const scopiAttualiIds = utente.scopi.map(s => s.id);
       let scopiFinali;
 
-      // Parsing: split per spazi
       const entries = inputs.scopi.trim().split(/\s+/).filter(s => s.length > 0);
 
       if (entries.length === 0) {
-        // Stringa vuota o solo spazi: rimuovi tutti gli scopi
         scopiFinali = [];
       } else {
-        // Determina modalità: se almeno un elemento ha +/-, modalità chmod
         const isChmodMode = entries.some(s => s.startsWith('+') || s.startsWith('-'));
 
         if (isChmodMode) {
-          scopiFinali = [...scopiAttuali];
+          scopiFinali = [...scopiAttualiIds];
 
           for (const entry of entries) {
             if (entry.startsWith('+')) {
-              const scopoId = parseInt(entry.substring(1), 10);
-              if (isNaN(scopoId)) {
-                return this.res.ApiResponse({
-                  errType: ERROR_TYPES.ERRORE_GENERICO,
-                  errMsg: `Formato non valido: ${entry}`
-                });
-              }
-              const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
+              const nome = entry.substring(1);
+              const scopoRecord = await resolveScopo(nome);
               if (!scopoRecord) {
                 return this.res.ApiResponse({
                   errType: ERROR_TYPES.NON_TROVATO,
-                  errMsg: `Scopo con id ${scopoId} non trovato`
+                  errMsg: `Scopo "${nome}" non trovato`
                 });
               }
-              if (scopiFinali.includes(scopoId)) {
-                avvisi.push(`Lo scopo ${scopoId} (${scopoRecord.scopo}) era già assegnato`);
+              if (scopiFinali.includes(scopoRecord.id)) {
+                avvisi.push(`Lo scopo "${scopoRecord.scopo}" era già assegnato`);
               } else {
-                scopiFinali.push(scopoId);
+                scopiFinali.push(scopoRecord.id);
               }
             } else if (entry.startsWith('-')) {
-              const scopoId = parseInt(entry.substring(1), 10);
-              if (isNaN(scopoId)) {
+              const nome = entry.substring(1);
+              const scopoRecord = await resolveScopo(nome);
+              if (!scopoRecord) {
                 return this.res.ApiResponse({
-                  errType: ERROR_TYPES.ERRORE_GENERICO,
-                  errMsg: `Formato non valido: ${entry}`
+                  errType: ERROR_TYPES.NON_TROVATO,
+                  errMsg: `Scopo "${nome}" non trovato`
                 });
               }
-              if (!scopiFinali.includes(scopoId)) {
-                const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
-                const nome = scopoRecord ? scopoRecord.scopo : scopoId;
-                avvisi.push(`Lo scopo ${scopoId} (${nome}) non era assegnato`);
+              if (!scopiFinali.includes(scopoRecord.id)) {
+                avvisi.push(`Lo scopo "${scopoRecord.scopo}" non era assegnato`);
               } else {
-                scopiFinali = scopiFinali.filter(id => id !== scopoId);
+                scopiFinali = scopiFinali.filter(id => id !== scopoRecord.id);
               }
             } else {
               return this.res.ApiResponse({
@@ -102,21 +103,14 @@ module.exports = {
           // Modalità sostituzione completa
           scopiFinali = [];
           for (const entry of entries) {
-            const id = parseInt(entry, 10);
-            if (isNaN(id)) {
-              return this.res.ApiResponse({
-                errType: ERROR_TYPES.ERRORE_GENERICO,
-                errMsg: `ID scopo non valido: ${entry}`
-              });
-            }
-            const scopoRecord = await Auth_Scopi.findOne({id});
+            const scopoRecord = await resolveScopo(entry);
             if (!scopoRecord) {
               return this.res.ApiResponse({
                 errType: ERROR_TYPES.NON_TROVATO,
-                errMsg: `Scopo con id ${id} non trovato`
+                errMsg: `Scopo "${entry}" non trovato`
               });
             }
-            scopiFinali.push(id);
+            scopiFinali.push(scopoRecord.id);
           }
         }
       }
@@ -146,7 +140,7 @@ module.exports = {
           targetUserId: utente.id,
           targetUsername: utente.username,
           modalita: entries.some(s => s.startsWith('+') || s.startsWith('-')) ? 'incrementale' : 'sostituzione',
-          oldScopi: scopiAttuali,
+          oldScopi: scopiAttualiIds,
           newScopi: scopiFinali
         }
       });
