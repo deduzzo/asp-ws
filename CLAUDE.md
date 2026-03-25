@@ -246,7 +246,44 @@ The application supports Active Directory/LDAP authentication via the `domain-lo
 
 Swagger docs are available at `/docs` (protected by basic auth). The dynamic stats (total patients, last update, geolocation percentage) are injected into the Swagger spec at runtime via the `/api/v1/stats/info` endpoint.
 
-Tags are defined once in a controller with `tags: - name: TagName` and referenced in others with just `tags: - TagName`. Extra data endpoints use the tag `Gestione Extra data Assistiti`.
+**Swagger tag system (IMPORTANT — follow exactly):**
+
+Tags are managed **exclusively** via JSDoc comments in controllers. Do NOT use `swagger: { tags: [...] }` in route definitions (`routes.js`) or in controller `module.exports`.
+
+1. **Declare a tag once** in one controller per group, using a JSDoc block with `name` and `description`:
+   ```javascript
+   /**
+    * @swagger
+    *
+    * /action-name:
+    *   tags:
+    *     - TagName
+    * tags:
+    *   - name: TagName
+    *     description: Description shown next to the tag in Swagger UI
+    */
+   ```
+
+2. **Reference the tag** in all other controllers of the same group:
+   ```javascript
+   /**
+    * @swagger
+    *
+    * /action-name:
+    *   tags:
+    *     - TagName
+    */
+   ```
+
+3. **The path in JSDoc must be the short action name only** (last segment), NOT the full route path. Examples:
+   - Controller at `api/controllers/login/get-token.js` → path is `/get-token`
+   - Controller at `api/controllers/admin/search-user.js` → path is `/search-user`
+   - Controller at `api/controllers/cambio-medico/get-medici.js` → path is `/get-medici`
+   - WRONG: `/api/v1/admin-op/search-user` or `/admin-op/search-user`
+
+4. **Route exclusion filter** in `config/swaggergenerator.js` (`includeRoute`): routes containing `/admin/` are excluded from Swagger. Use a different URL prefix (e.g., `/admin-op/`) for admin endpoints that need to appear in Swagger docs.
+
+Existing tags: `Auth`, `Otp`, `Cambio Medico`, `Gestione Extra data Assistiti`, `Info`, `Admin`.
 
 ### Admin UI
 
