@@ -53,13 +53,44 @@ module.exports = {
 
   fn: async function (inputs) {
     try {
-      // Verifica username unico
-      const existingUser = await Auth_Utenti.findOne({username: inputs.username});
+      // Verifica unicità username + ambito
+      const existingUser = await Auth_Utenti.findOne({username: inputs.username, ambito: inputs.ambito});
       if (existingUser) {
         return this.res.ApiResponse({
           errType: ERROR_TYPES.GIA_PRESENTE,
-          errMsg: 'Un utente con questo username esiste già'
+          errMsg: 'Un utente con questo username e ambito esiste già'
         });
+      }
+
+      // Verifica che l'ambito esista
+      const ambitoRecord = await Auth_Ambiti.findOne({id: inputs.ambito});
+      if (!ambitoRecord) {
+        return this.res.ApiResponse({
+          errType: ERROR_TYPES.NON_TROVATO,
+          errMsg: 'Ambito non trovato'
+        });
+      }
+
+      // Verifica che il livello esista
+      const livelloRecord = await Auth_Livelli.findOne({id: inputs.livello});
+      if (!livelloRecord) {
+        return this.res.ApiResponse({
+          errType: ERROR_TYPES.NON_TROVATO,
+          errMsg: 'Livello non trovato'
+        });
+      }
+
+      // Verifica che gli scopi esistano
+      if (inputs.scopi && inputs.scopi.length > 0) {
+        for (const scopoId of inputs.scopi) {
+          const scopoRecord = await Auth_Scopi.findOne({id: scopoId});
+          if (!scopoRecord) {
+            return this.res.ApiResponse({
+              errType: ERROR_TYPES.NON_TROVATO,
+              errMsg: `Scopo con id ${scopoId} non trovato`
+            });
+          }
+        }
       }
 
       // Validazione dominio

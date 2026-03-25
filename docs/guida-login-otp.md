@@ -804,8 +804,93 @@ POST /api/v1/admin-op/registra-utente
 
 | Codice | Messaggio | Causa |
 |--------|-----------|-------|
-| `GIA_PRESENTE` | Un utente con questo username esiste già | Username duplicato |
+| `GIA_PRESENTE` | Un utente con questo username e ambito esiste già | Coppia username+ambito duplicata |
+| `NON_TROVATO` | Ambito non trovato | L'ID ambito fornito non esiste |
+| `NON_TROVATO` | Livello non trovato | L'ID livello fornito non esiste |
+| `NON_TROVATO` | Scopo con id X non trovato | Uno degli ID scopi forniti non esiste |
 | `ERRORE_GENERICO` | Il dominio è richiesto per il login con dominio | `allow_domain_login: true` senza `domain` |
+
+**Nota importante:** La chiave univoca di un utente e' la coppia `username + ambito`. Lo stesso username puo' esistere in ambiti diversi. Per modificare l'ambito di un utente, e' necessario creare un nuovo utente e cancellare quello precedente.
+
+---
+
+### Modifica Utente (Admin)
+
+Permette di modificare gli **scopi** assegnati a un utente. Username e ambito non sono modificabili in quanto costituiscono la chiave univoca dell'utente.
+
+```
+POST /api/v1/admin-op/modifica-utente
+```
+
+#### Parametri
+
+| Campo  | Tipo     | Obbligatorio | Descrizione |
+|--------|----------|:------------:|-------------|
+| `id`   | number   | Si           | ID dell'utente (ottenibile da `/admin-op/search-user`) |
+| `scopi`| number[] | Si           | Nuovo array completo di ID scopi. **Sostituisce** tutti gli scopi precedenti. |
+
+**Attenzione:** Passare un array vuoto `[]` rimuove tutti gli scopi dall'utente.
+
+#### Esempio richiesta — assegna scopi
+
+```json
+{
+  "id": 1,
+  "scopi": [1, 5, 8]
+}
+```
+
+#### Esempio richiesta — rimuovi tutti gli scopi
+
+```json
+{
+  "id": 1,
+  "scopi": []
+}
+```
+
+#### Risposta successo (HTTP 200)
+
+```json
+{
+  "ok": true,
+  "err": null,
+  "data": {
+    "id": 1,
+    "username": "mario.rossi",
+    "mail": "mario.rossi@email.it",
+    "domain": null,
+    "allow_domain_login": false,
+    "attivo": true,
+    "otp_enabled": false,
+    "otp_type": null,
+    "otp_required": false,
+    "ambito": {
+      "id": 1,
+      "ambito": "api",
+      "is_dominio": false
+    },
+    "livello": {
+      "id": 1,
+      "livello": "user",
+      "descrizione": "Utente standard"
+    },
+    "scopi": [
+      { "id": 1, "scopo": "asp5-anagrafica", "attivo": true },
+      { "id": 5, "scopo": "cambio-medico", "attivo": true },
+      { "id": 8, "scopo": "admin-manage", "attivo": true }
+    ]
+  }
+}
+```
+
+#### Possibili errori
+
+| Codice | Messaggio | Causa |
+|--------|-----------|-------|
+| `NON_TROVATO` | Utente non trovato | L'ID fornito non corrisponde ad alcun utente |
+| `NON_TROVATO` | Scopo con id X non trovato | Uno degli ID scopi forniti non esiste |
+| `ERRORE_GENERICO` | Il campo scopi deve essere un array di ID | Formato scopi non valido |
 
 ---
 
@@ -942,6 +1027,18 @@ curl -X POST https://ws.asp.messina.it/api/v1/admin-op/registra-utente \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token_superadmin>" \
   -d '{"username":"mario.rossi","mail":"mario.rossi@asp.messina.it","ambito":2,"livello":1,"scopi":[1],"allow_domain_login":true,"domain":"asp.messina.it"}'
+
+# Modifica scopi utente
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/modifica-utente \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"id":1,"scopi":[1,5,8]}'
+
+# Rimuovi tutti gli scopi
+curl -X POST https://ws.asp.messina.it/api/v1/admin-op/modifica-utente \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_superadmin>" \
+  -d '{"id":1,"scopi":[]}'
 ```
 
 ---

@@ -510,6 +510,11 @@ let routes = {
     scopi: ['admin-manage'],
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+  'POST /api/v1/admin-op/modifica-utente': {
+    action: 'admin/modifica-utente',
+    scopi: ['admin-manage'],
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 
   // Admin API routes for levels
   'GET /api/v1/admin/levels': {
