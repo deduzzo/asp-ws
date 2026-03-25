@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /admin-op/cambio-password:
+ * /cambio-password:
  *   tags:
  *     - Admin
  */

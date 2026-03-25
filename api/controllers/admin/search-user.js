@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /admin-op/search-user:
+ * /search-user:
  *   tags:
  *     - Admin
  * tags:

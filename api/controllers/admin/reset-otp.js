@@ -1,7 +1,7 @@
 /**
  * @swagger
  *
- * /admin-op/reset-otp:
+ * /reset-otp:
  *   tags:
  *     - Admin
  */
