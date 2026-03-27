@@ -19,9 +19,14 @@ module.exports = {
       type: 'string',
       description: 'Username da cercare (ricerca contains/like). Se omesso, restituisce tutti gli utenti.'
     },
+    utente_di_dominio: {
+      type: 'boolean',
+      defaultsTo: false,
+      description: 'Se false mostra solo utenti senza dominio, se true filtra per dominio (o tutti gli utenti con dominio se dominio è vuoto)'
+    },
     dominio: {
       type: 'string',
-      description: 'Filtro per dominio (contains)'
+      description: 'Filtro per dominio (contains). Usato solo se utente_di_dominio è true. Se vuoto, mostra tutti gli utenti con dominio.'
     },
     ambito: {
       type: 'string',
@@ -44,8 +49,17 @@ module.exports = {
       }
 
       // Filtro dominio
-      if (inputs.dominio) {
-        whereClause.domain = {contains: inputs.dominio};
+      if (inputs.utente_di_dominio) {
+        // Mostra utenti con dominio, filtrato se specificato
+        if (inputs.dominio) {
+          whereClause.domain = {contains: inputs.dominio};
+        } else {
+          // Wildcard: tutti gli utenti che hanno un dominio non vuoto
+          whereClause.domain = {'!=': ''};
+        }
+      } else {
+        // Mostra solo utenti senza dominio
+        whereClause.domain = '';
       }
 
       // Cerca utenti
