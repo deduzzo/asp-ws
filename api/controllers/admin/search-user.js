@@ -26,7 +26,7 @@ module.exports = {
     },
     dominio: {
       type: 'string',
-      description: 'Filtro per dominio (contains). Usato solo se utente_di_dominio è true. Se vuoto, mostra tutti gli utenti con dominio.'
+      description: 'Filtro per dominio (contains). Ignorato se utente_di_dominio è false. Se utente_di_dominio è true e dominio è vuoto, mostra tutti gli utenti con dominio.'
     },
     ambito: {
       type: 'string',
@@ -54,12 +54,12 @@ module.exports = {
         if (inputs.dominio) {
           whereClause.domain = {contains: inputs.dominio};
         } else {
-          // Wildcard: tutti gli utenti che hanno un dominio non vuoto
-          whereClause.domain = {'!=': ''};
+          // Wildcard: tutti gli utenti che hanno un dominio non null
+          whereClause.domain = {'!=': null};
         }
       } else {
-        // Mostra solo utenti senza dominio
-        whereClause.domain = '';
+        // Mostra solo utenti senza dominio (null o stringa vuota)
+        whereClause.or = [{domain: null}, {domain: ''}];
       }
 
       // Cerca utenti
