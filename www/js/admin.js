@@ -784,13 +784,13 @@ class AdminPanel {
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="userForm">
+                            <form id="userForm" autocomplete="off">
                                 <input type="hidden" id="userId" name="id">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="username" class="form-label">Username *</label>
-                                            <input type="text" class="form-control" id="username" name="username" required>
+                                            <input type="text" class="form-control" id="username" name="username" required autocomplete="off">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -805,7 +805,7 @@ class AdminPanel {
                                         <div class="mb-3">
                                             <label for="password" class="form-label">Password</label>
                                             <div class="input-group">
-                                                <input type="password" class="form-control" id="password" name="password">
+                                                <input type="password" class="form-control" id="password" name="password" autocomplete="new-password">
                                                 <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" title="Mostra/nascondi password">
                                                     <i class="bi bi-eye"></i>
                                                 </button>
