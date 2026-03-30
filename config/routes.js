@@ -789,6 +789,50 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+
+  // Admin MPI Records
+  'POST /api/v1/admin/mpi/records/search': {
+    action: 'admin/mpi/records-search',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/admin/mpi/records/:mpiId': {
+    action: 'admin/mpi/records-get',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/mpi/records': {
+    action: 'admin/mpi/records-create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/mpi/records/:mpiId': {
+    action: 'admin/mpi/records-update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'GET /api/v1/admin/mpi/records/:mpiId/storico': {
+    action: 'admin/mpi/records-storico',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/mpi/records/:mpiId/link': {
+    action: 'admin/mpi/records-link',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/mpi/records/:mpiId/annulla': {
+    action: 'admin/mpi/records-annulla',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato

@@ -277,6 +277,13 @@ class AdminPanel {
       case 'dashboard':
         this.loadDashboardStats();
         break;
+      case 'mpi-apps':
+        loadMpiApps();
+        break;
+      case 'mpi-records':
+        loadMpiAppSelect();
+        searchMpiRecords();
+        break;
     }
   }
 
@@ -313,12 +320,13 @@ class AdminPanel {
           throw new Error(message);
         }
 
-        // Check if token is expired or invalid
+        // Check if token is expired or invalid - force logout
         if (result.err.code === 'TOKEN_SCADUTO' || result.err.code === 'TOKEN_NON_VALIDO') {
-          console.error('Token error detected:', result.err);
-          console.warn('API call failed due to token error. This might be a configuration issue.');
-          console.warn('Token will remain in localStorage. User can logout manually if needed.');
-          throw new Error('Token error: ' + result.err.msg);
+          localStorage.removeItem('admin_token');
+          this.authToken = null;
+          this.showToast('Sessione scaduta', 'Il token è scaduto. Effettua nuovamente il login.', 'warning');
+          setTimeout(function() { location.reload(); }, 1500);
+          throw new Error('Token scaduto');
         }
         throw new Error(result.err.msg || 'Errore sconosciuto');
       }
@@ -1444,4 +1452,731 @@ function showCreateDomainModal() {
 
   const modal = new bootstrap.Modal(document.getElementById('domainModal'));
   modal.show();
+}
+
+// ===== MPI APPLICAZIONI =====
+
+async function loadMpiApps() {
+  const loading = document.getElementById('mpi-apps-loading');
+  const tbody = document.getElementById('mpi-apps-tbody');
+  loading.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/mpi/applicazioni');
+    (data || []).forEach(app => {
+      const row = document.createElement('tr');
+      const badge = app.attivo
+        ? '<span class="badge bg-success">Attiva</span>'
+        : '<span class="badge bg-danger">Disattiva</span>';
+      row.innerHTML = `
+        <td>${app.id}</td>
+        <td><strong>${app.codice}</strong></td>
+        <td>${app.nome}</td>
+        <td>${app.versione || '-'}</td>
+        <td>${app.contatto || '-'}</td>
+        <td>${badge}</td>
+        <td>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" onclick="editMpiApp(${app.id})" title="Modifica"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-outline-danger" onclick="deleteMpiApp(${app.id}, '${app.codice}')" title="Disattiva"><i class="bi bi-trash"></i></button>
+          </div>
+        </td>`;
+      tbody.appendChild(row);
+    });
+  } catch (e) {
+    console.error('Error loading MPI apps:', e);
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+function showCreateMpiAppModal() {
+  document.getElementById('mpiAppModalTitle').textContent = 'Nuova Applicazione MPI';
+  document.getElementById('mpiAppForm').reset();
+  document.getElementById('mpiAppId').value = '';
+  document.getElementById('mpiAppCodice').removeAttribute('disabled');
+  const modal = new bootstrap.Modal(document.getElementById('mpiAppModal'));
+  modal.show();
+}
+
+let _mpiAppsCache = [];
+
+async function editMpiApp(id) {
+  if (_mpiAppsCache.length === 0) {
+    _mpiAppsCache = await adminPanel.apiCall('/api/v1/admin/mpi/applicazioni');
+  }
+  const app = (_mpiAppsCache || []).find(a => a.id === id);
+  if (!app) { adminPanel.showToast('Errore', 'App non trovata', 'danger'); return; }
+
+  document.getElementById('mpiAppModalTitle').textContent = 'Modifica Applicazione MPI';
+  document.getElementById('mpiAppId').value = app.id;
+  document.getElementById('mpiAppCodice').value = app.codice;
+  document.getElementById('mpiAppCodice').setAttribute('disabled', 'disabled');
+  document.getElementById('mpiAppNome').value = app.nome;
+  document.getElementById('mpiAppDescrizione').value = app.descrizione || '';
+  document.getElementById('mpiAppVersione').value = app.versione || '';
+  document.getElementById('mpiAppContatto').value = app.contatto || '';
+
+  const modal = new bootstrap.Modal(document.getElementById('mpiAppModal'));
+  modal.show();
+}
+
+async function saveMpiApp() {
+  const id = document.getElementById('mpiAppId').value;
+  const data = {
+    codice: document.getElementById('mpiAppCodice').value.toUpperCase(),
+    nome: document.getElementById('mpiAppNome').value,
+    descrizione: document.getElementById('mpiAppDescrizione').value || null,
+    versione: document.getElementById('mpiAppVersione').value || null,
+    contatto: document.getElementById('mpiAppContatto').value || null,
+  };
+
+  try {
+    if (id) {
+      data.id = parseInt(id);
+      await adminPanel.apiCall(`/api/v1/admin/mpi/applicazioni/${id}`, 'PUT', data);
+      adminPanel.showToast('Successo', 'Applicazione aggiornata', 'success');
+    } else {
+      await adminPanel.apiCall('/api/v1/admin/mpi/applicazioni', 'POST', data);
+      adminPanel.showToast('Successo', 'Applicazione creata. Scopi auto-generati.', 'success');
+    }
+    bootstrap.Modal.getInstance(document.getElementById('mpiAppModal')).hide();
+    _mpiAppsCache = [];
+    loadMpiApps();
+  } catch (e) {
+    console.error('Error saving MPI app:', e);
+  }
+}
+
+async function deleteMpiApp(id, codice) {
+  if (!confirm(`Disattivare l'applicazione "${codice}"?`)) return;
+  try {
+    await adminPanel.apiCall(`/api/v1/admin/mpi/applicazioni/${id}`, 'DELETE');
+    adminPanel.showToast('Successo', 'Applicazione disattivata', 'success');
+    _mpiAppsCache = [];
+    loadMpiApps();
+  } catch (e) {
+    console.error('Error deleting MPI app:', e);
+  }
+}
+
+// ===== MPI RECORDS =====
+
+async function loadMpiAppSelect() {
+  const select = document.getElementById('mpiSearchApp');
+  if (select.options.length > 1) return;
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/mpi/applicazioni');
+    (data || []).forEach(app => {
+      if (app.attivo) {
+        const opt = document.createElement('option');
+        opt.value = app.codice;
+        opt.textContent = `${app.codice} - ${app.nome}`;
+        select.appendChild(opt);
+      }
+    });
+  } catch (e) {
+    console.error('Error loading MPI app select:', e);
+  }
+}
+
+async function searchMpiRecords() {
+  const loading = document.getElementById('mpi-records-loading');
+  const tbody = document.getElementById('mpi-records-tbody');
+  const countEl = document.getElementById('mpiRecordsCount');
+  loading.style.display = 'inline-block';
+  tbody.innerHTML = '';
+
+  var body = {};
+  var searchId = document.getElementById('mpiSearchId').value.trim();
+  var codice = document.getElementById('mpiSearchCodice').value.trim();
+  var cf = document.getElementById('mpiSearchCf').value.trim();
+  var cognome = document.getElementById('mpiSearchCognome').value.trim();
+  var nome = document.getElementById('mpiSearchNome').value.trim();
+  var stato = document.getElementById('mpiSearchStato').value;
+  var app = document.getElementById('mpiSearchApp').value;
+  var mpiId = document.getElementById('mpiSearchMpiId').value.trim();
+  var idEsterno = document.getElementById('mpiSearchIdEsterno').value.trim();
+
+  if (searchId) body.id = parseInt(searchId);
+  if (codice) body.codice = codice;
+  if (cf) body.cf = cf;
+  if (cognome) body.cognome = cognome;
+  if (nome) body.nome = nome;
+  if (stato) body.stato = stato;
+  if (app) body.applicazione = app;
+  if (mpiId) body.mpiId = mpiId;
+  if (idEsterno) body.idEsterno = idEsterno;
+
+  // Se nessun criterio, cerca tutti i record aperti
+  if (Object.keys(body).length === 0) {
+    body.stato = 'aperto';
+  }
+
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/mpi/records/search', 'POST', body);
+    const records = data || [];
+    countEl.textContent = `${records.length} risultati`;
+
+    records.forEach(r => {
+      const row = document.createElement('tr');
+      const statoBadge = {
+        'aperto': '<span class="badge bg-warning text-dark">Aperto</span>',
+        'identificato': '<span class="badge bg-success">Identificato</span>',
+        'annullato': '<span class="badge bg-secondary">Annullato</span>'
+      }[r.stato] || r.stato;
+
+      var editBtn = r.stato !== 'annullato' ? '<button class="btn btn-outline-warning" onclick="editMpiRecord(\'' + r.mpiId + '\')" title="Modifica"><i class="bi bi-pencil"></i></button>' : '';
+      var linkBtn = r.stato === 'aperto' ? '<button class="btn btn-outline-success" onclick="showMpiLinkModal(\'' + r.mpiId + '\')" title="Collega"><i class="bi bi-link-45deg"></i></button>' : '';
+      var annullaBtn = r.stato !== 'annullato' ? '<button class="btn btn-outline-danger" onclick="annullaMpiRecord(\'' + r.mpiId + '\')" title="Annulla"><i class="bi bi-x-circle"></i></button>' : '';
+
+      row.innerHTML =
+        '<td>' + r.id + '</td>' +
+        '<td><code>' + (r.codice || r.mpiId.substring(0, 8)) + '</code></td>' +
+        '<td><span class="badge bg-info">' + r.applicazione + '</span></td>' +
+        '<td>' + (r.idEsterno || '-') + '</td>' +
+        '<td>' + statoBadge + '</td>' +
+        '<td>' + (r.cf || '-') + '</td>' +
+        '<td>' + (r.cognome || '-') + '</td>' +
+        '<td>' + (r.nome || '-') + '</td>' +
+        '<td class="small">' + (r.createdAt || '-') + '</td>' +
+        '<td>' +
+          '<div class="btn-group btn-group-sm">' +
+            '<button class="btn btn-outline-primary" onclick="viewMpiRecord(\'' + r.mpiId + '\')" title="Dettaglio"><i class="bi bi-eye"></i></button>' +
+            editBtn + linkBtn + annullaBtn +
+          '</div>' +
+        '</td>';
+      tbody.appendChild(row);
+    });
+
+    // Evidenzia potenziali collisioni (stesso cognome+nome in app diverse)
+    highlightCollisions(records);
+  } catch (e) {
+    console.error('Error searching MPI records:', e);
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+function highlightCollisions(records) {
+  const groups = {};
+  records.forEach(r => {
+    if (r.cognome && r.nome) {
+      const key = `${r.cognome.toLowerCase()}_${r.nome.toLowerCase()}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    }
+  });
+
+  const tbody = document.getElementById('mpi-records-tbody');
+  const rows = tbody.querySelectorAll('tr');
+  let collisionCount = 0;
+
+  records.forEach((r, i) => {
+    if (r.cognome && r.nome) {
+      const key = `${r.cognome.toLowerCase()}_${r.nome.toLowerCase()}`;
+      if (groups[key].length > 1) {
+        rows[i].classList.add('table-warning');
+        rows[i].title = `Possibile collisione: ${groups[key].length} record con stesso nome`;
+        collisionCount++;
+      }
+    }
+  });
+
+  if (collisionCount > 0) {
+    adminPanel.showToast('Attenzione', `${collisionCount} record con possibili collisioni (stesso nome/cognome)`, 'warning');
+  }
+}
+
+async function viewMpiRecord(mpiId) {
+  const detailCard = document.getElementById('mpi-record-detail');
+  const body = document.getElementById('mpi-record-detail-body');
+  detailCard.style.display = 'block';
+  body.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Caricamento...';
+
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId);
+    const r = data;
+
+    let html = `
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-primary">Informazioni Record</h6>
+          <table class="table table-sm">
+            <tr><td class="text-muted" style="width:40%">Codice</td><td><code class="fs-5">${r.codice || '-'}</code></td></tr>
+            <tr><td class="text-muted" style="width:40%">MPI ID</td><td><code class="small text-muted">${r.mpiId}</code></td></tr>
+            <tr><td class="text-muted">Applicazione</td><td><span class="badge bg-info">${r.applicazione}</span></td></tr>
+            <tr><td class="text-muted">ID Esterno</td><td>${r.idEsterno || '-'}</td></tr>
+            <tr><td class="text-muted">Stato</td><td>${r.stato}</td></tr>
+            <tr><td class="text-muted">Creato</td><td>${r.createdAt}</td></tr>
+            <tr><td class="text-muted">Aggiornato</td><td>${r.updatedAt}</td></tr>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-primary">Dati Demografici ${r.assistito ? '(da Anagrafica Reale)' : '(da MPI)'}</h6>
+          <table class="table table-sm">`;
+
+    const campi = ['cf', 'cognome', 'nome', 'sesso', 'dataNascita', 'comuneNascita', 'comuneResidenza', 'indirizzoResidenza', 'capResidenza'];
+    const labels = {'cf':'CF', 'cognome':'Cognome', 'nome':'Nome', 'sesso':'Sesso', 'dataNascita':'Data Nascita', 'comuneNascita':'Comune Nascita', 'comuneResidenza':'Comune Residenza', 'indirizzoResidenza':'Indirizzo', 'capResidenza':'CAP'};
+
+    for (const c of campi) {
+      const val = r.demografici[c] || '-';
+      const mpiVal = r.demograficiMpi[c];
+      const highlight = r.assistito && mpiVal && val !== mpiVal ? ` <small class="text-muted" title="Valore MPI originale">(MPI: ${mpiVal})</small>` : '';
+      html += `<tr><td class="text-muted" style="width:40%">${labels[c] || c}</td><td>${val}${highlight}</td></tr>`;
+    }
+
+    html += '</table></div></div>';
+
+    if (r.assistito) {
+      html += `<div class="alert alert-success mt-2"><i class="bi bi-check-circle me-2"></i><strong>Identificato:</strong> collegato a CF <code>${r.assistito.cf}</code> il ${r.assistito.dataIdentificazione || '?'} da ${r.assistito.utenteIdentificazione || '?'}</div>`;
+    }
+
+    // Pulsanti azione
+    html += '<div class="mt-3">';
+    html += '<button class="btn btn-sm btn-outline-secondary me-2" onclick="viewMpiStorico(\'' + mpiId + '\')"><i class="bi bi-clock-history me-1"></i>Storico</button>';
+    if (r.stato !== 'annullato') {
+      html += '<button class="btn btn-sm btn-outline-warning me-2" onclick="editMpiRecord(\'' + mpiId + '\')"><i class="bi bi-pencil me-1"></i>Modifica</button>';
+    }
+    if (r.stato === 'aperto') {
+      html += '<button class="btn btn-sm btn-outline-success me-2" onclick="showMpiLinkModal(\'' + mpiId + '\')"><i class="bi bi-link-45deg me-1"></i>Collega</button>';
+    }
+    html += '</div>';
+
+    // Container storico
+    html += '<div id="mpi-storico-container" class="mt-3" style="display:none;"></div>';
+
+    body.innerHTML = html;
+    detailCard.scrollIntoView({behavior: 'smooth'});
+  } catch (e) {
+    body.innerHTML = '<div class="alert alert-danger">Errore nel caricamento</div>';
+    console.error('Error viewing MPI record:', e);
+  }
+}
+
+function closeMpiRecordDetail() {
+  document.getElementById('mpi-record-detail').style.display = 'none';
+}
+
+async function viewMpiStorico(mpiId) {
+  const container = document.getElementById('mpi-storico-container');
+  container.style.display = 'block';
+  container.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Caricamento storico...';
+
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId + '/storico');
+    const storico = data.storico || [];
+
+    if (storico.length === 0) {
+      container.innerHTML = '<p class="text-muted">Nessuna operazione nello storico</p>';
+      return;
+    }
+
+    let html = '<h6 class="text-primary mt-2"><i class="bi bi-clock-history me-2"></i>Storico Operazioni</h6>';
+    html += '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Data</th><th>Operazione</th><th>Utente</th><th>Dettaglio</th></tr></thead><tbody>';
+
+    storico.forEach(s => {
+      const opBadge = {
+        'CREATE': 'bg-success', 'UPDATE': 'bg-primary', 'LINK': 'bg-info',
+        'UNLINK': 'bg-warning', 'ANNULLA': 'bg-danger'
+      }[s.operazione] || 'bg-secondary';
+
+      const dettaglio = s.dettaglio ? `<code class="small">${JSON.stringify(s.dettaglio).substring(0, 100)}...</code>` : '-';
+      html += `<tr><td class="small">${s.createdAt}</td><td><span class="badge ${opBadge}">${s.operazione}</span></td><td>${s.utente}</td><td>${dettaglio}</td></tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="alert alert-danger">Errore nel caricamento storico</div>';
+    console.error('Error loading MPI storico:', e);
+  }
+}
+
+function showMpiLinkModal(mpiId) {
+  document.getElementById('mpiLinkMpiId').value = mpiId;
+  document.getElementById('mpiLinkCf').value = '';
+  document.getElementById('mpiLinkResult').style.display = 'none';
+  const modal = new bootstrap.Modal(document.getElementById('mpiLinkModal'));
+  modal.show();
+}
+
+async function confirmMpiLink() {
+  const mpiId = document.getElementById('mpiLinkMpiId').value;
+  const cf = document.getElementById('mpiLinkCf').value.trim().toUpperCase();
+  const resultDiv = document.getElementById('mpiLinkResult');
+
+  if (!cf) { adminPanel.showToast('Attenzione', 'Inserire il codice fiscale', 'warning'); return; }
+
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId + '/link', 'POST', {cf: cf});
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Collegato a <strong>${data.assistito.cognome} ${data.assistito.nome}</strong> (${data.assistito.cf})</div>`;
+    adminPanel.showToast('Successo', 'Record MPI collegato all\'assistito', 'success');
+
+    setTimeout(() => {
+      bootstrap.Modal.getInstance(document.getElementById('mpiLinkModal')).hide();
+      searchMpiRecords();
+      closeMpiRecordDetail();
+    }, 1500);
+  } catch (e) {
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
+  }
+}
+
+async function annullaMpiRecord(mpiId) {
+  var motivo = prompt('Motivo dell\'annullamento (opzionale):');
+  if (motivo === null) return;
+
+  try {
+    await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId + '/annulla', 'POST', {motivo: motivo || null});
+    adminPanel.showToast('Successo', 'Record annullato', 'success');
+    searchMpiRecords();
+    closeMpiRecordDetail();
+  } catch (e) {
+    console.error('Error annulling MPI record:', e);
+  }
+}
+
+// ===== MPI RECORD CREATE/EDIT =====
+
+function _ensureMpiRecordModal() {
+  if (document.getElementById('mpiRecordModal')) return;
+
+  var modalHTML = '<div class="modal fade" id="mpiRecordModal" tabindex="-1">' +
+    '<div class="modal-dialog modal-xl">' +
+      '<div class="modal-content">' +
+        '<div class="modal-header">' +
+          '<h5 class="modal-title" id="mpiRecordModalTitle">Nuovo Record MPI</h5>' +
+          '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
+        '</div>' +
+        '<div class="modal-body">' +
+          '<form id="mpiRecordForm" autocomplete="off">' +
+            '<input type="hidden" id="mpiRecordId">' +
+            '<input type="hidden" id="mpiRecordMpiId">' +
+
+            '<ul class="nav nav-tabs mb-3" role="tablist">' +
+              '<li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#mpiTabBase">Base</a></li>' +
+              '<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#mpiTabNascita">Nascita</a></li>' +
+              '<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#mpiTabResidenza">Residenza</a></li>' +
+              '<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#mpiTabSsn">SSN</a></li>' +
+              '<li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#mpiTabAltro">Altro</a></li>' +
+            '</ul>' +
+
+            '<div class="tab-content">' +
+              // Tab Base
+              '<div class="tab-pane fade show active" id="mpiTabBase">' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Applicazione *</label>' +
+                    '<select class="form-select" id="mpiRecordApp" required></select>' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">ID Esterno</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordIdEsterno">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Codice Fiscale</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCf" maxlength="16" style="text-transform:uppercase">' +
+                    '<div class="form-text">Se corrisponde a un assistito, verr&agrave; collegato automaticamente</div>' +
+                  '</div></div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Cognome</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCognome">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Nome</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordNome">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Sesso</label>' +
+                    '<select class="form-select" id="mpiRecordSesso">' +
+                      '<option value="">-</option><option value="M">M</option><option value="F">F</option>' +
+                    '</select>' +
+                  '</div></div>' +
+                '</div>' +
+              '</div>' +
+
+              // Tab Nascita
+              '<div class="tab-pane fade" id="mpiTabNascita">' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Data di Nascita</label>' +
+                    '<input type="date" class="form-control" id="mpiRecordDataNascita">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Comune di Nascita</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordComuneNascita">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Provincia Nascita</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordProvinciaNascita" maxlength="2">' +
+                  '</div></div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Cod. Comune Nascita</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCodComuneNascita">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Cod. ISTAT Comune Nascita</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCodIstatComuneNascita">' +
+                  '</div></div>' +
+                '</div>' +
+              '</div>' +
+
+              // Tab Residenza
+              '<div class="tab-pane fade" id="mpiTabResidenza">' +
+                '<div class="row">' +
+                  '<div class="col-md-6"><div class="mb-3">' +
+                    '<label class="form-label">Indirizzo Residenza</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordIndirizzoResidenza">' +
+                  '</div></div>' +
+                  '<div class="col-md-3"><div class="mb-3">' +
+                    '<label class="form-label">CAP</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCapResidenza" maxlength="5">' +
+                  '</div></div>' +
+                  '<div class="col-md-3"><div class="mb-3">' +
+                    '<label class="form-label">Comune Residenza</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordComuneResidenza">' +
+                  '</div></div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Cod. Comune Residenza</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCodComuneResidenza">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Cod. ISTAT Comune Residenza</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordCodIstatComuneResidenza">' +
+                  '</div></div>' +
+                '</div>' +
+              '</div>' +
+
+              // Tab SSN
+              '<div class="tab-pane fade" id="mpiTabSsn">' +
+                '<div class="row">' +
+                  '<div class="col-md-3"><div class="mb-3">' +
+                    '<label class="form-label">ASP</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordAsp">' +
+                  '</div></div>' +
+                  '<div class="col-md-3"><div class="mb-3">' +
+                    '<label class="form-label">Tipo Assistito</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordSsnTipoAssistito">' +
+                  '</div></div>' +
+                  '<div class="col-md-3"><div class="mb-3">' +
+                    '<label class="form-label">Numero Tessera</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordSsnNumeroTessera">' +
+                  '</div></div>' +
+                  '<div class="col-md-3"><div class="mb-3">' +
+                    '<label class="form-label">Motiv. Fine Assistenza</label>' +
+                    '<input type="text" class="form-control" id="mpiRecordSsnMotivazione">' +
+                  '</div></div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Inizio Assistenza</label>' +
+                    '<input type="date" class="form-control" id="mpiRecordSsnInizio">' +
+                  '</div></div>' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Fine Assistenza</label>' +
+                    '<input type="date" class="form-control" id="mpiRecordSsnFine">' +
+                  '</div></div>' +
+                '</div>' +
+              '</div>' +
+
+              // Tab Altro
+              '<div class="tab-pane fade" id="mpiTabAltro">' +
+                '<div class="row">' +
+                  '<div class="col-md-4"><div class="mb-3">' +
+                    '<label class="form-label">Data Decesso</label>' +
+                    '<input type="date" class="form-control" id="mpiRecordDataDecesso">' +
+                  '</div></div>' +
+                '</div>' +
+                '<div class="row">' +
+                  '<div class="col-12"><div class="mb-3">' +
+                    '<label class="form-label">Note</label>' +
+                    '<textarea class="form-control" id="mpiRecordNote" rows="3"></textarea>' +
+                  '</div></div>' +
+                '</div>' +
+              '</div>' +
+
+            '</div>' +
+          '</form>' +
+        '</div>' +
+        '<div class="modal-footer">' +
+          '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>' +
+          '<button type="button" class="btn btn-primary" onclick="saveMpiRecord()">Salva</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+async function showCreateMpiRecordModal() {
+  _ensureMpiRecordModal();
+  document.getElementById('mpiRecordModalTitle').textContent = 'Nuovo Record MPI';
+  document.getElementById('mpiRecordForm').reset();
+  document.getElementById('mpiRecordId').value = '';
+  document.getElementById('mpiRecordMpiId').value = '';
+  document.getElementById('mpiRecordApp').removeAttribute('disabled');
+
+  // Load apps
+  await _loadMpiRecordAppSelect();
+
+  var modal = new bootstrap.Modal(document.getElementById('mpiRecordModal'));
+  modal.show();
+}
+
+async function editMpiRecord(mpiId) {
+  _ensureMpiRecordModal();
+  document.getElementById('mpiRecordModalTitle').textContent = 'Modifica Record MPI';
+  document.getElementById('mpiRecordForm').reset();
+
+  try {
+    var data = await adminPanel.apiCall('/api/v1/mpi/record/' + mpiId);
+    var r = data;
+
+    await _loadMpiRecordAppSelect();
+
+    document.getElementById('mpiRecordId').value = '';
+    document.getElementById('mpiRecordMpiId').value = mpiId;
+
+    // Find app by codice
+    var appSelect = document.getElementById('mpiRecordApp');
+    for (var i = 0; i < appSelect.options.length; i++) {
+      if (appSelect.options[i].textContent.indexOf(r.applicazione) === 0) {
+        appSelect.value = appSelect.options[i].value;
+        break;
+      }
+    }
+    appSelect.setAttribute('disabled', 'disabled');
+
+    // Fill fields from demograficiMpi (original MPI values)
+    var mpi = r.demograficiMpi || {};
+    document.getElementById('mpiRecordIdEsterno').value = r.idEsterno || '';
+    document.getElementById('mpiRecordCf').value = mpi.cf || '';
+    document.getElementById('mpiRecordCognome').value = mpi.cognome || '';
+    document.getElementById('mpiRecordNome').value = mpi.nome || '';
+    document.getElementById('mpiRecordSesso').value = mpi.sesso || '';
+    document.getElementById('mpiRecordComuneNascita').value = mpi.comuneNascita || '';
+    document.getElementById('mpiRecordProvinciaNascita').value = mpi.provinciaNascita || '';
+    document.getElementById('mpiRecordCodComuneNascita').value = mpi.codComuneNascita || '';
+    document.getElementById('mpiRecordCodIstatComuneNascita').value = mpi.codIstatComuneNascita || '';
+    document.getElementById('mpiRecordIndirizzoResidenza').value = mpi.indirizzoResidenza || '';
+    document.getElementById('mpiRecordCapResidenza').value = mpi.capResidenza || '';
+    document.getElementById('mpiRecordComuneResidenza').value = mpi.comuneResidenza || '';
+    document.getElementById('mpiRecordCodComuneResidenza').value = mpi.codComuneResidenza || '';
+    document.getElementById('mpiRecordCodIstatComuneResidenza').value = mpi.codIstatComuneResidenza || '';
+    document.getElementById('mpiRecordAsp').value = mpi.asp || '';
+    document.getElementById('mpiRecordSsnTipoAssistito').value = mpi.ssnTipoAssistito || '';
+    document.getElementById('mpiRecordSsnNumeroTessera').value = mpi.ssnNumeroTessera || '';
+    document.getElementById('mpiRecordSsnMotivazione').value = mpi.ssnMotivazioneFineAssistenza || '';
+    document.getElementById('mpiRecordNote').value = mpi.note || '';
+
+    // Date fields
+    if (mpi.dataNascita) document.getElementById('mpiRecordDataNascita').value = _toDateInput(mpi.dataNascita);
+    if (mpi.ssnInizioAssistenza) document.getElementById('mpiRecordSsnInizio').value = _toDateInput(mpi.ssnInizioAssistenza);
+    if (mpi.ssnFineAssistenza) document.getElementById('mpiRecordSsnFine').value = _toDateInput(mpi.ssnFineAssistenza);
+    if (mpi.dataDecesso) document.getElementById('mpiRecordDataDecesso').value = _toDateInput(mpi.dataDecesso);
+
+    var modal = new bootstrap.Modal(document.getElementById('mpiRecordModal'));
+    modal.show();
+  } catch (e) {
+    console.error('Error loading MPI record for edit:', e);
+    adminPanel.showToast('Errore', 'Impossibile caricare il record', 'danger');
+  }
+}
+
+function _toDateInput(val) {
+  // val can be "DD/MM/YYYY" string (from customToJSON) or timestamp
+  if (!val) return '';
+  if (typeof val === 'string' && val.indexOf('/') !== -1) {
+    var parts = val.split('/');
+    if (parts.length === 3) return parts[2] + '-' + parts[1] + '-' + parts[0];
+  }
+  if (typeof val === 'number') {
+    var d = new Date(val);
+    return d.toISOString().split('T')[0];
+  }
+  return val;
+}
+
+async function _loadMpiRecordAppSelect() {
+  var select = document.getElementById('mpiRecordApp');
+  select.innerHTML = '<option value="">Seleziona applicazione...</option>';
+  try {
+    var data = await adminPanel.apiCall('/api/v1/admin/mpi/applicazioni');
+    (data || []).forEach(function(app) {
+      if (app.attivo) {
+        var opt = document.createElement('option');
+        opt.value = app.id;
+        opt.textContent = app.codice + ' - ' + app.nome;
+        select.appendChild(opt);
+      }
+    });
+  } catch (e) {
+    console.error('Error loading MPI apps for select:', e);
+  }
+}
+
+async function saveMpiRecord() {
+  var id = document.getElementById('mpiRecordId').value;
+  var appId = document.getElementById('mpiRecordApp').value;
+
+  if (!appId && !id) {
+    adminPanel.showToast('Attenzione', 'Selezionare un\'applicazione', 'warning');
+    return;
+  }
+
+  var data = {
+    idEsterno: document.getElementById('mpiRecordIdEsterno').value || '',
+    cf: document.getElementById('mpiRecordCf').value.toUpperCase() || '',
+    cognome: document.getElementById('mpiRecordCognome').value || '',
+    nome: document.getElementById('mpiRecordNome').value || '',
+    sesso: document.getElementById('mpiRecordSesso').value || '',
+    dataNascita: document.getElementById('mpiRecordDataNascita').value || '',
+    comuneNascita: document.getElementById('mpiRecordComuneNascita').value || '',
+    codComuneNascita: document.getElementById('mpiRecordCodComuneNascita').value || '',
+    codIstatComuneNascita: document.getElementById('mpiRecordCodIstatComuneNascita').value || '',
+    provinciaNascita: document.getElementById('mpiRecordProvinciaNascita').value || '',
+    indirizzoResidenza: document.getElementById('mpiRecordIndirizzoResidenza').value || '',
+    capResidenza: document.getElementById('mpiRecordCapResidenza').value || '',
+    comuneResidenza: document.getElementById('mpiRecordComuneResidenza').value || '',
+    codComuneResidenza: document.getElementById('mpiRecordCodComuneResidenza').value || '',
+    codIstatComuneResidenza: document.getElementById('mpiRecordCodIstatComuneResidenza').value || '',
+    asp: document.getElementById('mpiRecordAsp').value || '',
+    ssnTipoAssistito: document.getElementById('mpiRecordSsnTipoAssistito').value || '',
+    ssnNumeroTessera: document.getElementById('mpiRecordSsnNumeroTessera').value || '',
+    ssnMotivazioneFineAssistenza: document.getElementById('mpiRecordSsnMotivazione').value || '',
+    ssnInizioAssistenza: document.getElementById('mpiRecordSsnInizio').value || '',
+    ssnFineAssistenza: document.getElementById('mpiRecordSsnFine').value || '',
+    dataDecesso: document.getElementById('mpiRecordDataDecesso').value || '',
+    note: document.getElementById('mpiRecordNote').value || ''
+  };
+
+  try {
+    var mpiId = document.getElementById('mpiRecordMpiId').value;
+    if (mpiId) {
+      await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId, 'PUT', data);
+      adminPanel.showToast('Successo', 'Record MPI aggiornato', 'success');
+    } else {
+      data.applicazione = parseInt(appId);
+      var result = await adminPanel.apiCall('/api/v1/admin/mpi/records', 'POST', data);
+      var msg = 'Record MPI creato: ' + result.mpiId;
+      if (result.assistito) {
+        msg += ' - Collegato automaticamente a ' + result.assistito.cognome + ' ' + result.assistito.nome;
+      }
+      adminPanel.showToast('Successo', msg, 'success');
+    }
+    bootstrap.Modal.getInstance(document.getElementById('mpiRecordModal')).hide();
+    searchMpiRecords();
+  } catch (e) {
+    console.error('Error saving MPI record:', e);
+  }
 }

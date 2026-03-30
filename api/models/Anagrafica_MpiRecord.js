@@ -1,11 +1,23 @@
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const crypto = require('crypto');
 
+function _generateShortCode() {
+  // Genera codice 8 caratteri alfanumerici uppercase (senza caratteri ambigui 0/O, 1/I/L)
+  var chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  var bytes = crypto.randomBytes(8);
+  var code = '';
+  for (var i = 0; i < 8; i++) {
+    code += chars[bytes[i] % chars.length];
+  }
+  return code;
+}
+
 module.exports = {
   datastore: 'anagrafica',
   tableName: 'mpi_record',
   attributes: {
     mpiId:        {type: 'string', required: true, unique: true, maxLength: 36},
+    codice:       {type: 'string', unique: true, maxLength: 10},
     applicazione: {model: 'Anagrafica_MpiApplicazioni', required: true},
     idEsterno:    {type: 'string', allowNull: true, maxLength: 255},
     stato:        {type: 'string', isIn: ['aperto', 'identificato', 'annullato'], defaultsTo: 'aperto'},
@@ -43,6 +55,20 @@ module.exports = {
   beforeCreate: async function (record, proceed) {
     if (!record.mpiId) {
       record.mpiId = crypto.randomUUID();
+    }
+    if (!record.codice) {
+      var maxAttempts = 10;
+      for (var i = 0; i < maxAttempts; i++) {
+        var codice = _generateShortCode();
+        var existing = await Anagrafica_MpiRecord.findOne({codice: codice});
+        if (!existing) {
+          record.codice = codice;
+          break;
+        }
+      }
+      if (!record.codice) {
+        return proceed(new Error('Impossibile generare un codice univoco dopo ' + maxAttempts + ' tentativi'));
+      }
     }
     return proceed();
   },

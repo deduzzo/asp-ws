@@ -13,12 +13,14 @@ module.exports = {
   description: 'Ricerca cross-app nei record MPI. Richiede scope mpi-search.',
 
   inputs: {
+    id: {type: 'number'},
     cf: {type: 'string'},
     nome: {type: 'string'},
     cognome: {type: 'string'},
     dataNascita: {type: 'number'},
     idEsterno: {type: 'string'},
     mpiId: {type: 'string'},
+    codice: {type: 'string'},
     stato: {type: 'string', isIn: ['aperto', 'identificato', 'annullato']},
     applicazione: {type: 'string', description: 'Codice applicazione (filtra per app)'},
     limit: {type: 'number', defaultsTo: 100, max: 500},
@@ -36,8 +38,14 @@ module.exports = {
       // Costruisci criteria
       const criteria = {};
 
+      if (inputs.id) {
+        criteria.id = inputs.id;
+      }
       if (inputs.mpiId) {
         criteria.mpiId = inputs.mpiId;
+      }
+      if (inputs.codice) {
+        criteria.codice = inputs.codice.toUpperCase();
       }
       if (inputs.cf) {
         criteria.cf = {contains: inputs.cf.toUpperCase()};
@@ -80,6 +88,8 @@ module.exports = {
 
       // Mappa risultati (senza dati sensibili interni)
       const results = records.map(r => ({
+        id: r.id,
+        codice: r.codice,
         mpiId: r.mpiId,
         applicazione: r.applicazione.codice,
         idEsterno: r.idEsterno,

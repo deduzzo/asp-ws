@@ -6,7 +6,7 @@ module.exports = {
   attributes: {
     mpiRecord:  {model: 'Anagrafica_MpiRecord', required: true},
     operazione: {type: 'string', required: true, isIn: ['CREATE', 'UPDATE', 'LINK', 'UNLINK', 'ANNULLA']},
-    dettaglio:  {type: 'json', allowNull: true},
+    dettaglio:  {type: 'json'},
     utente:     {type: 'string', required: true, maxLength: 100},
     ipAddress:  {type: 'string', allowNull: true, maxLength: 45},
   },
