@@ -1085,22 +1085,17 @@ class AdminPanel {
               <div class="alert alert-warning mb-3">
                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                 <strong>Attenzione:</strong> La password non potr&agrave; pi&ugrave; essere visualizzata dopo la chiusura di questa finestra.
-                Assicurati di copiarla e conservarla in modo sicuro.
+                Copia il testo sottostante e conservalo in modo sicuro.
               </div>
               <div class="mb-3">
-                <label class="form-label fw-bold">Username</label>
-                <div class="form-control bg-light">${username}</div>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">Password generata</label>
                 <div class="input-group">
-                  <input type="text" class="form-control font-monospace bg-light" id="reportPassword" value="${password}" readonly>
-                  <button class="btn btn-outline-primary" type="button" id="copyPasswordBtn" title="Copia password">
+                  <textarea class="form-control font-monospace" id="reportSummary" rows="3" readonly>Username: ${username}\nPassword: ${password}</textarea>
+                  <button class="btn btn-outline-primary" type="button" id="copyPasswordBtn" title="Copia negli appunti">
                     <i class="bi bi-clipboard"></i> Copia
                   </button>
                 </div>
                 <div id="copyFeedback" class="form-text text-success d-none">
-                  <i class="bi bi-check2"></i> Password copiata negli appunti!
+                  <i class="bi bi-check2"></i> Copiato negli appunti!
                 </div>
               </div>
             </div>
@@ -1121,8 +1116,8 @@ class AdminPanel {
 
     // Copy button handler
     document.getElementById('copyPasswordBtn').addEventListener('click', () => {
-      const pwField = document.getElementById('reportPassword');
-      navigator.clipboard.writeText(pwField.value).then(() => {
+      var summaryField = document.getElementById('reportSummary');
+      navigator.clipboard.writeText(summaryField.value).then(() => {
         const feedback = document.getElementById('copyFeedback');
         feedback.classList.remove('d-none');
         document.getElementById('copyPasswordBtn').innerHTML = '<i class="bi bi-clipboard-check"></i> Copiato!';
