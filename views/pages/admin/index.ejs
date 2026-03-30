@@ -935,7 +935,6 @@
                     document.getElementById('attivo').checked = user.attivo;
                     document.getElementById('allow_domain_login').checked = user.allow_domain_login;
                     document.getElementById('otp_enabled').checked = user.otp_enabled || false;
-                    document.getElementById('otp_type').value = user.otp_type || '';
                     document.getElementById('otp_required').checked = user.otp_required || false;
 
                     user.scopi.forEach(scope => {
@@ -948,6 +947,8 @@
                     if (user.otp_enabled) {
                         document.getElementById('otp-settings').style.display = 'block';
                     }
+                    // Set otp_type after toggle setup and visibility, so the value is preserved
+                    document.getElementById('otp_type').value = user.otp_type || '';
 
                     const modal = new bootstrap.Modal(document.getElementById('userModal'));
                     modal.show();
