@@ -725,8 +725,10 @@ class AdminPanel {
 
     const rows = Array.from(tbody.querySelectorAll('tr'));
     rows.sort((a, b) => {
-      const aText = (a.cells[colIdx]?.textContent || '').trim().toLowerCase();
-      const bText = (b.cells[colIdx]?.textContent || '').trim().toLowerCase();
+      const aCell = a.cells[colIdx];
+      const bCell = b.cells[colIdx];
+      const aText = (aCell ? aCell.textContent : '').trim().toLowerCase();
+      const bText = (bCell ? bCell.textContent : '').trim().toLowerCase();
       const aNum = parseFloat(aText);
       const bNum = parseFloat(bText);
 
@@ -1060,7 +1062,7 @@ class AdminPanel {
     const chars = password.split('');
     for (let i = chars.length - 1; i > 0; i--) {
       const j = shuffleArray[i] % (i + 1);
-      [chars[i], chars[j]] = [chars[j], chars[i]];
+      var tmp = chars[i]; chars[i] = chars[j]; chars[j] = tmp;
     }
     return chars.join('');
   }
