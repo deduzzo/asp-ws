@@ -1,392 +1,250 @@
 # ASP di Messina - Web Services
 
-Applicazione Sails.js per la gestione dei servizi web dell'ASP di Messina (Azienda Sanitaria Provinciale). Il sistema fornisce API REST per la gestione dell'anagrafica assistiti, autenticazione, cambio medico e funzionalità amministrative.
+Piattaforma di web services per l'**Azienda Sanitaria Provinciale di Messina**. Il sistema fornisce API REST per la gestione dell'anagrafica assistiti, Master Patient Index, dati clinici HL7, assistenza domiciliare SIAD, form dinamici, app containerizzate e funzionalita amministrative.
 
 ## Requisiti
 
 - **Node.js**: ^22.13
-- **MySQL**: Database per gestione dati
-- **Meilisearch**: Motore di ricerca full-text (opzionale)
+- **MySQL**: 3 istanze separate (anagrafica, auth, log)
+- **Meilisearch**: Motore di ricerca full-text
+- **Docker**: Per gestione app containerizzate (opzionale)
 
-## Tecnologie Principali
+## Tecnologie
 
 - **Sails.js 1.5.14**: Framework MVC
-- **JWT**: Autenticazione basata su token
-- **Argon2**: Hashing delle password
+- **JWT + Argon2 + OTP**: Autenticazione e sicurezza
 - **aziendasanitaria-utils**: Libreria utilities interna
-- **Swagger**: Documentazione API
+- **Swagger/OpenAPI**: Documentazione API
+- **Docsify**: Knowledge Base
 - **@turf/turf**: Operazioni geospaziali
+- **Dockerode**: Gestione container Docker
+- **Alpine.js + Tailwind CSS**: Frontend form dinamici
 
 ## Installazione
 
 ```bash
-# Clona il repository
 git clone <repository-url>
 cd asp-ws
-
-# Installa le dipendenze
 npm install
 
-# Configura i file di configurazione privati
-# Copia e modifica i file di esempio in config/custom/
+# Configura i file privati
 cp config/custom/private_example.json config/custom/private.json
+# Modifica config/custom/private_jwt.json, private_ui_users.json, ecc.
 
-# Avvia l'applicazione in modalità sviluppo
+# Avvia in sviluppo
 sails lift
 ```
 
-## Configurazione
-
-### Database Multi-Database
-
-L'applicazione utilizza tre database MySQL separati:
-
-- **auth**: Autenticazione e autorizzazione (utenti, ruoli, scopi, ambiti)
-- **anagrafica**: Dati anagrafici assistiti
-- **log**: Logging applicativo
-
-Configurare le connessioni in `config/datastores.js`.
-
-### File di Configurazione Privati
-
-I file sensibili sono esclusi dal repository e devono essere creati in `config/custom/`:
-
-- `private.json`: Configurazioni private generali
-- `private_jwt.json`: Secret JWT
-- Altri file privati specifici
-
-## Comandi Utili
-
-### Sviluppo
-
-```bash
-# Avvia in modalità sviluppo
-sails lift
-
-# Avvia in modalità produzione
-npm start
-# oppure
-NODE_ENV=production node app.js
-
-# Linter
-npm run lint
-
-# Test
-npm test
-
-# Console REPL (accesso ai modelli)
-sails console
-```
-
-### Generatori Sails
-
-```bash
-# Genera un nuovo controller
-sails generate controller <nome>
-
-# Genera un nuovo model
-sails generate model <nome>
-
-# Genera una nuova action
-sails generate action <nome>
-
-# Genera un nuovo helper
-sails generate helper <nome>
-```
-
-## Architettura
-
-### Sistema di Autenticazione e Autorizzazione
-
-Sistema sofisticato basato su JWT con:
-
-#### 1. Livelli di Login
-
-- `guest` (0): Accesso limitato
-- `user` (1): Utente standard
-- `admin` (2): Amministratore
-- `superAdmin` (99): Super amministratore
-
-#### 2. Scopi (Scopes)
-
-Permessi granulari per diverse aree API:
-- `asp5-anagrafica`: Accesso all'anagrafica
-- `cambio-medico`: Gestione cambio medico
-- `admin-manage`: Funzioni amministrative
-- Altri scopi personalizzati
-
-#### 3. Ambiti (Domains)
-
-Segregazione utenti per dominio:
-- `api`: API generiche
-- `asp.messina.it`: Dominio aziendale
-- `globale`: Accesso globale
-
-#### 4. Policy di Protezione
-
-La policy `is-token-verified` valida:
-- Validità e scadenza token JWT
-- Livello di autenticazione richiesto
-- Scopi necessari
-- Appartenenza al dominio
-- Stato attivo dell'account
-
-Le rotte sono protette in `config/routes.js` specificando `scopi`, `ambito` e `minAuthLevel`.
-
-### Formato Risposta API
-
-Tutte le risposte API utilizzano il formato standardizzato tramite `ApiResponse`:
-
-```javascript
-// Successo
-return res.ApiResponse({
-  data: { /* dati */ }
-});
-
-// Errore
-return res.ApiResponse({
-  errType: ERROR_TYPES.NOT_FOUND,
-  errMsg: 'Risorsa non trovata'
-});
-```
-
-Struttura della risposta:
-```json
-{
-  "ok": true|false,
-  "err": { "code": "CODICE_ERRORE", "msg": "Messaggio errore" } | null,
-  "data": { /* dati */ } | null
-}
-```
-
-### Sistema di Logging
-
-Logging automatico di tutte le richieste e risposte API tramite l'helper `log`:
-
-```javascript
-await sails.helpers.log.with({
-  level: 'info',
-  tag: LOG_TAGS.ANAGRAFICA,
-  action: 'get-assistito',
-  ip: req.ip,
-  user: req.user,
-  params: req.allParams()
-});
-```
-
-I log includono:
-- Livello (info, warn, error)
-- Tag per categorizzazione
-- Azione eseguita
-- Indirizzo IP
-- Utente autenticato
-- Parametri della richiesta
-
-### Organizzazione Controller
-
-```
-api/controllers/
-├── anagrafica/          # Operazioni anagrafica assistiti
-├── login/               # Endpoint autenticazione
-├── admin/               # Funzioni amministrative
-├── cambio-medico/       # Gestione cambio medico
-└── stats/               # Endpoint statistiche
-```
-
-### Servizi Principali
-
-```
-api/services/
-├── JwtService.js            # Generazione e verifica JWT
-├── AssistitoService.js      # Operazioni dati assistiti
-├── MeilisearchService.js    # Integrazione ricerca
-├── MediciService.js         # Gestione dati medici
-├── MailService.js           # Invio email
-└── JobManager.js            # Gestione job in background
-```
-
-### Helper
-
-```
-api/helpers/
-├── log.js                   # Helper logging
-├── domain-login.js          # Autenticazione LDAP/AD
-└── altri helper...
-```
-
-## Documentazione API
-
-La documentazione Swagger è disponibile all'endpoint `/docs` (protetto da basic auth).
-
-Le statistiche dinamiche (totale assistiti, ultimo aggiornamento, percentuale geolocalizzazione) sono iniettate nello spec Swagger a runtime tramite l'endpoint `/api/v1/stats/info`.
-
-## Login con Dominio
-
-L'applicazione supporta l'autenticazione Active Directory/LDAP tramite l'helper `domain-login` per il dominio asp.messina.it. Il suffisso del dominio viene automaticamente rimosso dagli username durante il login.
-
-## Best Practices
-
-### 1. Utilizzo Modelli
-
-I modelli sono automaticamente globalizzati da Sails e accessibili ovunque:
-
-```javascript
-// Accesso diretto ai modelli
-const assistiti = await Anagrafica_Assistiti.find();
-const utenti = await Auth_Utenti.find();
-```
-
-### 2. Risposta API Standardizzata
-
-Utilizzare sempre `res.ApiResponse()` invece di `res.json()`:
-
-```javascript
-// CORRETTO
-return res.ApiResponse({ data: results });
-
-// EVITARE
-return res.json(results);
-```
-
-### 3. Helper
-
-Invocare gli helper tramite `sails.helpers.<nomeHelper>()`:
-
-```javascript
-await sails.helpers.log.with({
-  level: 'info',
-  tag: LOG_TAGS.AUTH,
-  action: 'login-success'
-});
-```
-
-### 4. Protezione Rotte
-
-Configurare la protezione in `config/routes.js`:
-
-```javascript
-'POST /api/v1/assistiti': {
-  controller: 'anagrafica/search',
-  action: 'search',
-  scopi: ['asp5-anagrafica'],
-  ambito: ['api', 'asp.messina.it'],
-  minAuthLevel: 1
-}
-```
-
-### 5. Gestione Errori
-
-Utilizzare i tipi di errore definiti e il sistema di logging:
-
-```javascript
-try {
-  // operazione
-} catch (err) {
-  await sails.helpers.log.with({
-    level: 'error',
-    tag: LOG_TAGS.ERROR,
-    action: 'operazione-fallita',
-    context: { error: err.message }
-  });
-
-  return res.ApiResponse({
-    errType: ERROR_TYPES.SERVER_ERROR,
-    errMsg: 'Errore durante l\'operazione'
-  });
-}
-```
-
-## Struttura del Progetto
+## Moduli del Sistema
+
+### Anagrafica Assistiti
+Registro centrale pazienti (~500k record) con ricerca avanzata, integrazione SistemaTS (MEF) per codici STP/ENI, geolocalizzazione automatica indirizzi.
+
+### Master Patient Index (MPI)
+Sistema per collegare record da applicazioni esterne (PS, CUP, sistemi dipartimentali) ai pazienti del registro centrale. Supporta:
+- Registrazione applicazioni esterne
+- Creazione record con dati parziali
+- Collegamento (link) a un assistito tramite codice fiscale
+- Ricerca cross-applicazione
+- Rilevamento collisioni (duplicati potenziali)
+- Audit trail completo
+
+### Extra Data System
+Sistema flessibile di dati aggiuntivi strutturati per categoria:
+- Schema di validazione JSON per campo
+- Versionamento e audit trail di ogni modifica
+- Controllo accessi granulare per categoria (scope read/write)
+- Supporto wildcard scope (`anagrafica-hl7_*-read`)
+- Disponibile sia per assistiti che per record MPI
+
+### Dati Clinici HL7
+Categorie extra data ispirate allo standard HL7 v2.5:
+
+| Categoria | Descrizione |
+|-----------|-------------|
+| `HL7_CONTATTI_EMERGENZA` | Contatti di emergenza |
+| `HL7_ALLERGIE` | Allergie e intolleranze |
+| `HL7_PATOLOGIE_CRONICHE` | Patologie croniche (ICD9/ICD10) |
+| `HL7_ESENZIONI` | Esenzioni SSN |
+| `HL7_TERAPIE_CRONICHE` | Terapie farmacologiche |
+| `HL7_PARAMETRI_VITALI` | Pressione, FC, peso, SpO2, glicemia, temperatura |
+| `HL7_CONSENSI` | Consensi informati |
+| `HL7_ANAGRAFICA_EXTRA` | Stato civile, titolo studio, professione, condizione lavorativa |
+
+### SIAD - Assistenza Domiciliare
+Categorie extra data ispirate al flusso SIAD v7.4 del Ministero della Salute:
+
+| Categoria | Descrizione |
+|-----------|-------------|
+| `SIAD_PRESA_IN_CARICO` | Data, soggetto richiedente, tipologia PIC, patologie ICD9, nucleo familiare |
+| `SIAD_VALUTAZIONE_SANITARIA` | 37 campi clinici: autonomia, mobilita, bisogni assistenziali (si/no), cure palliative, riabilitazione |
+| `SIAD_VALUTAZIONE_SOCIALE` | Supporto sociale, fragilita familiare, disturbi cognitivi/comportamentali |
+
+### Forms Dinamici
+Form serverless definiti tramite file JSON in `/api/data/forms/`:
+- Multi-pagina con progress bar
+- Validazioni (required, email, telefono, regex)
+- Tipi campo: text, textarea, radio, checkbox, select
+- reCAPTCHA v3 integrato
+- 2 temi UI (Modern, Healthcare)
+- Submission salvate nel database
+
+### Apps Docker
+Deploy e gestione applicazioni containerizzate:
+- Clone da GitHub o upload ZIP
+- Start/stop/restart container
+- Reverse proxy su `/apps/<app-id>/`
+- Log container in tempo reale
+- Aggiornamento da GitHub (git pull)
+
+### Autenticazione e Autorizzazione
+- **JWT** con livelli (guest, user, admin, superAdmin)
+- **Scope** granulari con supporto wildcard (`*`)
+- **Domini** (api, asp.messina.it, globale)
+- **OTP** via email o TOTP (Google Authenticator)
+- **Active Directory/LDAP** per dominio asp.messina.it
+- **Password hashing** con Argon2
+
+## API Endpoints
+
+### Login
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `POST` | `/api/v1/login/get-token` | Login e ottenimento JWT |
+| `POST` | `/api/v1/login/verify-token` | Verifica token |
+
+### Anagrafica
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `POST` | `/api/v1/anagrafica/ricerca` | Ricerca assistiti |
+| `GET` | `/api/v1/anagrafica/extra-data/:cf` | Leggi extra data |
+| `POST` | `/api/v1/anagrafica/extra-data/:cf` | Scrivi extra data |
+| `DELETE` | `/api/v1/anagrafica/extra-data/:cf` | Elimina extra data |
+| `GET` | `/api/v1/anagrafica/extra-data/:cf/storico` | Storico modifiche |
+| `GET` | `/api/v1/anagrafica/extra-data-categorie/summary` | Lista categorie |
+
+### MPI
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `POST` | `/api/v1/mpi/record` | Crea record |
+| `GET` | `/api/v1/mpi/record/:mpiId` | Dettaglio record |
+| `PUT` | `/api/v1/mpi/record/:mpiId` | Aggiorna (solo se aperto) |
+| `POST` | `/api/v1/mpi/record/:mpiId/link` | Collega a assistito |
+| `POST` | `/api/v1/mpi/record/:mpiId/annulla` | Annulla record |
+| `GET` | `/api/v1/mpi/record/:mpiId/storico` | Audit trail |
+| `POST` | `/api/v1/mpi/ricerca` | Ricerca cross-app |
+| `GET/POST/DELETE` | `/api/v1/mpi/record/:mpiId/extra-data` | Extra data MPI |
+
+### Forms
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `GET` | `/forms/:id` | Visualizza form |
+| `GET` | `/api/v1/forms/:id` | Definizione JSON |
+
+### Admin
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `GET/POST/PUT/DELETE` | `/api/v1/admin/utenti` | CRUD utenti |
+| `GET/POST/PUT/DELETE` | `/api/v1/admin/extra-data-categorie` | CRUD categorie |
+| `GET/POST/PUT/DELETE` | `/api/v1/admin/mpi/applicazioni` | CRUD app MPI |
+| `POST/GET` | `/api/v1/admin/mpi/records/*` | Gestione record MPI |
+| `GET/POST` | `/api/v1/admin/apps/*` | Gestione app Docker |
+
+## Interfacce Web
+
+| URL | Descrizione | Protezione |
+|-----|-------------|------------|
+| `/` | Homepage | Pubblica |
+| `/docs` | Swagger UI API | Basic Auth |
+| `/kb` | Knowledge Base (Docsify) | Basic Auth |
+| `/admin` | Pannello amministrazione | Basic Auth + JWT |
+| `/forms/:id` | Form dinamici | Pubblica |
+| `/apps/:id` | App containerizzate | Pubblica |
+
+## Database
+
+| Database | Tabelle principali |
+|----------|-------------------|
+| `anagrafica` | assistiti, extra_data_categorie, extra_data_valori, extra_data_storico, mpi_record, mpi_applicazioni, mpi_record_storico, mpi_extra_data_valori, mpi_extra_data_storico |
+| `auth` | utenti, scopi, ambiti, utenti_scopi, utenti_ambiti |
+| `log` | log, form_submissions |
+
+### Migrazioni
+Le migrazioni SQL in `migrations/` vengono eseguite automaticamente al `sails lift`. Ogni file deve avere l'header `-- database: anagrafica|auth|log`. Convenzione nomi: `YYYYMMDD_NNN_descrizione.sql`.
+
+## Struttura Progetto
 
 ```
 asp-ws/
 ├── api/
-│   ├── controllers/        # Controller organizzati per dominio
-│   ├── models/            # Modelli dati (waterline ORM)
-│   ├── helpers/           # Helper riutilizzabili
-│   ├── services/          # Servizi business logic
-│   ├── policies/          # Policy di autenticazione/autorizzazione
-│   └── responses/         # Response handler personalizzati
+│   ├── controllers/
+│   │   ├── anagrafica/        # Ricerca e extra data assistiti
+│   │   ├── anagrafica/extra-data/  # CRUD extra data
+│   │   ├── mpi/               # Master Patient Index
+│   │   ├── mpi/extra-data/    # Extra data su record MPI
+│   │   ├── login/             # Autenticazione
+│   │   ├── admin/             # Gestione utenti, categorie
+│   │   ├── admin/mpi/         # Admin MPI
+│   │   ├── admin/apps/        # Admin Docker apps
+│   │   ├── forms/             # Form dinamici
+│   │   ├── cambio-medico/     # Cambio medico
+│   │   └── stats/             # Statistiche
+│   ├── models/                # Modelli (Waterline ORM)
+│   ├── helpers/               # Helper riutilizzabili
+│   ├── services/              # Business logic
+│   ├── policies/              # Policy auth
+│   ├── responses/             # Response handler (ApiResponse)
+│   ├── hooks/                 # Hook (apps-proxy)
+│   └── data/forms/            # Definizioni form JSON
 ├── config/
-│   ├── routes.js          # Definizione rotte
-│   ├── policies.js        # Mapping policy
-│   ├── datastores.js      # Configurazione database
-│   ├── custom.js          # Configurazioni custom
-│   ├── bootstrap.js       # Logica inizializzazione
-│   └── custom/            # File configurazione privati
-├── assets/                # Asset statici
-├── views/                 # Template view
-├── tasks/                 # Task Grunt
-├── CLAUDE.md             # Guida per Claude Code
-└── package.json
+│   ├── routes.js              # Definizione rotte + auth
+│   ├── policies.js            # Mapping policy
+│   ├── datastores.js          # Connessioni database
+│   ├── bootstrap.js           # Init + migrazioni
+│   └── custom/                # File privati (git-ignored)
+├── migrations/                # Migrazioni SQL
+├── docs/                      # Knowledge Base (Docsify)
+├── views/                     # Template EJS
+├── assets/                    # Asset statici
+└── .apps/                     # App Docker (git-ignored)
+```
+
+## Comandi
+
+```bash
+sails lift              # Sviluppo
+npm start               # Produzione
+npm run lint            # Linter
+npm test                # Test
+sails console           # REPL con accesso ai modelli
 ```
 
 ## Deployment
 
-### Produzione
-
 ```bash
-# Imposta variabile d'ambiente
 export NODE_ENV=production
-
-# Avvia applicazione
 node app.js
-
-# Oppure con PM2
+# oppure
 pm2 start app.js --name asp-ws
 ```
 
-### Variabili d'Ambiente
+## Roadmap
 
-Configurare le seguenti variabili d'ambiente in produzione:
+| # | Feature | Effort | Valore |
+|---|---------|--------|--------|
+| 1 | Timeline Paziente | Basso | Alto |
+| 2 | MPI Merge/Unmerge | Medio | Alto |
+| 3 | Report e Statistiche | Medio | Alto |
+| 4 | Webhook/Notifiche | Medio | Alto |
+| 5 | Alerting Clinico | Alto | Alto |
+| 6 | Import/Export Massivo | Medio | Medio |
+| 7 | API Key + Rate Limiting | Medio | Medio-Alto |
+| 8 | Gestione Documenti/Allegati | Medio | Medio |
+| 9 | Cambio Medico Evoluto | Medio | Medio |
+| 10 | Portale Medico (MMG/PLS) | Alto | Molto alto |
 
-- `NODE_ENV=production`
-- Configurazioni database in `config/datastores.js`
-- Secret JWT in `config/custom/private_jwt.json`
-
-## Troubleshooting
-
-### Errori Comuni
-
-1. **Errore connessione database**: Verificare le credenziali in `config/datastores.js`
-2. **Token JWT non valido**: Verificare la configurazione in `config/custom/private_jwt.json`
-3. **Permessi insufficienti**: Controllare scopi e ambiti dell'utente nel database auth
-
-### Log
-
-I log sono salvati nel database `log` e possono essere consultati tramite query dirette o tramite l'interfaccia amministrativa.
-
-## Contribuire
-
-1. Creare un branch per la feature: `git checkout -b feature/nuova-funzionalita`
-2. Commit delle modifiche: `git commit -m 'Aggiunta nuova funzionalità'`
-3. Push del branch: `git push origin feature/nuova-funzionalita`
-4. Aprire una Pull Request
-
-## Licenza
-
-[Specificare la licenza]
-
-## Contatti
-
-ASP di Messina - [Informazioni di contatto]
-
-## Note
-
-- I file di configurazione privati contenenti secret non sono inclusi nel repository
-- Assicurarsi di configurare correttamente tutti i database prima dell'avvio
-- Per il dominio asp.messina.it è necessaria la configurazione LDAP/Active Directory
+Dettagli nella [Knowledge Base](/kb).
 
 ---
 
-## Version Info
-
-This app was originally generated on Sat Jan 25 2025 07:07:23 GMT+0100 using Sails v1.5.14.
-
-### Links
-
-+ [Sails framework documentation](https://sailsjs.com/get-started)
-+ [Version notes / upgrading](https://sailsjs.com/documentation/upgrading)
-+ [Deployment tips](https://sailsjs.com/documentation/concepts/deployment)
-+ [Community support options](https://sailsjs.com/support)
-+ [Professional / enterprise options](https://sailsjs.com/enterprise)
+**ASP5 Messina - SIA Area Progettazione e Sviluppo - Ing. Roberto De Domenico**
