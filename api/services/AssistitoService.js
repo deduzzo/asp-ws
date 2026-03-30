@@ -31,6 +31,96 @@ module.exports = {
       return null;
     }
   },
+  /**
+   * Riconosce un codice STP/ENI nel formato: STP1902050000001 o ENI1902050000001
+   * @param {string} codice
+   * @returns {{prefisso: string, codiceRegione: string, codiceAsl: string, suffisso: string}|null}
+   */
+  parseCodiceStp: function (codice) {
+    if (!codice) return null;
+    const match = codice.toUpperCase().match(/^(STP|ENI)(\d{3})(\d{3})(\d{7})$/);
+    if (!match) return null;
+    return {
+      prefisso: match[1],
+      codiceRegione: match[2],
+      codiceAsl: match[3],
+      suffisso: match[4]
+    };
+  },
+
+  /**
+   * Recupera i dati di un assistito STP/ENI dal Sistema TS e li mappa al formato assistiti.
+   * @param {string} codiceStp - Codice STP/ENI completo (es. STP1902050000001)
+   * @param {boolean} geoloc - Se true, tenta la geolocalizzazione
+   * @returns {object|null} Dati assistito pronti per create/update, o null se non trovato
+   */
+  getAssistitoFromStp: async function (codiceStp, geoloc = true) {
+    const parsed = this.parseCodiceStp(codiceStp);
+    if (!parsed) return null;
+
+    const {ImpostazioniServiziTerzi} = await import('aziendasanitaria-utils/src/config/ImpostazioniServiziTerzi.js');
+    const {Ts} = await import('aziendasanitaria-utils/src/narTsServices/Ts.js');
+    let impostazioniServizi = new ImpostazioniServiziTerzi(configData);
+    let ts = new Ts(impostazioniServizi);
+
+    const result = await ts.ricercaStpPerCodice({
+      prefisso: parsed.prefisso,
+      codiceAsl: parsed.codiceAsl,
+      suffissoCodiceStp: parsed.suffisso
+    });
+
+    if (result.error || !result.data) return null;
+
+    const stp = result.data;
+    const {utils} = require('aziendasanitaria-utils/src/Utils');
+
+    // Mappa i campi STP al formato assistiti
+    // nazionalita STP va in comuneNascita (es. "GAMBIA"), come per gli assistiti stranieri esistenti
+    const datiAssistito = {
+      cf: stp.codice_stp_eni,
+      cognome: stp.cognome || null,
+      nome: stp.nome || null,
+      sesso: stp.genere || null,
+      dataNascita: stp.data_nascita ? utils.convertToUnixSeconds(stp.data_nascita) : null,
+      comuneNascita: stp.nazionalita || null,
+      indirizzoResidenza: stp.indirizzo || null,
+      capResidenza: stp.cap || null,
+      comuneResidenza: stp.comune || null,
+      asp: stp.asl_ao || null,
+      ssnTipoAssistito: stp.tipo_assistito || parsed.prefisso,
+      ssnInizioAssistenza: stp.data_inizio_assistenza ? utils.convertToUnixSeconds(stp.data_inizio_assistenza) : null,
+      ssnFineAssistenza: stp.data_fine_assistenza ? utils.convertToUnixSeconds(stp.data_fine_assistenza) : null,
+      ssnMotivazioneFineAssistenza: stp.motivazione_fine_assistenza || null,
+    };
+
+    // Gestione medico (arriva come stringa unica, es. "ROSSI MARIO")
+    if (stp.medico && stp.medico.trim()) {
+      const parti = stp.medico.trim().split(/\s+/);
+      if (parti.length >= 2) {
+        datiAssistito.MMGCognome = parti[0];
+        datiAssistito.MMGNome = parti.slice(1).join(' ');
+      } else {
+        datiAssistito.MMGCognome = stp.medico.trim();
+      }
+    }
+
+    // Geolocalizzazione
+    if (geoloc && datiAssistito.indirizzoResidenza) {
+      try {
+        let geo = await this.getGeoAssistito(datiAssistito);
+        if (geo) {
+          datiAssistito.lat = geo.lat;
+          datiAssistito.long = geo.lon;
+          datiAssistito.geolocPrecise = geo.precise;
+        }
+      } catch (geoErr) {
+        sails.log.warn('Geolocalizzazione STP fallita:', geoErr.message);
+      }
+    }
+
+    return datiAssistito;
+  },
+
   getGeoAssistito: async function (datiAssistito, {bulk = false} = {}) {
     const indirizzo = datiAssistito.indirizzoResidenza;
     console.log('[GEO] getGeoAssistito chiamato', {indirizzo, bulk, capResidenza: datiAssistito.capResidenza, comuneResidenza: datiAssistito.comuneResidenza});

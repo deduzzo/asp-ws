@@ -24,14 +24,15 @@ module.exports = {
     'Ricerca assistito tramite parametri. Restituisce un array di assistiti ed altre informazioni.<br />' +
     'Se la ricerca produce più di 100 risultati, verranno restituiti solo i primi 100.<br />' +
     'E\' necessario inserire almeno 5 caratteri del codice fiscale oppure 2 parametri a scelta tra nome, cognome e data di nascita (questi ultimi devono contenere almeno 3 caratteri, 4 per la data di nascita per garantire la ricerca per anno)<br />' +
-    'Se il codice fiscale risulta valido e non vengono trovati risultati, viene effettuata una ricerca nel sistema TS e lo aggiunge al database locale',
+    'Se il codice fiscale risulta valido e non vengono trovati risultati, viene effettuata una ricerca nel sistema TS e lo aggiunge al database locale.<br />' +
+    'Supporta anche codici STP/ENI (es. STP1902050000001): se non trovato localmente o con forzaAggiornamentoTs, viene cercato nel Sistema TS e importato.',
 
   inputs: {
     codiceFiscale: {
       type: 'string',
       required: false,
       minLength: 3,
-      description: 'Il codice fiscale dell\'assistito (minimo 3 caratteri, se i caratteri sono da 3 a 5 devono essere presenti almeno altri 2 parametri di ricerca)'
+      description: 'Il codice fiscale o codice STP/ENI dell\'assistito (minimo 3 caratteri, se i caratteri sono da 3 a 5 devono essere presenti almeno altri 2 parametri di ricerca)'
     },
     nome: {
       type: 'string',
@@ -150,15 +151,18 @@ module.exports = {
         where: criteria
       });
 
-      if (inputs.codiceFiscale && utils.codiceFiscaleValido(inputs.codiceFiscale) && (!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs) {
-        // se il codice fiscale è completo, facciamo un ulteriore tentativo di verifica nel sistema ts
+      // Determina se il codice è un STP/ENI
+      const isStp = inputs.codiceFiscale && !!AssistitoService.parseCodiceStp(inputs.codiceFiscale);
+      const isCfValido = inputs.codiceFiscale && utils.codiceFiscaleValido(inputs.codiceFiscale);
+
+      // Ricerca su TS per codice fiscale normale
+      if (isCfValido && (!assistiti || assistiti.length === 0) || (isCfValido && inputs.forzaAggiornamentoTs)) {
         let timeout = false;
         let otherError = null;
         const assistito = await Promise.race([
           AssistitoService.getAssistitoFromCf(inputs.codiceFiscale, true, true, !!inputs.forzaAggiornamentoTs),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca su TS')), 20000))
         ]).catch(err => {
-          // Check if this is a timeout error or another type of error
           if (err.message === 'Timeout durante la ricerca su TS') {
             timeout = true;
           } else {
@@ -182,11 +186,49 @@ module.exports = {
         }
 
         if (assistito && assistiti.length === 0) {
-          // add assistito to db
           const created = await Anagrafica_Assistiti.create(assistito).fetch();
           assistiti = [created];
         } else if (assistito && assistiti.length === 1) {
-          // update assistito in db
+          assistito.lastCheck = utils.nowToUnixDate();
+          const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito);
+          assistiti = [updated];
+        }
+      }
+
+      // Ricerca su Sistema TS per codice STP/ENI
+      if (isStp && ((!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs)) {
+        let timeout = false;
+        let otherError = null;
+        const assistito = await Promise.race([
+          AssistitoService.getAssistitoFromStp(inputs.codiceFiscale, true),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout durante la ricerca STP su TS')), 20000))
+        ]).catch(err => {
+          if (err.message === 'Timeout durante la ricerca STP su TS') {
+            timeout = true;
+          } else {
+            otherError = err;
+          }
+          return null;
+        });
+
+        if (timeout) {
+          return res.ApiResponse({
+            errType: ERROR_TYPES.TIMEOUT,
+            errMsg: 'Nessun assistito STP presente nel database. Il tentativo di richiesta su TS ha prodotto Timeout'
+          });
+        }
+
+        if (otherError) {
+          return res.ApiResponse({
+            errType: ERROR_TYPES.ERRORE_DEL_SERVER,
+            errMsg: `Errore durante la ricerca STP su TS: ${otherError.message}`
+          });
+        }
+
+        if (assistito && assistiti.length === 0) {
+          const created = await Anagrafica_Assistiti.create(assistito).fetch();
+          assistiti = [created];
+        } else if (assistito && assistiti.length === 1) {
           assistito.lastCheck = utils.nowToUnixDate();
           const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito);
           assistiti = [updated];
