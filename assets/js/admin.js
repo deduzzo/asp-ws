@@ -662,7 +662,15 @@ class AdminPanel {
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="password" class="form-label">Password</label>
-                                            <input type="password" class="form-control" id="password" name="password">
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="password" name="password">
+                                                <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" title="Mostra/nascondi password">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-primary" type="button" id="generatePasswordBtn" title="Genera password forte">
+                                                    <i class="bi bi-key-fill"></i> Genera
+                                                </button>
+                                            </div>
                                             <div class="form-text">Lascia vuoto per non modificare</div>
                                         </div>
                                     </div>
@@ -817,6 +825,8 @@ class AdminPanel {
 
     // Setup OTP toggle handler
     this.setupOtpToggle();
+    // Setup password generation buttons
+    this.setupPasswordButtons();
 
     const modal = new bootstrap.Modal(document.getElementById('userModal'));
     modal.show();
@@ -851,6 +861,140 @@ class AdminPanel {
       otpSettings.style.display = 'block';
       otpTypeSelect.setAttribute('required', 'required');
     }
+  }
+
+  setupPasswordButtons() {
+    const generateBtn = document.getElementById('generatePasswordBtn');
+    const toggleBtn = document.getElementById('togglePasswordBtn');
+    const passwordInput = document.getElementById('password');
+
+    // Remove existing listeners via clone
+    const newGenerateBtn = generateBtn.cloneNode(true);
+    generateBtn.parentNode.replaceChild(newGenerateBtn, generateBtn);
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+    newGenerateBtn.addEventListener('click', () => {
+      const password = this.generateStrongPassword();
+      passwordInput.value = password;
+      passwordInput.type = 'text';
+      newToggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    });
+
+    newToggleBtn.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        newToggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        passwordInput.type = 'password';
+        newToggleBtn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    });
+  }
+
+  generateStrongPassword(length = 16) {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const symbols = '!@#$%&*?+-';
+    const all = upper + lower + digits + symbols;
+
+    const crypto = window.crypto || window.msCrypto;
+    const array = new Uint32Array(length);
+    crypto.getRandomValues(array);
+
+    // Ensure at least one of each type
+    let password = '';
+    password += upper[array[0] % upper.length];
+    password += lower[array[1] % lower.length];
+    password += digits[array[2] % digits.length];
+    password += symbols[array[3] % symbols.length];
+
+    for (let i = 4; i < length; i++) {
+      password += all[array[i] % all.length];
+    }
+
+    // Shuffle the password
+    const shuffleArray = new Uint32Array(password.length);
+    crypto.getRandomValues(shuffleArray);
+    const chars = password.split('');
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = shuffleArray[i] % (i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
+  }
+
+  showPasswordReport(username, password) {
+    // Remove existing report modal if present
+    const existing = document.getElementById('passwordReportModal');
+    if (existing) existing.remove();
+
+    const modalHTML = `
+      <div class="modal fade" id="passwordReportModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+              <h5 class="modal-title">
+                <i class="bi bi-check-circle-fill me-2"></i>Utente creato con successo
+              </h5>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Attenzione:</strong> La password non potr&agrave; pi&ugrave; essere visualizzata dopo la chiusura di questa finestra.
+                Assicurati di copiarla e conservarla in modo sicuro.
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Username</label>
+                <div class="form-control bg-light">${username}</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Password generata</label>
+                <div class="input-group">
+                  <input type="text" class="form-control font-monospace bg-light" id="reportPassword" value="${password}" readonly>
+                  <button class="btn btn-outline-primary" type="button" id="copyPasswordBtn" title="Copia password">
+                    <i class="bi bi-clipboard"></i> Copia
+                  </button>
+                </div>
+                <div id="copyFeedback" class="form-text text-success d-none">
+                  <i class="bi bi-check2"></i> Password copiata negli appunti!
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                <i class="bi bi-check-lg me-1"></i>Ho copiato la password, chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const reportModal = new bootstrap.Modal(document.getElementById('passwordReportModal'));
+    reportModal.show();
+
+    // Copy button handler
+    document.getElementById('copyPasswordBtn').addEventListener('click', () => {
+      const pwField = document.getElementById('reportPassword');
+      navigator.clipboard.writeText(pwField.value).then(() => {
+        const feedback = document.getElementById('copyFeedback');
+        feedback.classList.remove('d-none');
+        document.getElementById('copyPasswordBtn').innerHTML = '<i class="bi bi-clipboard-check"></i> Copiato!';
+        setTimeout(() => {
+          feedback.classList.add('d-none');
+          document.getElementById('copyPasswordBtn').innerHTML = '<i class="bi bi-clipboard"></i> Copia';
+        }, 3000);
+      });
+    });
+
+    // Cleanup on close
+    document.getElementById('passwordReportModal').addEventListener('hidden.bs.modal', () => {
+      document.getElementById('passwordReportModal').remove();
+    });
   }
 
   async loadFormData() {
@@ -922,6 +1066,7 @@ class AdminPanel {
 
     try {
       let result;
+      const generatedPassword = data.password || null;
       if (userId) {
         data.id = parseInt(userId);
         result = await this.apiCall(`/api/v1/admin/users/${userId}`, 'PUT', data);
@@ -934,6 +1079,11 @@ class AdminPanel {
       bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
       this.loadUsers();
       this.loadDashboardStats();
+
+      // Show password report for new users with a generated password
+      if (!userId && generatedPassword) {
+        this.showPasswordReport(data.username, generatedPassword);
+      }
     } catch (error) {
       console.error('Error saving user:', error);
     }
@@ -972,6 +1122,7 @@ class AdminPanel {
 
       // Setup OTP toggle handler and trigger display
       this.setupOtpToggle();
+      this.setupPasswordButtons();
       if (user.otp_enabled) {
         document.getElementById('otp-settings').style.display = 'block';
       }
