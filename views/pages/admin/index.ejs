@@ -109,6 +109,19 @@
             color: var(--dark-color);
         }
 
+        .table thead tr.filter-row th {
+            background: white;
+            padding: 4px 8px !important;
+        }
+
+        .table thead tr.filter-row input {
+            border-radius: 4px;
+        }
+
+        .table th .sort-icon {
+            transition: color 0.2s;
+        }
+
         .badge {
             padding: 6px 12px;
             border-radius: 20px;
@@ -343,7 +356,7 @@
                                     <div class="col-auto">
                                         <div class="input-group">
                                             <input type="text" class="form-control" id="user-search" placeholder="Cerca utenti...">
-                                            <button class="btn btn-outline-light" type="button" onclick="loadUsers()">
+                                            <button class="btn btn-outline-light" type="button" onclick="adminPanel.loadUsers()">
                                                 <i class="bi bi-search"></i>
                                             </button>
                                         </div>
@@ -1002,6 +1015,7 @@
             try {
                 const data = await adminPanel.apiCall('/api/v1/admin/extra-data-categorie');
                 (data.categorie || []).forEach(cat => tbody.appendChild(createExtraDataCategoriaRow(cat)));
+                adminPanel.initTableSortFilter('extra-data-table', 1);
             } catch (error) {
                 console.error('Error loading extra data categorie:', error);
             } finally {

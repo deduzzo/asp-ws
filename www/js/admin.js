@@ -216,7 +216,10 @@ class AdminPanel {
     document.querySelectorAll('.nav-link[data-section]').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        this.switchSection(e.target.getAttribute('data-section'));
+        const navLink = e.target.closest('[data-section]');
+        if (navLink) {
+          this.switchSection(navLink.getAttribute('data-section'));
+        }
       });
     });
 
@@ -302,16 +305,19 @@ class AdminPanel {
       console.log(`API Response:`, result);
 
       if (!result.ok) {
+        // Handle Sails native validation errors (400) which have a different format
+        if (!result.err) {
+          const message = result.problems
+            ? result.problems.join('; ')
+            : (result.message || 'Errore di validazione');
+          throw new Error(message);
+        }
+
         // Check if token is expired or invalid
         if (result.err.code === 'TOKEN_SCADUTO' || result.err.code === 'TOKEN_NON_VALIDO') {
           console.error('Token error detected:', result.err);
-
-          // Don't automatically logout - it might be a configuration issue
-          // Just show an error and let the user manually logout if needed
           console.warn('API call failed due to token error. This might be a configuration issue.');
           console.warn('Token will remain in localStorage. User can logout manually if needed.');
-
-          // Throw error so calling function knows it failed
           throw new Error('Token error: ' + result.err.msg);
         }
         throw new Error(result.err.msg || 'Errore sconosciuto');
@@ -346,7 +352,7 @@ class AdminPanel {
     }
   }
 
-  async loadUsers(page = 1) {
+  async loadUsers() {
     const loading = document.getElementById('users-loading');
     const tbody = document.getElementById('users-tbody');
     const search = document.getElementById('user-search').value;
@@ -356,8 +362,7 @@ class AdminPanel {
 
     try {
       const params = new URLSearchParams({
-        page: page,
-        limit: this.pageSize
+        limit: 10000
       });
 
       if (search) {
@@ -371,7 +376,13 @@ class AdminPanel {
         tbody.appendChild(row);
       });
 
-      this.createPagination('users', data.pagination);
+      // Show total count
+      const paginationContainer = document.getElementById('users-pagination');
+      if (paginationContainer) {
+        paginationContainer.innerHTML = `<div class="text-center mt-2"><small class="text-muted">Totale: ${data.users.length} utenti</small></div>`;
+      }
+
+      this.initTableSortFilter('users-table', 1);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -386,12 +397,17 @@ class AdminPanel {
       ? '<span class="badge bg-success">Attivo</span>'
       : '<span class="badge bg-danger">Disattivo</span>';
 
+    const otpBadge = user.otp_enabled
+      ? '<span class="badge bg-warning text-dark ms-1" title="OTP Abilitato"><i class="bi bi-shield-lock"></i></span>'
+      : '';
+
     const scopesList = user.scopi.map(scope =>
       `<span class="badge bg-primary me-1">${scope.scopo}</span>`
     ).join('');
 
     row.innerHTML = `
-            <td><strong>${user.username}</strong></td>
+            <td>${user.id}</td>
+            <td><strong>${user.username}</strong>${otpBadge}</td>
             <td>${user.mail}</td>
             <td>${user.ambito.ambito || '-'}</td>
             <td>${user.livello.livello || '-'}</td>
@@ -426,6 +442,8 @@ class AdminPanel {
         const row = this.createScopeRow(scope);
         tbody.appendChild(row);
       });
+
+      this.initTableSortFilter('scopes-table', 1);
     } catch (error) {
       console.error('Error loading scopes:', error);
     } finally {
@@ -476,6 +494,8 @@ class AdminPanel {
         const row = this.createDomainRow(domain);
         tbody.appendChild(row);
       });
+
+      this.initTableSortFilter('domains-table', 1);
     } catch (error) {
       console.error('Error loading domains:', error);
     } finally {
@@ -526,6 +546,8 @@ class AdminPanel {
         const row = this.createLevelRow(level);
         tbody.appendChild(row);
       });
+
+      this.initTableSortFilter('levels-table', 0);
     } catch (error) {
       console.error('Error loading levels:', error);
     } finally {
@@ -619,6 +641,135 @@ class AdminPanel {
     });
   }
 
+  initTableSortFilter(tableId, excludeLastCols = 1) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const thead = table.querySelector('thead');
+    const headers = thead.querySelectorAll('tr:first-child th');
+    const totalCols = headers.length;
+    const sortableCols = totalCols - excludeLastCols;
+
+    // Track sort state
+    if (!this._tableSortState) this._tableSortState = {};
+    this._tableSortState[tableId] = { col: null, asc: true };
+
+    // Style headers as sortable
+    headers.forEach((th, idx) => {
+      if (idx < sortableCols) {
+        th.style.cursor = 'pointer';
+        th.style.userSelect = 'none';
+        th.style.whiteSpace = 'nowrap';
+        // Remove old sort indicator if present
+        const oldIcon = th.querySelector('.sort-icon');
+        if (oldIcon) oldIcon.remove();
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-arrow-down-up ms-1 sort-icon text-muted';
+        icon.style.fontSize = '0.75em';
+        th.appendChild(icon);
+
+        th.onclick = () => this._sortTable(tableId, idx, sortableCols);
+      }
+    });
+
+    // Remove existing filter row if present
+    const existingFilter = thead.querySelector('tr.filter-row');
+    if (existingFilter) existingFilter.remove();
+
+    // Add filter row
+    const filterRow = document.createElement('tr');
+    filterRow.className = 'filter-row';
+    for (let i = 0; i < totalCols; i++) {
+      const td = document.createElement('th');
+      td.style.padding = '4px';
+      if (i < sortableCols) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control form-control-sm';
+        input.placeholder = 'Filtra...';
+        input.style.fontSize = '0.8em';
+        input.dataset.colIndex = i;
+        input.addEventListener('input', () => this._filterTable(tableId, sortableCols));
+        td.appendChild(input);
+      }
+      filterRow.appendChild(td);
+    }
+    thead.appendChild(filterRow);
+  }
+
+  _sortTable(tableId, colIdx, sortableCols) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector('tbody');
+    const state = this._tableSortState[tableId];
+
+    // Toggle direction
+    if (state.col === colIdx) {
+      state.asc = !state.asc;
+    } else {
+      state.col = colIdx;
+      state.asc = true;
+    }
+
+    // Update sort icons
+    const headers = table.querySelectorAll('thead tr:first-child th');
+    headers.forEach((th, idx) => {
+      const icon = th.querySelector('.sort-icon');
+      if (icon) {
+        if (idx === colIdx) {
+          icon.className = `bi ${state.asc ? 'bi-sort-down' : 'bi-sort-up'} ms-1 sort-icon text-primary`;
+        } else {
+          icon.className = 'bi bi-arrow-down-up ms-1 sort-icon text-muted';
+        }
+      }
+    });
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+      const aText = (a.cells[colIdx]?.textContent || '').trim().toLowerCase();
+      const bText = (b.cells[colIdx]?.textContent || '').trim().toLowerCase();
+      const aNum = parseFloat(aText);
+      const bNum = parseFloat(bText);
+
+      let cmp;
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        cmp = aNum - bNum;
+      } else {
+        cmp = aText.localeCompare(bText, 'it');
+      }
+      return state.asc ? cmp : -cmp;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+  }
+
+  _filterTable(tableId, sortableCols) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector('tbody');
+    const filterInputs = table.querySelectorAll('tr.filter-row input');
+    const filters = [];
+    filterInputs.forEach(input => {
+      filters.push({
+        col: parseInt(input.dataset.colIndex),
+        value: input.value.toLowerCase().trim()
+      });
+    });
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+      let visible = true;
+      for (const f of filters) {
+        if (f.value && row.cells[f.col]) {
+          const cellText = row.cells[f.col].textContent.toLowerCase();
+          if (!cellText.includes(f.value)) {
+            visible = false;
+            break;
+          }
+        }
+      }
+      row.style.display = visible ? '' : 'none';
+    });
+  }
+
   createModals() {
     // Create modal HTML and append to body
     const modalsHTML = `
@@ -651,7 +802,15 @@ class AdminPanel {
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="password" class="form-label">Password</label>
-                                            <input type="password" class="form-control" id="password" name="password">
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="password" name="password">
+                                                <button class="btn btn-outline-secondary" type="button" id="togglePasswordBtn" title="Mostra/nascondi password">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-primary" type="button" id="generatePasswordBtn" title="Genera password forte">
+                                                    <i class="bi bi-key-fill"></i> Genera
+                                                </button>
+                                            </div>
                                             <div class="form-text">Lascia vuoto per non modificare</div>
                                         </div>
                                     </div>
@@ -686,16 +845,42 @@ class AdminPanel {
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="attivo" name="attivo" checked>
                                             <label class="form-check-label" for="attivo">Utente attivo</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" id="allow_domain_login" name="allow_domain_login">
                                             <label class="form-check-label" for="allow_domain_login">Login con dominio</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="otp_enabled" name="otp_enabled">
+                                            <label class="form-check-label" for="otp_enabled">
+                                                <i class="bi bi-shield-lock me-1"></i>OTP abilitato
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3" id="otp-settings" style="display: none;">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Autenticazione OTP:</strong> L'utente dovrà inserire un codice inviato via email ad ogni login
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="otp_type" class="form-label">Tipo OTP *</label>
+                                            <select class="form-select" id="otp_type" name="otp_type">
+                                                <option value="">Seleziona tipo...</option>
+                                                <option value="mail">Email</option>
+                                            </select>
+                                            <div class="form-text">Seleziona come inviare il codice OTP</div>
                                         </div>
                                     </div>
                                 </div>
@@ -778,8 +963,178 @@ class AdminPanel {
 
     await this.loadFormData();
 
+    // Setup OTP toggle handler
+    this.setupOtpToggle();
+    // Setup password generation buttons
+    this.setupPasswordButtons();
+
     const modal = new bootstrap.Modal(document.getElementById('userModal'));
     modal.show();
+  }
+
+  setupOtpToggle() {
+    const otpCheckbox = document.getElementById('otp_enabled');
+    const otpSettings = document.getElementById('otp-settings');
+    const otpTypeSelect = document.getElementById('otp_type');
+
+    // Remove any existing listeners
+    const newOtpCheckbox = otpCheckbox.cloneNode(true);
+    otpCheckbox.parentNode.replaceChild(newOtpCheckbox, otpCheckbox);
+
+    newOtpCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        otpSettings.style.display = 'block';
+        otpTypeSelect.setAttribute('required', 'required');
+        // Default to 'mail' if not set
+        if (!otpTypeSelect.value) {
+          otpTypeSelect.value = 'mail';
+        }
+      } else {
+        otpSettings.style.display = 'none';
+        otpTypeSelect.removeAttribute('required');
+        otpTypeSelect.value = '';
+      }
+    });
+
+    // Trigger initial state
+    if (newOtpCheckbox.checked) {
+      otpSettings.style.display = 'block';
+      otpTypeSelect.setAttribute('required', 'required');
+    }
+  }
+
+  setupPasswordButtons() {
+    const generateBtn = document.getElementById('generatePasswordBtn');
+    const toggleBtn = document.getElementById('togglePasswordBtn');
+    const passwordInput = document.getElementById('password');
+
+    // Remove existing listeners via clone
+    const newGenerateBtn = generateBtn.cloneNode(true);
+    generateBtn.parentNode.replaceChild(newGenerateBtn, generateBtn);
+    const newToggleBtn = toggleBtn.cloneNode(true);
+    toggleBtn.parentNode.replaceChild(newToggleBtn, toggleBtn);
+
+    newGenerateBtn.addEventListener('click', () => {
+      const password = this.generateStrongPassword();
+      passwordInput.value = password;
+      passwordInput.type = 'text';
+      newToggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    });
+
+    newToggleBtn.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        newToggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        passwordInput.type = 'password';
+        newToggleBtn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    });
+  }
+
+  generateStrongPassword(length = 16) {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const symbols = '!@#$%&*?+-';
+    const all = upper + lower + digits + symbols;
+
+    const crypto = window.crypto || window.msCrypto;
+    const array = new Uint32Array(length);
+    crypto.getRandomValues(array);
+
+    // Ensure at least one of each type
+    let password = '';
+    password += upper[array[0] % upper.length];
+    password += lower[array[1] % lower.length];
+    password += digits[array[2] % digits.length];
+    password += symbols[array[3] % symbols.length];
+
+    for (let i = 4; i < length; i++) {
+      password += all[array[i] % all.length];
+    }
+
+    // Shuffle the password
+    const shuffleArray = new Uint32Array(password.length);
+    crypto.getRandomValues(shuffleArray);
+    const chars = password.split('');
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = shuffleArray[i] % (i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
+  }
+
+  showPasswordReport(username, password) {
+    // Remove existing report modal if present
+    const existing = document.getElementById('passwordReportModal');
+    if (existing) existing.remove();
+
+    const modalHTML = `
+      <div class="modal fade" id="passwordReportModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+              <h5 class="modal-title">
+                <i class="bi bi-check-circle-fill me-2"></i>Utente creato con successo
+              </h5>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-warning mb-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Attenzione:</strong> La password non potr&agrave; pi&ugrave; essere visualizzata dopo la chiusura di questa finestra.
+                Assicurati di copiarla e conservarla in modo sicuro.
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Username</label>
+                <div class="form-control bg-light">${username}</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Password generata</label>
+                <div class="input-group">
+                  <input type="text" class="form-control font-monospace bg-light" id="reportPassword" value="${password}" readonly>
+                  <button class="btn btn-outline-primary" type="button" id="copyPasswordBtn" title="Copia password">
+                    <i class="bi bi-clipboard"></i> Copia
+                  </button>
+                </div>
+                <div id="copyFeedback" class="form-text text-success d-none">
+                  <i class="bi bi-check2"></i> Password copiata negli appunti!
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                <i class="bi bi-check-lg me-1"></i>Ho copiato la password, chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const reportModal = new bootstrap.Modal(document.getElementById('passwordReportModal'));
+    reportModal.show();
+
+    // Copy button handler
+    document.getElementById('copyPasswordBtn').addEventListener('click', () => {
+      const pwField = document.getElementById('reportPassword');
+      navigator.clipboard.writeText(pwField.value).then(() => {
+        const feedback = document.getElementById('copyFeedback');
+        feedback.classList.remove('d-none');
+        document.getElementById('copyPasswordBtn').innerHTML = '<i class="bi bi-clipboard-check"></i> Copiato!';
+        setTimeout(() => {
+          feedback.classList.add('d-none');
+          document.getElementById('copyPasswordBtn').innerHTML = '<i class="bi bi-clipboard"></i> Copia';
+        }, 3000);
+      });
+    });
+
+    // Cleanup on close
+    document.getElementById('passwordReportModal').addEventListener('hidden.bs.modal', () => {
+      document.getElementById('passwordReportModal').remove();
+    });
   }
 
   async loadFormData() {
@@ -836,7 +1191,9 @@ class AdminPanel {
       livello: parseInt(formData.get('livello')),
       attivo: formData.get('attivo') === 'on',
       allow_domain_login: formData.get('allow_domain_login') === 'on',
-      domain: formData.get('domain') || null
+      domain: formData.get('domain') || null,
+      otp_enabled: formData.get('otp_enabled') === 'on',
+      otp_type: formData.get('otp_type') || null
     };
 
     if (formData.get('password')) {
@@ -849,6 +1206,7 @@ class AdminPanel {
 
     try {
       let result;
+      const generatedPassword = data.password || null;
       if (userId) {
         data.id = parseInt(userId);
         result = await this.apiCall(`/api/v1/admin/users/${userId}`, 'PUT', data);
@@ -861,6 +1219,11 @@ class AdminPanel {
       bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
       this.loadUsers();
       this.loadDashboardStats();
+
+      // Show password report for new users with a generated password
+      if (!userId && generatedPassword) {
+        this.showPasswordReport(data.username, generatedPassword);
+      }
     } catch (error) {
       console.error('Error saving user:', error);
     }
@@ -888,12 +1251,21 @@ class AdminPanel {
       document.getElementById('livello').value = user.livello.id || '';
       document.getElementById('attivo').checked = user.attivo;
       document.getElementById('allow_domain_login').checked = user.allow_domain_login;
+      document.getElementById('otp_enabled').checked = user.otp_enabled || false;
+      document.getElementById('otp_type').value = user.otp_type || '';
 
       // Check user scopes
       user.scopi.forEach(scope => {
         const checkbox = document.getElementById(`scope_${scope.id}`);
         if (checkbox) checkbox.checked = true;
       });
+
+      // Setup OTP toggle handler and trigger display
+      this.setupOtpToggle();
+      this.setupPasswordButtons();
+      if (user.otp_enabled) {
+        document.getElementById('otp-settings').style.display = 'block';
+      }
 
       const modal = new bootstrap.Modal(document.getElementById('userModal'));
       modal.show();

@@ -352,7 +352,7 @@ class AdminPanel {
     }
   }
 
-  async loadUsers(page = 1) {
+  async loadUsers() {
     const loading = document.getElementById('users-loading');
     const tbody = document.getElementById('users-tbody');
     const search = document.getElementById('user-search').value;
@@ -362,8 +362,7 @@ class AdminPanel {
 
     try {
       const params = new URLSearchParams({
-        page: page,
-        limit: this.pageSize
+        limit: 10000
       });
 
       if (search) {
@@ -377,7 +376,13 @@ class AdminPanel {
         tbody.appendChild(row);
       });
 
-      this.createPagination('users', data.pagination);
+      // Show total count
+      const paginationContainer = document.getElementById('users-pagination');
+      if (paginationContainer) {
+        paginationContainer.innerHTML = `<div class="text-center mt-2"><small class="text-muted">Totale: ${data.users.length} utenti</small></div>`;
+      }
+
+      this.initTableSortFilter('users-table', 1);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -437,6 +442,8 @@ class AdminPanel {
         const row = this.createScopeRow(scope);
         tbody.appendChild(row);
       });
+
+      this.initTableSortFilter('scopes-table', 1);
     } catch (error) {
       console.error('Error loading scopes:', error);
     } finally {
@@ -487,6 +494,8 @@ class AdminPanel {
         const row = this.createDomainRow(domain);
         tbody.appendChild(row);
       });
+
+      this.initTableSortFilter('domains-table', 1);
     } catch (error) {
       console.error('Error loading domains:', error);
     } finally {
@@ -537,6 +546,8 @@ class AdminPanel {
         const row = this.createLevelRow(level);
         tbody.appendChild(row);
       });
+
+      this.initTableSortFilter('levels-table', 0);
     } catch (error) {
       console.error('Error loading levels:', error);
     } finally {
@@ -627,6 +638,135 @@ class AdminPanel {
 
     toast.addEventListener('hidden.bs.toast', () => {
       toast.remove();
+    });
+  }
+
+  initTableSortFilter(tableId, excludeLastCols = 1) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const thead = table.querySelector('thead');
+    const headers = thead.querySelectorAll('tr:first-child th');
+    const totalCols = headers.length;
+    const sortableCols = totalCols - excludeLastCols;
+
+    // Track sort state
+    if (!this._tableSortState) this._tableSortState = {};
+    this._tableSortState[tableId] = { col: null, asc: true };
+
+    // Style headers as sortable
+    headers.forEach((th, idx) => {
+      if (idx < sortableCols) {
+        th.style.cursor = 'pointer';
+        th.style.userSelect = 'none';
+        th.style.whiteSpace = 'nowrap';
+        // Remove old sort indicator if present
+        const oldIcon = th.querySelector('.sort-icon');
+        if (oldIcon) oldIcon.remove();
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-arrow-down-up ms-1 sort-icon text-muted';
+        icon.style.fontSize = '0.75em';
+        th.appendChild(icon);
+
+        th.onclick = () => this._sortTable(tableId, idx, sortableCols);
+      }
+    });
+
+    // Remove existing filter row if present
+    const existingFilter = thead.querySelector('tr.filter-row');
+    if (existingFilter) existingFilter.remove();
+
+    // Add filter row
+    const filterRow = document.createElement('tr');
+    filterRow.className = 'filter-row';
+    for (let i = 0; i < totalCols; i++) {
+      const td = document.createElement('th');
+      td.style.padding = '4px';
+      if (i < sortableCols) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control form-control-sm';
+        input.placeholder = 'Filtra...';
+        input.style.fontSize = '0.8em';
+        input.dataset.colIndex = i;
+        input.addEventListener('input', () => this._filterTable(tableId, sortableCols));
+        td.appendChild(input);
+      }
+      filterRow.appendChild(td);
+    }
+    thead.appendChild(filterRow);
+  }
+
+  _sortTable(tableId, colIdx, sortableCols) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector('tbody');
+    const state = this._tableSortState[tableId];
+
+    // Toggle direction
+    if (state.col === colIdx) {
+      state.asc = !state.asc;
+    } else {
+      state.col = colIdx;
+      state.asc = true;
+    }
+
+    // Update sort icons
+    const headers = table.querySelectorAll('thead tr:first-child th');
+    headers.forEach((th, idx) => {
+      const icon = th.querySelector('.sort-icon');
+      if (icon) {
+        if (idx === colIdx) {
+          icon.className = `bi ${state.asc ? 'bi-sort-down' : 'bi-sort-up'} ms-1 sort-icon text-primary`;
+        } else {
+          icon.className = 'bi bi-arrow-down-up ms-1 sort-icon text-muted';
+        }
+      }
+    });
+
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    rows.sort((a, b) => {
+      const aText = (a.cells[colIdx]?.textContent || '').trim().toLowerCase();
+      const bText = (b.cells[colIdx]?.textContent || '').trim().toLowerCase();
+      const aNum = parseFloat(aText);
+      const bNum = parseFloat(bText);
+
+      let cmp;
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        cmp = aNum - bNum;
+      } else {
+        cmp = aText.localeCompare(bText, 'it');
+      }
+      return state.asc ? cmp : -cmp;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+  }
+
+  _filterTable(tableId, sortableCols) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector('tbody');
+    const filterInputs = table.querySelectorAll('tr.filter-row input');
+    const filters = [];
+    filterInputs.forEach(input => {
+      filters.push({
+        col: parseInt(input.dataset.colIndex),
+        value: input.value.toLowerCase().trim()
+      });
+    });
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+      let visible = true;
+      for (const f of filters) {
+        if (f.value && row.cells[f.col]) {
+          const cellText = row.cells[f.col].textContent.toLowerCase();
+          if (!cellText.includes(f.value)) {
+            visible = false;
+            break;
+          }
+        }
+      }
+      row.style.display = visible ? '' : 'none';
     });
   }
 
