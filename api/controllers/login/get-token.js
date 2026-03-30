@@ -132,7 +132,7 @@ module.exports = {
       }
 
       // Verifica l'OTP
-      if (utente.otp_enabled) {
+      if (utente.otp_required) {
         switch (utente.otp_type) {
           case 'mail':
             if (utente.mail) {
