@@ -61,6 +61,8 @@ module.exports = {
         data_disattivazione: user.data_disattivazione,
         token_revocato: user.token_revocato,
         otp_enabled: user.otp_enabled,
+        otp_type: user.otp_type,
+        otp_required: user.otp_required,
         ambito: user.ambito ? {
           id: user.ambito.id,
           ambito: user.ambito.ambito,
