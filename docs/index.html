@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>ASP Messina - Knowledge Base</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Knowledge Base ASP Messina Web Services">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <style>
+    :root {
+      --theme-color: #0D9373;
+      --sidebar-width: 300px;
+      --sidebar-nav-link-color--active: #07C983;
+      --sidebar-nav-link-border-color--active: #07C983;
+      --link-color: #07C983;
+      --heading-color: #e0e0e0;
+      --base-font-size: 17px;
+      --base-line-height: 1.7;
+      --content-max-width: 900px;
+    }
+    body {
+      font-size: 17px;
+      line-height: 1.7;
+    }
+    .markdown-section {
+      font-size: 17px;
+      line-height: 1.7;
+    }
+    .markdown-section h1 {
+      font-size: 2.2em;
+      margin-top: 1.5em;
+    }
+    .markdown-section h2 {
+      font-size: 1.6em;
+      margin-top: 1.3em;
+    }
+    .markdown-section h3 {
+      font-size: 1.3em;
+    }
+    .markdown-section p, .markdown-section li {
+      font-size: 1.05em;
+    }
+    .markdown-section code {
+      font-size: 0.95em;
+    }
+    .sidebar-nav {
+      font-size: 15px;
+      line-height: 2;
+    }
+    .app-name-link {
+      font-size: 1.2em !important;
+    }
+    .markdown-section table {
+      display: table;
+      width: 100%;
+      font-size: 1em;
+    }
+    .markdown-section table th,
+    .markdown-section table td {
+      padding: 10px 14px;
+    }
+    .kb-footer {
+      margin-top: 60px;
+      padding: 20px 0;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+      font-size: 0.8em;
+      color: rgba(255,255,255,0.4);
+    }
+    .cover-main {
+      background: linear-gradient(135deg, #0a1628 0%, #0D9373 100%) !important;
+    }
+    /* Mermaid diagrams */
+    .mermaid svg {
+      max-width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'ASP Messina<br><small>Knowledge Base</small>',
+      repo: false,
+      loadSidebar: true,
+      loadNavbar: true,
+      subMaxLevel: 3,
+      auto2top: true,
+      search: {
+        placeholder: 'Cerca nella documentazione...',
+        noData: 'Nessun risultato',
+        paths: 'auto',
+        depth: 4
+      },
+      coverpage: true,
+      pagination: {
+        previousText: 'Precedente',
+        nextText: 'Successivo',
+        crossChapter: true,
+        crossChapterText: true
+      },
+      tabs: {
+        persist: true,
+        sync: true,
+        theme: 'classic'
+      },
+      copyCode: {
+        buttonText: 'Copia',
+        errorText: 'Errore',
+        successText: 'Copiato!'
+      },
+      footer: {
+        copy: '',
+        auth: '',
+        pre: '<hr/>',
+        style: 'text-align: center; font-size: 0.8em; color: rgba(255,255,255,0.4);',
+        class: 'kb-footer'
+      },
+      formatUpdated: '{DD}/{MM}/{YYYY}',
+      plugins: [
+        function(hook) {
+          hook.afterEach(function(html) {
+            return html + '<div class="kb-footer">ASP5 Messina - SIA Area Progettazione e Sviluppo - Ing. Roberto De Domenico</div>';
+          });
+        }
+      ]
+    };
+  </script>
+  <!-- Docsify core -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <!-- Plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-tabs@1"></script>
+  <!-- Syntax highlight -->
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
+  <!-- Mermaid -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    window.$docsify.markdown = {
+      renderer: {
+        code: function(code, lang) {
+          if (lang === 'mermaid') {
+            return '<div class="mermaid">' + code + '</div>';
+          }
+          return this.origin.code.apply(this, arguments);
+        }
+      }
+    };
+    window.$docsify.plugins.push(function(hook) {
+      hook.doneEach(function() {
+        mermaid.run({ querySelector: '.mermaid' });
+      });
+    });
+  </script>
+</body>
+</html>

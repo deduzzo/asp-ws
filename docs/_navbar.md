@@ -1,0 +1,3 @@
+- [KB Home](/)
+- [API Swagger](/docs)
+- [Admin](/admin)

@@ -138,6 +138,14 @@ A flexible system for adding dynamic data to patients (assistiti), organized by 
 - `HL7_TERAPIE_CRONICHE` — JSON list [{farmaco, dosaggio, frequenza...}]
 - `HL7_PARAMETRI_VITALI` — individual fields (pressione, FC, peso, SpO2...)
 - `HL7_CONSENSI` — JSON list [{tipo_consenso, stato, data_rilascio...}]
+- `HL7_ANAGRAFICA_EXTRA` — individual fields (stato_civile, titolo_studio, professione, condizione_lavorativa)
+
+**SIAD categories** (created by migration `20260330_002`, rif. SIAD v7.4 - Assistenza Domiciliare):
+- `SIAD_PRESA_IN_CARICO` — Gestione presa in carico (data, soggetto richiedente, tipologia PIC, patologia prevalente/concomitante, nucleo familiare, assistente non familiare)
+- `SIAD_VALUTAZIONE_SANITARIA` — Valutazione sanitaria (autonomia, mobilita, rischio infettivo, bisogni assistenziali si/no: broncorespirazione, ossigenoterapia, ventiloterapia, tracheostomia, alimentazione, stomia, ulcere, ECG, telemetria, riabilitazione, cure palliative, ecc.)
+- `SIAD_VALUTAZIONE_SOCIALE` — Valutazione sociale (supporto sociale, fragilita familiare, disturbi cognitivi/comportamentali, responsabilita genitoriale)
+
+**Wildcard scopes:** `anagrafica-siad_*-read/write` per tutte le categorie SIAD, `anagrafica-hl7_*-read/write` per tutte le HL7, `anagrafica-*-read/write` per tutte
 
 **Public API endpoints** (use `cf` as key, scope `asp5-anagrafica` + category scope):
 - `GET /api/v1/anagrafica/extra-data/:cf` — get extra data

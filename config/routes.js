@@ -369,6 +369,32 @@ let routes = {
     }
   },
 
+  // Knowledge Base (Docsify) - serve static files from docs/
+  'GET /kb': {
+    fn: function(req, res, next) {
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) { return res.status(401).send('Unauthorized'); }
+        return res.sendFile(require('path').resolve(sails.config.appPath, 'docs/index.html'));
+      });
+    }
+  },
+  'GET /kb/*': {
+    fn: function(req, res, next) {
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) { return res.status(401).send('Unauthorized'); }
+        const filePath = req.path.replace('/kb/', '');
+        const fullPath = require('path').resolve(sails.config.appPath, 'docs', filePath);
+        const fs = require('fs');
+        if (fs.existsSync(fullPath)) {
+          return res.sendFile(fullPath);
+        }
+        return res.sendFile(require('path').resolve(sails.config.appPath, 'docs/index.html'));
+      });
+    }
+  },
+
   'GET /docs': {
     fn: function(req, res, next) {
       // Apply the middleware directly
