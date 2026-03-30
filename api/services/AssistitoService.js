@@ -78,6 +78,7 @@ module.exports = {
     // nazionalita STP va in comuneNascita (es. "GAMBIA"), come per gli assistiti stranieri esistenti
     const datiAssistito = {
       cf: stp.codice_stp_eni,
+      cfNormalizzato: stp.codice_stp_eni,
       cognome: stp.cognome || null,
       nome: stp.nome || null,
       sesso: stp.genere || null,
