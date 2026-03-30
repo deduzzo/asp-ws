@@ -743,82 +743,62 @@
     <script>
         // Extend AdminPanel with OTP functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Override createModals to include OTP fields
-            const originalCreateModals = AdminPanel.prototype.createModals;
-            AdminPanel.prototype.createModals = function() {
-                originalCreateModals.call(this);
+            // Patch the user modal DOM directly (createModals has already been called by AdminPanel constructor)
+            var otpFieldsHTML = '<div class="row">' +
+                '<div class="col-md-4"><div class="form-check">' +
+                    '<input class="form-check-input" type="checkbox" id="attivo" name="attivo" checked>' +
+                    '<label class="form-check-label" for="attivo">Utente attivo</label>' +
+                '</div></div>' +
+                '<div class="col-md-4"><div class="form-check">' +
+                    '<input class="form-check-input" type="checkbox" id="allow_domain_login" name="allow_domain_login">' +
+                    '<label class="form-check-label" for="allow_domain_login">Login con dominio</label>' +
+                '</div></div>' +
+                '<div class="col-md-4"><div class="form-check">' +
+                    '<input class="form-check-input" type="checkbox" id="otp_enabled" name="otp_enabled">' +
+                    '<label class="form-check-label" for="otp_enabled"><i class="bi bi-shield-lock me-1"></i>OTP abilitato</label>' +
+                '</div></div>' +
+                '<div class="col-md-4"><div class="form-check">' +
+                    '<input class="form-check-input" type="checkbox" id="otp_required" name="otp_required">' +
+                    '<label class="form-check-label" for="otp_required"><i class="bi bi-shield-exclamation me-1"></i>OTP obbligatorio</label>' +
+                '</div></div>' +
+            '</div>' +
+            '<div class="row mt-3" id="otp-settings" style="display: none;">' +
+                '<div class="col-12"><div class="alert alert-info" id="otp-info-alert">' +
+                    '<i class="bi bi-info-circle me-2"></i><strong>Autenticazione OTP:</strong> ' +
+                    '<span id="otp-info-text">L\'utente dovr&agrave; inserire un codice inviato via email ad ogni login</span>' +
+                '</div></div>' +
+                '<div class="col-md-6"><div class="mb-3">' +
+                    '<label for="otp_type" class="form-label">Tipo OTP *</label>' +
+                    '<select class="form-select" id="otp_type" name="otp_type">' +
+                        '<option value="">Seleziona tipo...</option>' +
+                        '<option value="mail">Email</option>' +
+                        '<option value="totp">Autenticatore (TOTP)</option>' +
+                    '</select>' +
+                    '<div class="form-text">Seleziona il metodo di autenticazione OTP</div>' +
+                '</div></div>' +
+            '</div>';
 
-                // Add OTP fields to user modal
-                const userFormScopi = document.querySelector('#userModal .modal-body form #scopi-checkboxes').parentElement;
-                const otpFieldsHTML = `
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="attivo" name="attivo" checked>
-                                <label class="form-check-label" for="attivo">Utente attivo</label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="allow_domain_login" name="allow_domain_login">
-                                <label class="form-check-label" for="allow_domain_login">Login con dominio</label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="otp_enabled" name="otp_enabled">
-                                <label class="form-check-label" for="otp_enabled">
-                                    <i class="bi bi-shield-lock me-1"></i>OTP abilitato
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="otp_required" name="otp_required">
-                                <label class="form-check-label" for="otp_required">
-                                    <i class="bi bi-shield-exclamation me-1"></i>OTP obbligatorio
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-3" id="otp-settings" style="display: none;">
-                        <div class="col-12">
-                            <div class="alert alert-info" id="otp-info-alert">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong>Autenticazione OTP:</strong> <span id="otp-info-text">L'utente dovrà inserire un codice inviato via email ad ogni login</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="otp_type" class="form-label">Tipo OTP *</label>
-                                <select class="form-select" id="otp_type" name="otp_type">
-                                    <option value="">Seleziona tipo...</option>
-                                    <option value="mail">Email</option>
-                                    <option value="totp">Autenticatore (TOTP)</option>
-                                </select>
-                                <div class="form-text">Seleziona il metodo di autenticazione OTP</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Replace the old checkboxes and otp-settings sections
+            // Replace the old checkboxes and otp-settings sections in the already-created modal
+            // Use setTimeout(0) to ensure admin.js DOMContentLoaded has completed first
+            function patchUserModal() {
                 var attivoEl = document.getElementById('attivo');
-                if (attivoEl) {
-                    var oldRow = attivoEl.closest('.row');
-                    if (oldRow) {
-                        // Remove old otp-settings row if present (from admin.js createModals)
-                        var oldOtpSettings = document.getElementById('otp-settings');
-                        if (oldOtpSettings) {
-                            var oldOtpRow = oldOtpSettings.closest('.row');
-                            if (oldOtpRow && oldOtpRow !== oldRow) oldOtpRow.remove();
-                        }
-                        // Insert new HTML before old row, then remove old row
-                        oldRow.insertAdjacentHTML('beforebegin', otpFieldsHTML);
-                        oldRow.remove();
-                    }
+                if (!attivoEl) {
+                    // Modal not created yet, retry
+                    setTimeout(patchUserModal, 50);
+                    return;
                 }
-            };
+                var oldRow = attivoEl.closest('.row');
+                if (oldRow) {
+                    var oldOtpSettings = document.getElementById('otp-settings');
+                    if (oldOtpSettings) {
+                        var oldOtpRow = oldOtpSettings.closest('.row');
+                        if (oldOtpRow && oldOtpRow !== oldRow) oldOtpRow.remove();
+                    }
+                    oldRow.insertAdjacentHTML('beforebegin', otpFieldsHTML);
+                    oldRow.remove();
+                }
+            }
+            setTimeout(patchUserModal, 0);
 
             // Add OTP toggle handler
             AdminPanel.prototype.setupOtpToggle = function() {
