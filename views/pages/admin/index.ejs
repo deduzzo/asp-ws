@@ -802,17 +802,21 @@
                     </div>
                 `;
 
-                // Replace the old checkboxes section
-                const attivoEl = document.getElementById('attivo');
-                const oldCheckboxes = attivoEl ? attivoEl.closest('.row') : null;
-                if (oldCheckboxes) {
-                    // Remove also the old otp-settings row if present
-                    const oldOtpSettings = document.getElementById('otp-settings');
-                    if (oldOtpSettings) {
-                        var oldOtpRow = oldOtpSettings.closest('.row');
-                        if (oldOtpRow && oldOtpRow !== oldCheckboxes) oldOtpRow.remove();
+                // Replace the old checkboxes and otp-settings sections
+                var attivoEl = document.getElementById('attivo');
+                if (attivoEl) {
+                    var oldRow = attivoEl.closest('.row');
+                    if (oldRow) {
+                        // Remove old otp-settings row if present (from admin.js createModals)
+                        var oldOtpSettings = document.getElementById('otp-settings');
+                        if (oldOtpSettings) {
+                            var oldOtpRow = oldOtpSettings.closest('.row');
+                            if (oldOtpRow && oldOtpRow !== oldRow) oldOtpRow.remove();
+                        }
+                        // Insert new HTML before old row, then remove old row
+                        oldRow.insertAdjacentHTML('beforebegin', otpFieldsHTML);
+                        oldRow.remove();
                     }
-                    oldCheckboxes.outerHTML = otpFieldsHTML;
                 }
             };
 
