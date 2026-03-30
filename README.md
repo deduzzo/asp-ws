@@ -1,5 +1,16 @@
 # ASP di Messina - Web Services
 
+![Node.js](https://img.shields.io/badge/Node.js-22.x-339933?logo=node.js&logoColor=white)
+![Sails.js](https://img.shields.io/badge/Sails.js-1.5.14-0073CF?logo=sails.js&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-3%20databases-4479A1?logo=mysql&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT%20%2B%20OTP-000000?logo=jsonwebtokens&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Apps%20Manager-2496ED?logo=docker&logoColor=white)
+![Swagger](https://img.shields.io/badge/API-Swagger%20%2F%20OpenAPI-85EA2D?logo=swagger&logoColor=black)
+![HL7](https://img.shields.io/badge/HL7-v2.5%20Inspired-DA291C)
+![SIAD](https://img.shields.io/badge/SIAD-v7.4-0066CC)
+![Meilisearch](https://img.shields.io/badge/Search-Meilisearch-FF4F64?logo=meilisearch&logoColor=white)
+![License](https://img.shields.io/badge/License-Proprietary-red)
+
 Piattaforma di web services per l'**Azienda Sanitaria Provinciale di Messina**. Il sistema fornisce API REST per la gestione dell'anagrafica assistiti, Master Patient Index, dati clinici HL7, assistenza domiciliare SIAD, form dinamici, app containerizzate e funzionalita amministrative.
 
 ## Requisiti
