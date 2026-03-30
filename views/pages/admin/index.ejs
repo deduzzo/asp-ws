@@ -803,8 +803,15 @@
                 `;
 
                 // Replace the old checkboxes section
-                const oldCheckboxes = document.querySelector('#userModal .modal-body form .row:has(#attivo)');
+                const attivoEl = document.getElementById('attivo');
+                const oldCheckboxes = attivoEl ? attivoEl.closest('.row') : null;
                 if (oldCheckboxes) {
+                    // Remove also the old otp-settings row if present
+                    const oldOtpSettings = document.getElementById('otp-settings');
+                    if (oldOtpSettings) {
+                        var oldOtpRow = oldOtpSettings.closest('.row');
+                        if (oldOtpRow && oldOtpRow !== oldCheckboxes) oldOtpRow.remove();
+                    }
                     oldCheckboxes.outerHTML = otpFieldsHTML;
                 }
             };
@@ -937,6 +944,7 @@
                     });
 
                     this.setupOtpToggle();
+                    this.setupPasswordButtons();
                     if (user.otp_enabled) {
                         document.getElementById('otp-settings').style.display = 'block';
                     }
