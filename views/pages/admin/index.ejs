@@ -877,6 +877,7 @@
                 data.scopi = Array.from(scopeCheckboxes).map(cb => parseInt(cb.value));
 
                 try {
+                    var changedPassword = data.password || null;
                     let result;
                     if (userId) {
                         data.id = parseInt(userId);
@@ -890,6 +891,10 @@
                     bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
                     this.loadUsers();
                     this.loadDashboardStats();
+
+                    if (changedPassword) {
+                        this.showPasswordReport(data.username, changedPassword);
+                    }
                 } catch (error) {
                     console.error('Error saving user:', error);
                 }

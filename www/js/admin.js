@@ -1222,8 +1222,8 @@ class AdminPanel {
       this.loadUsers();
       this.loadDashboardStats();
 
-      // Show password report for new users with a generated password
-      if (!userId && generatedPassword) {
+      // Show password report whenever a password was set
+      if (generatedPassword) {
         this.showPasswordReport(data.username, generatedPassword);
       }
     } catch (error) {
