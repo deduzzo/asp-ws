@@ -29,6 +29,9 @@ module.exports.bootstrap = async function () {
   // ]);
   // ```
 
+  // Cache buster: timestamp di avvio per forzare il refresh degli asset statici
+  sails.config.custom.cacheBuster = Date.now();
+
   // Esegui migrazioni SQL pendenti
   try {
     const migrationResult = await sails.helpers.runMigrations();

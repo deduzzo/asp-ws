@@ -958,7 +958,7 @@
     <script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.11/runtime.min.js"></script>
 
     <!-- Custom JavaScript -->
-    <script src="/js/admin.js"></script>
+    <script src="/js/admin.js?v=<%= sails.config.custom.cacheBuster || Date.now() %>"></script>
 
     <!-- OTP Extension -->
     <script>
