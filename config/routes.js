@@ -859,6 +859,26 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
+
+  // Admin MPI Extra Data
+  'GET /api/v1/admin/mpi/records/:mpiId/extra-data': {
+    action: 'admin/mpi/records-extra-data-get',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/mpi/records/:mpiId/extra-data': {
+    action: 'admin/mpi/records-extra-data-set',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/mpi/records/:mpiId/extra-data': {
+    action: 'admin/mpi/records-extra-data-delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
 };
 
 // Aggiungi la rotta CSRF solo se è abilitato

@@ -4,7 +4,7 @@
 
 I record MPI possono avere **extra data** associati, esattamente come gli assistiti dell'anagrafica. Questo permette di registrare dati clinici (allergie, patologie, valutazioni) anche per pazienti **non ancora identificati**.
 
-Le categorie disponibili sono le stesse dell'anagrafica (HL7, SIAD, CONTATTI, ecc.).
+Le categorie disponibili sono le stesse dell'anagrafica (CLINICO_*, ANAGRAFICA_*, ecc.).
 
 ## API
 
@@ -20,11 +20,11 @@ Le categorie disponibili sono le stesse dell'anagrafica (HL7, SIAD, CONTATTI, ec
 Per accedere agli extra data MPI servono **due scope**:
 
 1. **Scope MPI**: `mpi-{appCodice}-read` o `mpi-{appCodice}-write`
-2. **Scope categoria**: `anagrafica-{categoria}-read` o `anagrafica-{categoria}-write`
+2. **Scope categoria**: `{categoria}-read` o `{categoria}-write`
 
 Esempio: per scrivere allergie su un record del PS Papardo servono:
 - `mpi-ps_papardo-write` (accesso al record MPI)
-- `anagrafica-hl7_allergie-write` (accesso alla categoria allergie)
+- `clinico_allergie-write` (accesso alla categoria allergie)
 
 ## Esempio
 
@@ -33,7 +33,7 @@ Esempio: per scrivere allergie su un record del PS Papardo servono:
 ```json
 POST /api/v1/mpi/record/{mpiId}/extra-data
 {
-  "categoria": "HL7_ALLERGIE",
+  "categoria": "CLINICO_ALLERGIE",
   "valori": {
     "lista": [
       {
@@ -50,13 +50,13 @@ POST /api/v1/mpi/record/{mpiId}/extra-data
 ### Lettura
 
 ```json
-GET /api/v1/mpi/record/{mpiId}/extra-data?categoria=HL7_ALLERGIE
+GET /api/v1/mpi/record/{mpiId}/extra-data?categoria=CLINICO_ALLERGIE
 
 // Risposta
 {
   "ok": true,
   "data": {
-    "HL7_ALLERGIE": {
+    "CLINICO_ALLERGIE": {
       "lista": [{"sostanza": "Penicillina", ...}]
     }
   }

@@ -8,10 +8,10 @@ Il sistema Extra Data permette di aggiungere **dati dinamici strutturati** agli 
 
 ```mermaid
 graph TD
-    CAT[Categoria<br/>es. HL7_ALLERGIE] --> |definisce schema| VAL[Valori<br/>per assistito/chiave]
+    CAT[Categoria<br/>es. CLINICO_ALLERGIE] --> |definisce schema| VAL[Valori<br/>per assistito/chiave]
     VAL --> |ogni modifica| STOR[Storico<br/>audit trail]
-    CAT --> |scope lettura| READ[anagrafica-hl7_allergie-read]
-    CAT --> |scope scrittura| WRITE[anagrafica-hl7_allergie-write]
+    CAT --> |scope lettura| READ[clinico_allergie-read]
+    CAT --> |scope scrittura| WRITE[clinico_allergie-write]
 ```
 
 ## Modelli
@@ -28,9 +28,9 @@ Ogni categoria definisce:
 
 | Campo | Descrizione |
 |-------|-------------|
-| `codice` | Identificativo unico (es. `HL7_ALLERGIE`) |
+| `codice` | Identificativo unico (es. `CLINICO_ALLERGIE`) |
 | `descrizione` | Descrizione leggibile |
-| `scopoLettura` | Scope richiesto per leggere (es. `anagrafica-hl7_allergie-read`) |
+| `scopoLettura` | Scope richiesto per leggere (es. `clinico_allergie-read`) |
 | `scopoScrittura` | Scope richiesto per scrivere |
 | `campi` | JSON array con schema dei campi ammessi |
 | `attivo` | Abilitazione categoria |
@@ -60,7 +60,7 @@ Tutte richiedono scope `asp5-anagrafica` + scope specifico della categoria.
 
 ```
 GET /api/v1/anagrafica/extra-data/:cf
-GET /api/v1/anagrafica/extra-data/:cf?categoria=HL7_ALLERGIE
+GET /api/v1/anagrafica/extra-data/:cf?categoria=CLINICO_ALLERGIE
 ```
 
 Risposta:
@@ -68,10 +68,10 @@ Risposta:
 {
   "ok": true,
   "data": {
-    "HL7_ALLERGIE": {
+    "CLINICO_ALLERGIE": {
       "lista": [{"sostanza": "Penicillina", "tipo": "farmaco", "criticita": "alta"}]
     },
-    "CONTATTI": {
+    "ANAGRAFICA_CONTATTI": {
       "cellulare_1": "333...",
       "email": "mario@example.com"
     }
@@ -90,7 +90,7 @@ POST /api/v1/anagrafica/extra-data/:cf
 Body:
 ```json
 {
-  "categoria": "CONTATTI",
+  "categoria": "ANAGRAFICA_CONTATTI",
   "valori": {
     "cellulare_1": "3331234567",
     "email": "mario@example.com"
@@ -107,7 +107,7 @@ DELETE /api/v1/anagrafica/extra-data/:cf
 Body:
 ```json
 {
-  "categoria": "CONTATTI",
+  "categoria": "ANAGRAFICA_CONTATTI",
   "chiavi": ["cellulare_1"]
 }
 ```
@@ -116,7 +116,7 @@ Body:
 
 ```
 GET /api/v1/anagrafica/extra-data/:cf/storico
-GET /api/v1/anagrafica/extra-data/:cf/storico?categoria=HL7_ALLERGIE
+GET /api/v1/anagrafica/extra-data/:cf/storico?categoria=CLINICO_ALLERGIE
 ```
 
 ### Lista categorie disponibili
@@ -127,33 +127,28 @@ GET /api/v1/anagrafica/extra-data-categorie/summary
 
 ## Categorie Disponibili
 
-### Categorie HL7
+### Categorie Anagrafiche
 
 | Codice | Descrizione | Tipo dati |
 |--------|-------------|-----------|
-| `HL7_CONTATTI_EMERGENZA` | Contatti di emergenza | Campi singoli |
-| `HL7_ALLERGIE` | Allergie e intolleranze | JSON lista |
-| `HL7_PATOLOGIE_CRONICHE` | Patologie croniche | JSON lista |
-| `HL7_ESENZIONI` | Esenzioni SSN | JSON lista |
-| `HL7_TERAPIE_CRONICHE` | Terapie farmacologiche | JSON lista |
-| `HL7_PARAMETRI_VITALI` | Parametri vitali | Campi singoli |
-| `HL7_CONSENSI` | Consensi informati | JSON lista |
-| `HL7_ANAGRAFICA_EXTRA` | Stato civile, professione, titolo studio | Campi singoli |
+| `ANAGRAFICA_CONTATTI` | Recapiti telefonici e email | Campi singoli |
+| `ANAGRAFICA_NOTE` | Note generiche | Campi singoli |
+| `ANAGRAFICA_EXTRA` | Stato civile, professione, titolo studio | Campi singoli |
+| `ANAGRAFICA_CONTATTI_EMERGENZA` | Contatti di emergenza | Campi singoli |
 
-### Categorie SIAD
+### Categorie Cliniche
 
 | Codice | Descrizione | Tipo dati |
 |--------|-------------|-----------|
-| `SIAD_PRESA_IN_CARICO` | Presa in carico assistenza domiciliare | Campi singoli |
-| `SIAD_VALUTAZIONE_SANITARIA` | Valutazione sanitaria | Campi singoli (si/no) |
-| `SIAD_VALUTAZIONE_SOCIALE` | Valutazione sociale | Campi singoli |
-
-### Categorie Generiche
-
-| Codice | Descrizione | Tipo dati |
-|--------|-------------|-----------|
-| `CONTATTI` | Recapiti telefonici e email | Campi singoli |
-| `EXTRA` | Note generiche | Campi singoli |
+| `CLINICO_ALLERGIE` | Allergie e intolleranze | JSON lista |
+| `CLINICO_PATOLOGIE` | Patologie croniche | JSON lista |
+| `CLINICO_ESENZIONI` | Esenzioni SSN | JSON lista |
+| `CLINICO_TERAPIE` | Terapie farmacologiche | JSON lista |
+| `CLINICO_PARAMETRI_VITALI` | Parametri vitali | Campi singoli |
+| `CLINICO_CONSENSI` | Consensi informati | JSON lista |
+| `CLINICO_PRESA_IN_CARICO` | Presa in carico assistenza domiciliare | Campi singoli |
+| `CLINICO_VALUTAZIONE_SANITARIA` | Valutazione sanitaria | Campi singoli (si/no) |
+| `CLINICO_VALUTAZIONE_SOCIALE` | Valutazione sociale | Campi singoli |
 
 ## Wildcard Scope
 
@@ -161,9 +156,8 @@ Il sistema supporta scope con wildcard `*`:
 
 | Scope | Accesso |
 |-------|---------|
-| `anagrafica-hl7_allergie-read` | Solo allergie |
-| `anagrafica-hl7_*-read` | Tutte le categorie HL7 |
-| `anagrafica-siad_*-read` | Tutte le categorie SIAD |
-| `anagrafica-*-read` | **Tutte** le categorie extra data |
+| `clinico_allergie-read` | Solo allergie |
+| `clinico_*-read` | Tutte le categorie cliniche |
+| `*-read` | **Tutte** le categorie extra data |
 
 Il matching viene eseguito da `api/helpers/scope-matches.js`.

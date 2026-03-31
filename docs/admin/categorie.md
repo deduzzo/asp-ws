@@ -34,8 +34,8 @@ POST /api/v1/admin/extra-data-categorie
 ```
 
 La creazione genera automaticamente gli scope:
-- `anagrafica-mia_categoria-read`
-- `anagrafica-mia_categoria-write`
+- `mia_categoria-read`
+- `mia_categoria-write`
 
 ## Tipi di Campo Supportati
 
@@ -64,5 +64,5 @@ Le categorie vengono create automaticamente dalle migrazioni SQL:
 
 | Migrazione | Categorie |
 |-----------|-----------|
-| `20260323_002` | HL7_CONTATTI_EMERGENZA, HL7_ALLERGIE, HL7_PATOLOGIE_CRONICHE, HL7_ESENZIONI, HL7_TERAPIE_CRONICHE, HL7_PARAMETRI_VITALI, HL7_CONSENSI |
-| `20260330_002` | SIAD_PRESA_IN_CARICO, SIAD_VALUTAZIONE_SANITARIA, SIAD_VALUTAZIONE_SOCIALE, HL7_ANAGRAFICA_EXTRA |
+| `20260323_002` | ANAGRAFICA_CONTATTI_EMERGENZA, CLINICO_ALLERGIE, CLINICO_PATOLOGIE, CLINICO_ESENZIONI, CLINICO_TERAPIE, CLINICO_PARAMETRI_VITALI, CLINICO_CONSENSI |
+| `20260330_002` | CLINICO_PRESA_IN_CARICO, CLINICO_VALUTAZIONE_SANITARIA, CLINICO_VALUTAZIONE_SOCIALE, ANAGRAFICA_EXTRA |

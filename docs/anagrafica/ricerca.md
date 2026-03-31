@@ -43,8 +43,8 @@ POST /api/v1/anagrafica/ricerca
         "dataNascita": "01/01/1980",
         "comuneResidenza": "MESSINA",
         "extraData": {
-          "CONTATTI": { "cellulare_1": "333..." },
-          "HL7_ALLERGIE": { "lista": [...] }
+          "ANAGRAFICA_CONTATTI": { "cellulare_1": "333..." },
+          "CLINICO_ALLERGIE": { "lista": [...] }
         }
       }
     ],
@@ -57,4 +57,4 @@ POST /api/v1/anagrafica/ricerca
 
 Il controller `ricerca.js` include automaticamente gli extra data per ogni assistito trovato, utilizzando `sails.helpers.getExtraDataForAssistiti()`. I dati sono filtrati in base agli **scope dell'utente** che effettua la ricerca.
 
-Ad esempio, un utente con scope `anagrafica-hl7_allergie-read` vedra' le allergie ma non i consensi (a meno che non abbia anche `anagrafica-hl7_consensi-read` o il wildcard `anagrafica-hl7_*-read`).
+Ad esempio, un utente con scope `clinico_allergie-read` vedra' le allergie ma non i consensi (a meno che non abbia anche `clinico_consensi-read` o il wildcard `clinico_*-read`).

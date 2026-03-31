@@ -123,33 +123,28 @@ Piattaforma di web services per l'**Azienda Sanitaria Provinciale di Messina**, 
 
 ## Categorie Extra Data
 
-### HL7
+### Anagrafiche
 
 | Codice | Descrizione | Tipo |
 |--------|-------------|------|
-| `HL7_CONTATTI_EMERGENZA` | Contatti di emergenza | Campi singoli |
-| `HL7_ALLERGIE` | Allergie e intolleranze | JSON lista |
-| `HL7_PATOLOGIE_CRONICHE` | Patologie croniche | JSON lista |
-| `HL7_ESENZIONI` | Esenzioni SSN | JSON lista |
-| `HL7_TERAPIE_CRONICHE` | Terapie farmacologiche | JSON lista |
-| `HL7_PARAMETRI_VITALI` | Parametri vitali | Campi singoli |
-| `HL7_CONSENSI` | Consensi informati | JSON lista |
-| `HL7_ANAGRAFICA_EXTRA` | Stato civile, professione, titolo studio | Campi singoli |
+| `ANAGRAFICA_CONTATTI` | Recapiti telefonici e email | Campi singoli |
+| `ANAGRAFICA_NOTE` | Note generiche | Campi singoli |
+| `ANAGRAFICA_EXTRA` | Stato civile, professione, titolo studio | Campi singoli |
+| `ANAGRAFICA_CONTATTI_EMERGENZA` | Contatti di emergenza | Campi singoli |
 
-### SIAD
+### Cliniche
 
 | Codice | Descrizione | Tipo |
 |--------|-------------|------|
-| `SIAD_PRESA_IN_CARICO` | Presa in carico assistenza domiciliare | Campi singoli |
-| `SIAD_VALUTAZIONE_SANITARIA` | Valutazione sanitaria (37 campi) | Campi singoli (si/no) |
-| `SIAD_VALUTAZIONE_SOCIALE` | Valutazione sociale | Campi singoli |
-
-### Generiche
-
-| Codice | Descrizione | Tipo |
-|--------|-------------|------|
-| `CONTATTI` | Recapiti telefonici e email | Campi singoli |
-| `EXTRA` | Note generiche | Campi singoli |
+| `CLINICO_ALLERGIE` | Allergie e intolleranze | JSON lista |
+| `CLINICO_PATOLOGIE` | Patologie croniche | JSON lista |
+| `CLINICO_ESENZIONI` | Esenzioni SSN | JSON lista |
+| `CLINICO_TERAPIE` | Terapie farmacologiche | JSON lista |
+| `CLINICO_PARAMETRI_VITALI` | Parametri vitali | Campi singoli |
+| `CLINICO_CONSENSI` | Consensi informati | JSON lista |
+| `CLINICO_PRESA_IN_CARICO` | Presa in carico assistenza domiciliare | Campi singoli |
+| `CLINICO_VALUTAZIONE_SANITARIA` | Valutazione sanitaria (37 campi) | Campi singoli (si/no) |
+| `CLINICO_VALUTAZIONE_SOCIALE` | Valutazione sociale | Campi singoli |
 
 ## Tecnologie
 

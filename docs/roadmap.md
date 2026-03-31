@@ -4,9 +4,9 @@
 Vista cronologica unificata per assistito: modifiche anagrafiche, extra data, valutazioni SIAD, prese in carico, link MPI — tutto in una timeline. Sia via API che nel pannello admin.
 
 ```
-2026-03-15  SIAD_PRESA_IN_CARICO creata (MMG, cure domiciliari)
-2026-03-15  SIAD_VALUTAZIONE_SANITARIA compilata (12 bisogni attivi)
-2026-03-20  HL7_ALLERGIE aggiornata (+Penicillina)
+2026-03-15  CLINICO_PRESA_IN_CARICO creata (MMG, cure domiciliari)
+2026-03-15  CLINICO_VALUTAZIONE_SANITARIA compilata (12 bisogni attivi)
+2026-03-20  CLINICO_ALLERGIE aggiornata (+Penicillina)
 2026-03-25  Record MPI PS_PAPARDO collegato
 ```
 

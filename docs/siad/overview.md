@@ -10,16 +10,16 @@ Il SIAD rileva le informazioni relative alle prestazioni di assistenza domicilia
 
 | Categoria | Descrizione |
 |-----------|-------------|
-| [SIAD_PRESA_IN_CARICO](siad/presa-in-carico.md) | Evento di presa in carico: data, richiedente, tipologia, patologie |
-| [SIAD_VALUTAZIONE_SANITARIA](siad/valutazione-sanitaria.md) | Valutazione bisogni sanitari: 37 campi clinici |
-| [SIAD_VALUTAZIONE_SOCIALE](siad/valutazione-sociale.md) | Valutazione bisogni sociali: supporto, fragilita, disturbi |
+| [CLINICO_PRESA_IN_CARICO](siad/presa-in-carico.md) | Evento di presa in carico: data, richiedente, tipologia, patologie |
+| [CLINICO_VALUTAZIONE_SANITARIA](siad/valutazione-sanitaria.md) | Valutazione bisogni sanitari: 37 campi clinici |
+| [CLINICO_VALUTAZIONE_SOCIALE](siad/valutazione-sociale.md) | Valutazione bisogni sociali: supporto, fragilita, disturbi |
 
 ## Flusso Operativo
 
 ```mermaid
 graph TD
-    PIC[Presa in Carico<br/>SIAD_PRESA_IN_CARICO] --> VS[Valutazione Sanitaria<br/>SIAD_VALUTAZIONE_SANITARIA]
-    PIC --> VSO[Valutazione Sociale<br/>SIAD_VALUTAZIONE_SOCIALE]
+    PIC[Presa in Carico<br/>CLINICO_PRESA_IN_CARICO] --> VS[Valutazione Sanitaria<br/>CLINICO_VALUTAZIONE_SANITARIA]
+    PIC --> VSO[Valutazione Sociale<br/>CLINICO_VALUTAZIONE_SOCIALE]
     VS --> |rivalutazione| VS
     VSO --> |rivalutazione| VSO
 ```
@@ -32,10 +32,10 @@ graph TD
 
 | Scope | Accesso |
 |-------|---------|
-| `anagrafica-siad_presa_in_carico-read/write` | Presa in carico |
-| `anagrafica-siad_valutazione_sanitaria-read/write` | Valutazione sanitaria |
-| `anagrafica-siad_valutazione_sociale-read/write` | Valutazione sociale |
-| `anagrafica-siad_*-read/write` | **Tutte** le categorie SIAD |
+| `clinico_presa_in_carico-read/write` | Presa in carico |
+| `clinico_valutazione_sanitaria-read/write` | Valutazione sanitaria |
+| `clinico_valutazione_sociale-read/write` | Valutazione sociale |
+| `clinico_*-read/write` | **Tutte** le categorie cliniche (incluse SIAD) |
 
 ## Riferimento Normativo
 

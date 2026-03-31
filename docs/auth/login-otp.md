@@ -16,7 +16,7 @@ Risposta con JWT token:
     "user": {
       "username": "mario.rossi",
       "livello": 1,
-      "scopi": ["asp5-anagrafica", "anagrafica-hl7_*-read"],
+      "scopi": ["asp5-anagrafica", "clinico_*-read"],
       "ambito": "api"
     }
   }

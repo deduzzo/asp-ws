@@ -1,6 +1,6 @@
 # Categorie HL7 - Dettaglio
 
-## HL7_CONTATTI_EMERGENZA
+## ANAGRAFICA_CONTATTI_EMERGENZA
 
 Contatti di emergenza del paziente.
 
@@ -13,7 +13,7 @@ Contatti di emergenza del paziente.
 
 ---
 
-## HL7_ALLERGIE
+## CLINICO_ALLERGIE
 
 Lista allergie e intolleranze in formato JSON.
 
@@ -35,7 +35,7 @@ Struttura di ogni elemento:
 
 ---
 
-## HL7_PATOLOGIE_CRONICHE
+## CLINICO_PATOLOGIE
 
 Lista patologie croniche e diagnosi.
 
@@ -54,7 +54,7 @@ Lista patologie croniche e diagnosi.
 
 ---
 
-## HL7_ESENZIONI
+## CLINICO_ESENZIONI
 
 Lista esenzioni SSN.
 
@@ -71,7 +71,7 @@ Lista esenzioni SSN.
 
 ---
 
-## HL7_TERAPIE_CRONICHE
+## CLINICO_TERAPIE
 
 Lista terapie farmacologiche croniche.
 
@@ -90,7 +90,7 @@ Lista terapie farmacologiche croniche.
 
 ---
 
-## HL7_PARAMETRI_VITALI
+## CLINICO_PARAMETRI_VITALI
 
 Ultimi parametri vitali rilevati.
 
@@ -110,7 +110,7 @@ Ultimi parametri vitali rilevati.
 
 ---
 
-## HL7_CONSENSI
+## CLINICO_CONSENSI
 
 Lista consensi informati.
 

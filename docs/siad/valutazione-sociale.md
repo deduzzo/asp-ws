@@ -1,6 +1,6 @@
 # SIAD - Valutazione Sociale
 
-## Categoria: SIAD_VALUTAZIONE_SOCIALE
+## Categoria: CLINICO_VALUTAZIONE_SOCIALE
 
 Valutazione dei bisogni sociali dell'assistito, complementare alla valutazione sanitaria.
 
@@ -42,7 +42,7 @@ Obbligatorio solo se l'assistito e' **minorenne** (eta <= 17 alla data presa in 
 ```json
 POST /api/v1/anagrafica/extra-data/RSSMRA80A01F158Z
 {
-  "categoria": "SIAD_VALUTAZIONE_SOCIALE",
+  "categoria": "CLINICO_VALUTAZIONE_SOCIALE",
   "valori": {
     "data_valutazione": "2026-03-15",
     "supporto_sociale": "2",

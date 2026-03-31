@@ -31,7 +31,7 @@ Per assegnare uno scope a un utente:
 ```json
 POST /api/v1/admin/utenti/{id}/scopi
 {
-  "scopo": "anagrafica-hl7_*-read"
+  "scopo": "clinico_*-read"
 }
 ```
 
@@ -49,7 +49,6 @@ Un utente puo avere **multipli scope**. Gli scope wildcard (`*`) sono particolar
    - mpi-link
 
 3. Assegna scope extra data:
-   - anagrafica-hl7_*-read
-   - anagrafica-hl7_*-write
-   - anagrafica-siad_*-write
+   - clinico_*-read
+   - clinico_*-write
 ```

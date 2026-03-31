@@ -1735,6 +1735,7 @@ async function viewMpiRecord(mpiId) {
     // Pulsanti azione
     html += '<div class="mt-3">';
     html += '<button class="btn btn-sm btn-outline-secondary me-2" onclick="viewMpiStorico(\'' + mpiId + '\')"><i class="bi bi-clock-history me-1"></i>Storico</button>';
+    html += '<button class="btn btn-sm btn-outline-info me-2" onclick="loadMpiExtraData(\'' + mpiId + '\')"><i class="bi bi-folder2-open me-1"></i>Extra Data</button>';
     if (r.stato !== 'annullato') {
       html += '<button class="btn btn-sm btn-outline-warning me-2" onclick="editMpiRecord(\'' + mpiId + '\')"><i class="bi bi-pencil me-1"></i>Modifica</button>';
     }
@@ -1745,6 +1746,9 @@ async function viewMpiRecord(mpiId) {
 
     // Container storico
     html += '<div id="mpi-storico-container" class="mt-3" style="display:none;"></div>';
+
+    // Container extra data MPI
+    html += '<div id="mpi-extra-data-container" class="mt-3" style="display:none;"></div>';
 
     body.innerHTML = html;
     detailCard.scrollIntoView({behavior: 'smooth'});
@@ -1837,6 +1841,183 @@ async function annullaMpiRecord(mpiId) {
   } catch (e) {
     console.error('Error annulling MPI record:', e);
   }
+}
+
+// ===== MPI EXTRA DATA =====
+
+let _mpiStoricoCache = {};
+let _mpiSchemaCache = {};
+
+async function loadMpiExtraData(mpiId) {
+  var container = document.getElementById('mpi-extra-data-container');
+  container.style.display = 'block';
+  container.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Caricamento extra data...';
+  _mpiStoricoCache = {};
+  _mpiSchemaCache = {};
+
+  try {
+    var data = await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId + '/extra-data');
+    var categorie = data.categorie || [];
+
+    if (categorie.length === 0) {
+      container.innerHTML = '<div class="alert alert-warning mt-2">Nessuna categoria extra data configurata.</div>';
+      return;
+    }
+
+    var html = '<h6 class="text-primary mt-2"><i class="bi bi-folder2-open me-2"></i>Extra Data</h6>';
+
+    categorie.forEach(function(cat) {
+      var campiHtml = '';
+      var campi = cat.campi || [];
+
+      campi.forEach(function(campo) {
+        var valore = cat.valori[campo.chiave] || '';
+        var reqBadge = campo.obbligatorio ? '<span class="badge bg-danger ms-1">*</span>' : '';
+        var isJson = campo.tipo === 'json';
+        var inputType = campo.tipo === 'number' ? 'number' : (campo.tipo === 'date' ? 'date' : 'text');
+        var displayValore = valore;
+        if (isJson && valore) {
+          try { displayValore = JSON.stringify(JSON.parse(valore), null, 2); } catch(e) { displayValore = valore; }
+        }
+        var escapedValore = (displayValore || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        var colSize = isJson ? 'col-12' : 'col-md-6';
+        var placeholder = campo.esempio || campo.etichetta || campo.chiave;
+
+        // JSON con schema → form strutturato a tabella
+        if (isJson && campo.schema && Array.isArray(campo.schema)) {
+          var items = [];
+          if (valore) { try { items = JSON.parse(valore); } catch(e) { items = []; } }
+          if (!Array.isArray(items)) items = [];
+          var schemaId = 'mpi_schema_' + cat.codice + '_' + campo.chiave;
+          _mpiSchemaCache[schemaId] = campo.schema;
+
+          var thHtml = campo.schema.map(function(sf) {
+            return '<th class="small">' + (sf.etichetta || sf.chiave) + (sf.obbligatorio ? ' <span class="text-danger">*</span>' : '') + '</th>';
+          }).join('');
+
+          var rowsHtml = '';
+          items.forEach(function(item, idx) {
+            var tdsHtml = campo.schema.map(function(sf) {
+              var val = item[sf.chiave] || '';
+              return '<td>' + renderMpiSchemaInput(schemaId, idx, sf, val) + '</td>';
+            }).join('');
+            rowsHtml += '<tr data-mpi-schema-row="' + schemaId + '">' + tdsHtml + '<td><button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="this.closest(\'tr\').remove()"><i class="bi bi-trash"></i></button></td></tr>';
+          });
+
+          campiHtml += '<div class="col-12 mb-2">' +
+            '<label class="form-label small fw-bold mb-0">' + (campo.etichetta || campo.chiave) + reqBadge + ' <span class="badge bg-info ms-1">Strutturato</span></label>' +
+            '<div class="table-responsive"><table class="table table-sm table-bordered mb-1" id="mpi_table_' + schemaId + '">' +
+            '<thead class="table-light"><tr>' + thHtml + '<th style="width:40px"></th></tr></thead>' +
+            '<tbody id="mpi_tbody_' + schemaId + '">' + rowsHtml + '</tbody></table></div>' +
+            '<button type="button" class="btn btn-outline-primary btn-sm" onclick="addMpiSchemaRow(\'' + schemaId + '\')"><i class="bi bi-plus me-1"></i>Aggiungi</button>' +
+            '<input type="hidden" data-mpi-categoria="' + cat.codice + '" data-mpi-chiave="' + campo.chiave + '" data-mpi-original="' + escapedValore + '" data-mpi-schema-id="' + schemaId + '">' +
+            '</div>';
+        } else {
+          // Campo semplice o JSON senza schema
+          var inputHtml = isJson
+            ? '<textarea class="form-control" rows="3" style="font-family: monospace; font-size: 0.8rem;" placeholder="' + placeholder + '" data-mpi-categoria="' + cat.codice + '" data-mpi-chiave="' + campo.chiave + '" data-mpi-original="' + escapedValore + '">' + displayValore + '</textarea>'
+            : '<input type="' + inputType + '" class="form-control" value="' + escapedValore + '" placeholder="' + placeholder + '" data-mpi-categoria="' + cat.codice + '" data-mpi-chiave="' + campo.chiave + '" data-mpi-original="' + escapedValore + '">';
+
+          campiHtml += '<div class="' + colSize + ' mb-2">' +
+            '<label class="form-label small fw-bold mb-0">' + (campo.etichetta || campo.chiave) + reqBadge + (isJson ? ' <span class="badge bg-info ms-1">JSON</span>' : '') + '</label>' +
+            '<div class="input-group input-group-sm">' + inputHtml +
+            (valore ? '<button class="btn btn-outline-danger" type="button" onclick="deleteMpiExtraDataValore(\'' + mpiId + '\', \'' + cat.codice + '\', \'' + campo.chiave + '\')" title="Elimina"><i class="bi bi-trash"></i></button>' : '') +
+            '</div></div>';
+        }
+      });
+
+      html += '<div class="card mb-3">' +
+        '<div class="card-header py-2" style="background: #f0f4ff;"><h6 class="mb-0"><i class="bi bi-folder2-open me-2"></i>' + cat.codice + '<small class="text-muted fw-normal ms-2">' + (cat.descrizione || '') + '</small></h6></div>' +
+        '<div class="card-body py-2"><div class="row">' + campiHtml + '</div>' +
+        '<div class="text-end mt-1"><button class="btn btn-primary btn-sm" onclick="saveMpiExtraDataValori(\'' + mpiId + '\', \'' + cat.codice + '\')"><i class="bi bi-check-lg me-1"></i>Salva</button></div>' +
+        '</div></div>';
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="alert alert-danger mt-2">Errore nel caricamento extra data: ' + (e.message || 'sconosciuto') + '</div>';
+    console.error('Error loading MPI extra data:', e);
+  }
+}
+
+function renderMpiSchemaInput(schemaId, rowIdx, sf, val) {
+  var escaped = (val || '').toString().replace(/"/g, '&quot;');
+  var req = sf.obbligatorio ? 'required' : '';
+  if (sf.tipo === 'enum' && sf.valori) {
+    var opts = '<option value="">--</option>';
+    sf.valori.forEach(function(v) { opts += '<option value="' + v + '"' + (val === v ? ' selected' : '') + '>' + v + '</option>'; });
+    return '<select class="form-select form-select-sm" data-sf="' + sf.chiave + '" ' + req + '>' + opts + '</select>';
+  } else if (sf.tipo === 'date') {
+    return '<input type="date" class="form-control form-control-sm" data-sf="' + sf.chiave + '" value="' + escaped + '" ' + req + '>';
+  } else if (sf.tipo === 'number') {
+    return '<input type="number" class="form-control form-control-sm" data-sf="' + sf.chiave + '" value="' + escaped + '" ' + req + ' step="any">';
+  }
+  return '<input type="text" class="form-control form-control-sm" data-sf="' + sf.chiave + '" value="' + escaped + '" ' + req + ' placeholder="' + (sf.etichetta || sf.chiave) + '">';
+}
+
+function addMpiSchemaRow(schemaId) {
+  var schema = _mpiSchemaCache[schemaId];
+  if (!schema) return;
+  var tbody = document.getElementById('mpi_tbody_' + schemaId);
+  var idx = tbody.rows.length;
+  var tr = document.createElement('tr');
+  tr.setAttribute('data-mpi-schema-row', schemaId);
+  var tds = schema.map(function(sf) { return '<td>' + renderMpiSchemaInput(schemaId, idx, sf, '') + '</td>'; }).join('');
+  tds += '<td><button type="button" class="btn btn-outline-danger btn-sm py-0" onclick="this.closest(\'tr\').remove()"><i class="bi bi-trash"></i></button></td>';
+  tr.innerHTML = tds;
+  tbody.appendChild(tr);
+}
+
+function collectMpiSchemaData(schemaId) {
+  var schema = _mpiSchemaCache[schemaId];
+  if (!schema) return null;
+  var rows = document.querySelectorAll('tr[data-mpi-schema-row="' + schemaId + '"]');
+  var items = [];
+  rows.forEach(function(row) {
+    var item = {};
+    schema.forEach(function(sf) {
+      var el = row.querySelector('[data-sf="' + sf.chiave + '"]');
+      if (el) {
+        var v = el.value.trim();
+        if (v) item[sf.chiave] = v;
+      }
+    });
+    if (Object.keys(item).length > 0) items.push(item);
+  });
+  return items;
+}
+
+async function saveMpiExtraDataValori(mpiId, categoriaCode) {
+  var fields = document.querySelectorAll('input[data-mpi-categoria="' + categoriaCode + '"], textarea[data-mpi-categoria="' + categoriaCode + '"]');
+  var valori = {};
+  var hasChanges = false;
+  fields.forEach(function(el) {
+    var chiave = el.getAttribute('data-mpi-chiave');
+    var schemaIdAttr = el.getAttribute('data-mpi-schema-id');
+    var current;
+    if (schemaIdAttr) {
+      var items = collectMpiSchemaData(schemaIdAttr);
+      current = JSON.stringify(items);
+    } else {
+      current = el.value.trim();
+    }
+    if (current !== el.getAttribute('data-mpi-original')) { valori[chiave] = current; hasChanges = true; }
+  });
+  if (!hasChanges) { adminPanel.showToast('Info', 'Nessuna modifica', 'info'); return; }
+  try {
+    await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId + '/extra-data', 'POST', {categoria: categoriaCode, valori: valori});
+    adminPanel.showToast('Successo', categoriaCode + ' salvato', 'success');
+    await loadMpiExtraData(mpiId);
+  } catch (e) { console.error('Error saving MPI extra data:', e); }
+}
+
+async function deleteMpiExtraDataValore(mpiId, categoriaCode, chiave) {
+  if (!confirm('Eliminare "' + chiave + '"?')) return;
+  try {
+    await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId + '/extra-data', 'DELETE', {categoria: categoriaCode, chiave: chiave});
+    adminPanel.showToast('Successo', '"' + chiave + '" eliminato', 'success');
+    await loadMpiExtraData(mpiId);
+  } catch (e) { console.error('Error deleting MPI extra data:', e); }
 }
 
 // ===== MPI RECORD CREATE/EDIT =====

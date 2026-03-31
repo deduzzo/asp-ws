@@ -1,6 +1,6 @@
 # SIAD - Presa in Carico
 
-## Categoria: SIAD_PRESA_IN_CARICO
+## Categoria: CLINICO_PRESA_IN_CARICO
 
 Registra l'evento di presa in carico di un paziente per assistenza domiciliare.
 
@@ -50,7 +50,7 @@ Registra l'evento di presa in carico di un paziente per assistenza domiciliare.
 ```json
 POST /api/v1/anagrafica/extra-data/RSSMRA80A01F158Z
 {
-  "categoria": "SIAD_PRESA_IN_CARICO",
+  "categoria": "CLINICO_PRESA_IN_CARICO",
   "valori": {
     "data_presa_in_carico": "2026-03-15",
     "soggetto_richiedente": "2",

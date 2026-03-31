@@ -20,14 +20,14 @@ Le categorie sono state progettate prendendo spunto da:
 
 | Categoria | Segmento HL7 | Risorsa FHIR | Tipo |
 |-----------|-------------|--------------|------|
-| `HL7_CONTATTI_EMERGENZA` | NK1 (NF) | Patient.contact | Campi singoli |
-| `HL7_ALLERGIE` | OBX | AllergyIntolerance | JSON lista |
-| `HL7_PATOLOGIE_CRONICHE` | — | Condition | JSON lista |
-| `HL7_ESENZIONI` | PV1-20 | Coverage | JSON lista |
-| `HL7_TERAPIE_CRONICHE` | — | MedicationRequest | JSON lista |
-| `HL7_PARAMETRI_VITALI` | OBX | Observation (vital-signs) | Campi singoli |
-| `HL7_CONSENSI` | NK1 (CONFC) | Consent | JSON lista |
-| `HL7_ANAGRAFICA_EXTRA` | PID-16, NK1 (PR) | — | Campi singoli |
+| `ANAGRAFICA_CONTATTI_EMERGENZA` | NK1 (NF) | Patient.contact | Campi singoli |
+| `CLINICO_ALLERGIE` | OBX | AllergyIntolerance | JSON lista |
+| `CLINICO_PATOLOGIE` | — | Condition | JSON lista |
+| `CLINICO_ESENZIONI` | PV1-20 | Coverage | JSON lista |
+| `CLINICO_TERAPIE` | — | MedicationRequest | JSON lista |
+| `CLINICO_PARAMETRI_VITALI` | OBX | Observation (vital-signs) | Campi singoli |
+| `CLINICO_CONSENSI` | NK1 (CONFC) | Consent | JSON lista |
+| `ANAGRAFICA_EXTRA` | PID-16, NK1 (PR) | — | Campi singoli |
 
 ## Dati HL7 nel Modello Assistiti
 
@@ -42,7 +42,7 @@ Alcuni dati HL7 sono gia presenti come **campi diretti** nel modello `Anagrafica
 | Indirizzo | PID-11 | `indirizzoResidenza`, `capResidenza`, ... |
 | Data decesso | PID-29 | `dataDecesso` |
 | Medico base | PV1-7, ROL | `ssnMMG*` |
-| Esenzioni | PV1-20 | categoria `HL7_ESENZIONI` |
+| Esenzioni | PV1-20 | categoria `CLINICO_ESENZIONI` |
 | Tessera sanitaria | PID-3 (SS) | `ssnNumeroTessera` |
 | Tipo assistito | PV1-18 | `ssnTipoAssistito` |
 
@@ -52,7 +52,9 @@ I dati **non presenti** nel modello base sono gestiti tramite extra data (catego
 
 | Scope | Accesso |
 |-------|---------|
-| `anagrafica-hl7_{categoria}-read` | Lettura singola categoria |
-| `anagrafica-hl7_{categoria}-write` | Scrittura singola categoria |
-| `anagrafica-hl7_*-read` | Lettura **tutte** le categorie HL7 |
-| `anagrafica-hl7_*-write` | Scrittura **tutte** le categorie HL7 |
+| `clinico_{categoria}-read` | Lettura singola categoria clinica |
+| `clinico_{categoria}-write` | Scrittura singola categoria clinica |
+| `anagrafica_{categoria}-read` | Lettura singola categoria anagrafica |
+| `anagrafica_{categoria}-write` | Scrittura singola categoria anagrafica |
+| `clinico_*-read` | Lettura **tutte** le categorie cliniche |
+| `clinico_*-write` | Scrittura **tutte** le categorie cliniche |

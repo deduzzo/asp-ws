@@ -1,6 +1,6 @@
 # Anagrafica Extra (HL7)
 
-## Categoria: HL7_ANAGRAFICA_EXTRA
+## Categoria: ANAGRAFICA_EXTRA
 
 Questa categoria contiene i dati anagrafici aggiuntivi previsti dallo standard HL7 che non sono presenti come campi diretti nel modello `Anagrafica_Assistiti`.
 
@@ -36,7 +36,7 @@ Il flusso SIAD v7.4 prevede anche i seguenti campi nei dati anagrafici:
 ```json
 POST /api/v1/anagrafica/extra-data/RSSMRA80A01F158Z
 {
-  "categoria": "HL7_ANAGRAFICA_EXTRA",
+  "categoria": "ANAGRAFICA_EXTRA",
   "valori": {
     "stato_civile": "2",
     "professione": "MEDICO",

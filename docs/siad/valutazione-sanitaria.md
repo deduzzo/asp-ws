@@ -1,6 +1,6 @@
 # SIAD - Valutazione Sanitaria
 
-## Categoria: SIAD_VALUTAZIONE_SANITARIA
+## Categoria: CLINICO_VALUTAZIONE_SANITARIA
 
 Valutazione dei bisogni sanitari dell'assistito al momento della presa in carico o della rivalutazione. Comprende 37 campi clinici.
 
