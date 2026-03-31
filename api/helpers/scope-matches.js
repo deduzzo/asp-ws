@@ -2,7 +2,7 @@ module.exports = {
   friendlyName: 'Scope matches',
 
   description: 'Verifica se un array di scope utente matcha uno scope richiesto, con supporto wildcard (*). ' +
-    'Es: "anagrafica-hl7_*-read" matcha "anagrafica-hl7_allergie-read".',
+    'Es: "clinico_*-read" matcha "clinico_allergie-read".',
 
   sync: true,
 

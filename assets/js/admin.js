@@ -2039,7 +2039,7 @@ async function editMpiRecord(mpiId) {
   document.getElementById('mpiRecordForm').reset();
 
   try {
-    var data = await adminPanel.apiCall('/api/v1/mpi/record/' + mpiId);
+    var data = await adminPanel.apiCall('/api/v1/admin/mpi/records/' + mpiId);
     var r = data;
 
     await _loadMpiRecordAppSelect();

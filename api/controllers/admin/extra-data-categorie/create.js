@@ -40,9 +40,9 @@ module.exports = {
         });
       }
 
-      // Genera scope names
-      const scopoLettura = `anagrafica-${codiceLower}-read`;
-      const scopoScrittura = `anagrafica-${codiceLower}-write`;
+      // Genera scope names (codice lowercase, senza prefissi)
+      const scopoLettura = `${codiceLower}-read`;
+      const scopoScrittura = `${codiceLower}-write`;
 
       // Crea gli scope in Auth_Scopi (se non esistono già)
       for (const scopoName of [scopoLettura, scopoScrittura]) {
