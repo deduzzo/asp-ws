@@ -31,6 +31,25 @@
       font-size: 0.8em;
       color: rgba(255,255,255,0.4);
     }
+    .kb-export-btn {
+      display: block;
+      margin: 20px 15px;
+      padding: 10px 14px;
+      background: rgba(13,147,115,0.15);
+      border: 1px solid rgba(7,201,131,0.3);
+      border-radius: 6px;
+      color: #07C983 !important;
+      text-align: center;
+      text-decoration: none !important;
+      font-size: 0.85em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .kb-export-btn:hover {
+      background: rgba(13,147,115,0.3);
+      color: #fff !important;
+    }
     .cover-main {
       background: linear-gradient(135deg, #0a1628 0%, #0D9373 100%) !important;
     }
@@ -89,6 +108,19 @@
         function(hook) {
           hook.afterEach(function(html) {
             return html + '<div class="kb-footer">ASP5 Messina - SIA Area Progettazione e Sviluppo - Ing. Roberto De Domenico</div>';
+          });
+          hook.doneEach(function() {
+            if (!document.querySelector('.kb-export-btn')) {
+              var sidebar = document.querySelector('.sidebar');
+              if (sidebar) {
+                var btn = document.createElement('a');
+                btn.className = 'kb-export-btn';
+                btn.href = '/kb/export';
+                btn.target = '_blank';
+                btn.textContent = 'Esporta KB in PDF';
+                sidebar.appendChild(btn);
+              }
+            }
           });
         }
       ]

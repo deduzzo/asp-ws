@@ -379,6 +379,15 @@ let routes = {
       });
     }
   },
+  'GET /kb/export': {
+    fn: function(req, res, next) {
+      const authMiddleware = getBasicAuthMiddleware();
+      authMiddleware(req, res, function(err) {
+        if (err) { return res.status(401).send('Unauthorized'); }
+        return res.sendFile(require('path').resolve(sails.config.appPath, 'docs/export.html'));
+      });
+    }
+  },
   'GET /kb/*': {
     fn: function(req, res, next) {
       const authMiddleware = getBasicAuthMiddleware();
