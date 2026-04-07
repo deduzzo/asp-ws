@@ -567,10 +567,7 @@ let routes = {
     minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
   },
   'GET /api/v1/anagrafica/extra-data-categorie/summary': {
-    action: 'anagrafica/extra-data/summary',
-    scopi: ['asp5-anagrafica'],
-    ambito: 'api',
-    minAuthLevel: JwtService.LOGIN_LEVEL.user
+    action: 'anagrafica/extra-data/summary'
   },
   'POST /api/v1/admin/extra-data-categorie': {
     action: 'admin/extra-data-categorie/create',
