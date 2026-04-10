@@ -47,6 +47,7 @@
 
 config/local.js
 config/custom/private_*.json
+.claude/settings.local.json
 config/custom/docker_settings.json
 data/apps.json
 api/data/forms/template/*.json
