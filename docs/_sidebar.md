@@ -29,6 +29,9 @@
   - [JWT e Permessi](auth/overview.md)
   - [Sistema Scope](auth/scopes.md)
   - [Login e OTP](auth/login-otp.md)
+  - [User Vault](auth/vault.md)
+  - [Keycloak SPID/CIE](auth/keycloak-spid.md)
+  - [Setup Keycloak](auth/keycloak-setup.md)
 
 - **Amministrazione**
   - [Dashboard Admin](admin/dashboard.md)

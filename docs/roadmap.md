@@ -122,6 +122,36 @@ Frontend dedicato per i medici di base:
 
 ---
 
+## 11. Integrazione Keycloak SPID/CIE
+
+Nuovo endpoint di autenticazione che accetta un JWT Keycloak (dopo login SPID o CIE) e rilascia lo stesso authtoken del sistema attuale. Keycloak fa da broker SAML: autentica via SPID/CIE, estrae il codice fiscale, emette un JWT. Il nostro backend verifica il JWT, cerca l'utente per CF, e rilascia il token con i permessi configurati.
+
+- Endpoint: `POST /api/v1/login/get-token-spid`
+- Verifica firma JWT Keycloak via JWKS
+- Ricerca utente per codice fiscale + ambito
+- Stesso token output del login classico
+- Nessun auto-provisioning (admin crea l'utente)
+- [Documento di progetto completo](auth/keycloak-spid.md)
+
+**Effort**: Medio | **Valore**: Molto alto
+
+---
+
+## 12. User Vault - Credenziali Esterne Sicure
+
+Sistema per memorizzare credenziali utente per servizi esterni (portali regionali, Sistema TS) con cifratura a 3 fattori: PIN utente + server secret + blob cifrato nel DB. Nessun singolo punto di compromissione puo rivelare i segreti.
+
+- PIN dedicato (indipendente dalla password AD/LDAP)
+- Doppio livello cifratura: PIN cifra Vault Key, Vault Key cifra i segreti
+- Derivazione chiave: PBKDF2 + HKDF con server pepper
+- Recovery key per reset PIN
+- AES-256-GCM con IV unico per ogni cifratura
+- [Documento di progetto completo](auth/vault.md)
+
+**Effort**: Medio | **Valore**: Alto
+
+---
+
 ## Priorita suggerita
 
 | # | Feature | Effort | Valore |
@@ -136,3 +166,5 @@ Frontend dedicato per i medici di base:
 | 8 | Documenti/Allegati | Medio | Medio |
 | 9 | Cambio Medico Evoluto | Medio | Medio |
 | 10 | Portale Medico | Alto | Molto alto |
+| 11 | Keycloak SPID/CIE | Medio | Molto alto |
+| 12 | User Vault | Medio | Alto |
