@@ -227,6 +227,11 @@ let routes = {
     action: 'stats/info',
   },
 
+  // Mail relay (autenticato via API key nell'header x-api-key)
+  'POST /api/v1/mail/send': {
+    action: 'mail/send',
+  },
+
   // Dynamic Forms routes (public)
   'GET /forms': {
     action: 'forms/index',
