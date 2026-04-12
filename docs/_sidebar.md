@@ -44,5 +44,8 @@
 - **Apps (Docker)**
   - [Panoramica](apps/overview.md)
 
+- **Mail**
+  - [SMTP Relay](mail/smtp-relay.md)
+
 - **Roadmap**
   - [Funzionalita Future](roadmap.md)
