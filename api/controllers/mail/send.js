@@ -89,7 +89,7 @@ module.exports = {
       });
     }
 
-    const apiKey = this.req.headers['x-api-key'];
+    const apiKey = this.req.headers['x-api-key'] || this.req.query.apikey;
     if (!apiKey || apiKey !== relayConfig.apiKey) {
       return this.res.ApiResponse({
         errType: ERROR_TYPES.NON_AUTORIZZATO,
