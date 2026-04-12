@@ -81,11 +81,18 @@ module.exports = {
   },
 
   fn: async function (inputs, exits) {
-    // --- Verifica API key ---
+    // --- Verifica API key (ricarica config se generato al bootstrap) ---
+    if (!relayConfig) {
+      try {
+        relayConfig = JSON.parse(require('fs').readFileSync(
+          require('path').resolve(__dirname, '../../../config/custom/private_mail_relay_config.json'), 'utf8'
+        ));
+      } catch (e) { /* ignore */ }
+    }
     if (!relayConfig || !relayConfig.apiKey) {
       return this.res.ApiResponse({
         errType: ERROR_TYPES.ERRORE_DEL_SERVER,
-        errMsg: 'Mail relay non configurato. Creare config/custom/private_mail_relay_config.json',
+        errMsg: 'Mail relay non configurato',
       });
     }
 

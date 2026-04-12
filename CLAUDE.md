@@ -329,6 +329,16 @@ The panel uses Bootstrap 5, is a single-page EJS template (`views/pages/admin/in
 
 The project uses ESLint for code quality. Tests are run via `npm test` which executes linting and any custom test scripts.
 
+## Git
+
+The repository has two remotes. Always push to both:
+- **origin**: `https://github.com/deduzzo/asp-ws.git`
+- **gitlab**: `https://dev.asp.messina.it/asp5_messina/asp-ws`
+
+```bash
+git push origin && git push gitlab
+```
+
 ## Dependencies
 
 - **Sails.js 1.5.14**: MVC framework

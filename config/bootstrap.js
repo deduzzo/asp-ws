@@ -11,7 +11,19 @@
 
 
 
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
 module.exports.bootstrap = async function () {
+
+  // Auto-genera private_mail_relay_config.json se non esiste
+  const relayConfigPath = path.resolve(__dirname, 'custom/private_mail_relay_config.json');
+  if (!fs.existsSync(relayConfigPath)) {
+    const apiKey = crypto.randomBytes(32).toString('hex');
+    fs.writeFileSync(relayConfigPath, JSON.stringify({ apiKey }, null, 2) + '\n');
+    sails.log.info('Mail relay: generato private_mail_relay_config.json con API key:', apiKey);
+  }
 
   // By convention, this is a good place to set up fake data during development.
   //
