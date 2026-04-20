@@ -7,8 +7,6 @@
  */
 
 const {ERROR_TYPES} = require('../../../responses/ApiResponse');
-const MetricsService = require('../../../services/MetricsService');
-
 module.exports = {
   friendlyName: 'Set extra data assistito',
   description: 'Imposta/aggiorna i dati extra di un assistito per una categoria, identificato tramite codice fiscale.',
@@ -102,7 +100,6 @@ module.exports = {
         }
       }
 
-      MetricsService.extraDataOpsTotal.inc({ operation: 'set' });
       const risultati = [];
 
       for (const [chiave, nuovoValore] of Object.entries(inputs.valori)) {

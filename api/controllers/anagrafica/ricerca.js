@@ -13,8 +13,6 @@ const moment = require('moment');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
 const AssistitoService = require('../../services/AssistitoService');
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
-const MetricsService = require('../../services/MetricsService');
-
 const maxResults = 100;
 
 module.exports = {
@@ -148,7 +146,6 @@ module.exports = {
 
     // Esegui la ricerca sul modello Anagrafica_Assistiti utilizzando i criteri costruiti
     try {
-      MetricsService.anagraficaRicercaTotal.inc({ source: 'local' });
       let assistiti = await Anagrafica_Assistiti.find({
         where: criteria
       });
@@ -159,7 +156,7 @@ module.exports = {
 
       // Ricerca su TS per codice fiscale normale
       if (isCfValido && (!assistiti || assistiti.length === 0) || (isCfValido && inputs.forzaAggiornamentoTs)) {
-        MetricsService.anagraficaRicercaTotal.inc({ source: 'nar2' });
+
         let timeout = false;
         let otherError = null;
         const assistito = await Promise.race([
@@ -190,19 +187,17 @@ module.exports = {
 
         if (assistito && assistiti.length === 0) {
           const created = await Anagrafica_Assistiti.create(assistito).fetch();
-          MetricsService.anagraficaUpsertTotal.inc({ operation: 'create' });
           assistiti = [created];
         } else if (assistito && assistiti.length === 1) {
           assistito.lastCheck = utils.nowToUnixDate();
           const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito);
-          MetricsService.anagraficaUpsertTotal.inc({ operation: 'update' });
           assistiti = [updated];
         }
       }
 
       // Ricerca su Sistema TS per codice STP/ENI
       if (isStp && ((!assistiti || assistiti.length === 0) || inputs.forzaAggiornamentoTs)) {
-        MetricsService.anagraficaRicercaTotal.inc({ source: 'sistema_ts' });
+
         let timeout = false;
         let otherError = null;
         const assistito = await Promise.race([
@@ -233,12 +228,10 @@ module.exports = {
 
         if (assistito && assistiti.length === 0) {
           const created = await Anagrafica_Assistiti.create(assistito).fetch();
-          MetricsService.anagraficaUpsertTotal.inc({ operation: 'create' });
           assistiti = [created];
         } else if (assistito && assistiti.length === 1) {
           assistito.lastCheck = utils.nowToUnixDate();
           const updated = await Anagrafica_Assistiti.updateOne({id: assistiti[0].id}).set(assistito);
-          MetricsService.anagraficaUpsertTotal.inc({ operation: 'update' });
           assistiti = [updated];
         }
       }

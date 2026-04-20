@@ -344,18 +344,20 @@ git push origin && git push gitlab
 The application exposes a `/metrics` endpoint in Prometheus text exposition format, protected by HTTP basic auth.
 
 **Key files:**
-- `api/services/MetricsService.js` — Registry, metric definitions, health check
+- `api/services/MetricsService.js` — Registry, DB queries with 15s cache, health check
 - `api/hooks/metrics.js` — Hook that registers `GET /metrics` on Express with basic auth
-- `config/http.js` — `prometheusMiddleware` collects HTTP metrics before routing
 
 **Config:** `config/custom/private_metrics_config.json` (see example file for format)
 
+**How it works:** Metrics are derived from the Log database table. On each Prometheus scrape, `MetricsService.refreshMetricsFromDb()` runs aggregate queries (COUNT + GROUP BY) on the Log table, cached for 15 seconds. No in-memory counters, no middleware — all data comes from existing logging in `ApiResponse.js`. The Log context includes `statusCode`, `ambito`, and `scopi` for each API response.
+
 **Adding metrics to new features (MANDATORY):**
 Every new controller, endpoint, or business operation MUST be evaluated for metrics. Follow this checklist:
-1. Does it involve CRUD, workflows, external calls, or auth? → Add a counter in `MetricsService.js`
-2. Add `MetricsService.<counter>.inc({ label: 'value' })` calls in the controller at success/failure points
-3. Update `docs/monitoring/metrics.md` with the new metric (table + PromQL example)
-4. After implementation, provide the user a prompt for the Grafana/Prometheus instance to update the dashboard
+1. Ensure the operation logs via `sails.helpers.log` or `res.ApiResponse()` with appropriate tags
+2. If a new tag is needed, add it to `api/models/Log.js` TAGS
+3. Add the corresponding query in `MetricsService.refreshMetricsFromDb()`
+4. Update `docs/monitoring/metrics.md` with the new metric
+5. Provide the user a prompt for the Grafana/Prometheus instance to update the dashboard
 
 ## Dependencies
 

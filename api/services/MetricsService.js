@@ -1,54 +1,65 @@
 /**
  * MetricsService
  *
- * Prometheus metrics registry and helpers.
- * All metrics are in-memory counters/gauges/histograms — no DB queries on scrape.
+ * Prometheus metrics from the Log database table.
+ * On each /metrics scrape, runs aggregate queries on the Log table
+ * and caches the results for 15 seconds.
+ * No in-memory counters, no middleware — all data comes from the DB.
  */
 
 const client = require('prom-client');
 
-// Custom registry (avoids polluting the global one)
+// Custom registry
 const registry = new client.Registry();
-
-// Default labels
 registry.setDefaultLabels({ app: 'asp-ws' });
 
 // Node.js runtime metrics (CPU, memory, event loop, GC)
 client.collectDefaultMetrics({ register: registry });
 
 // ---------------------------------------------------------------------------
-// 1. HTTP metrics
+// Gauges — set from DB queries on each scrape (not counters, because the
+// values come from COUNT(*) which is already a running total)
 // ---------------------------------------------------------------------------
 
-const httpRequestsTotal = new client.Counter({
-  name: 'http_requests_total',
-  help: 'Total HTTP requests',
-  labelNames: ['method', 'action', 'status'],
+const apiRequestsTotal = new client.Gauge({
+  name: 'api_requests_total',
+  help: 'Total API requests from log (by action, status, tag)',
+  labelNames: ['action', 'tag', 'status'],
   registers: [registry],
 });
 
-const httpRequestDuration = new client.Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'HTTP request latency in seconds',
-  labelNames: ['method', 'action'],
-  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+const apiRequestsByAmbito = new client.Gauge({
+  name: 'api_requests_by_ambito_total',
+  help: 'Total API requests by ambito (domain)',
+  labelNames: ['ambito', 'tag'],
   registers: [registry],
 });
 
-const httpRequestsInFlight = new client.Gauge({
-  name: 'http_requests_in_flight',
-  help: 'HTTP requests currently being processed',
+const apiRequestsByScope = new client.Gauge({
+  name: 'api_requests_by_scope_total',
+  help: 'Total API requests by scope',
+  labelNames: ['scope'],
   registers: [registry],
 });
 
-// ---------------------------------------------------------------------------
-// 2. Application errors
-// ---------------------------------------------------------------------------
+const jwtAuthTotal = new client.Gauge({
+  name: 'jwt_auth_total',
+  help: 'JWT token validations by result',
+  labelNames: ['result'],
+  registers: [registry],
+});
 
-const apiErrorsTotal = new client.Counter({
-  name: 'api_errors_total',
-  help: 'Application errors by action and type',
-  labelNames: ['action', 'error_type'],
+const mpiOpsTotal = new client.Gauge({
+  name: 'mpi_operations_total',
+  help: 'MPI record operations by type',
+  labelNames: ['operation'],
+  registers: [registry],
+});
+
+const formSubmissionsTotal = new client.Gauge({
+  name: 'form_submissions_total',
+  help: 'Form submissions by result',
+  labelNames: ['result'],
   registers: [registry],
 });
 
@@ -57,120 +68,135 @@ const apiUp = new client.Gauge({
   help: '1 if service is healthy, 0 if degraded (DB unreachable)',
   registers: [registry],
 });
-apiUp.set(1); // assume healthy on start
+apiUp.set(1);
 
 // ---------------------------------------------------------------------------
-// 3. JWT auth
+// Cache
 // ---------------------------------------------------------------------------
 
-const jwtAuthTotal = new client.Counter({
-  name: 'jwt_auth_total',
-  help: 'JWT token validation outcomes',
-  labelNames: ['result'],
-  registers: [registry],
-});
+let cachedMetrics = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 15000; // 15 seconds
 
 // ---------------------------------------------------------------------------
-// 4. Business — Login
+// Tag -> metric mapping
 // ---------------------------------------------------------------------------
 
-const loginAttemptsTotal = new client.Counter({
-  name: 'login_attempts_total',
-  help: 'Login attempts by method and result',
-  labelNames: ['method', 'result'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// 5. Business — Anagrafica
-// ---------------------------------------------------------------------------
-
-const anagraficaRicercaTotal = new client.Counter({
-  name: 'anagrafica_ricerca_total',
-  help: 'Patient searches by data source',
-  labelNames: ['source'],
-  registers: [registry],
-});
-
-const anagraficaUpsertTotal = new client.Counter({
-  name: 'anagrafica_upsert_total',
-  help: 'Patient create/update operations',
-  labelNames: ['operation'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// 6. Business — Extra Data
-// ---------------------------------------------------------------------------
-
-const extraDataOpsTotal = new client.Counter({
-  name: 'extra_data_operations_total',
-  help: 'Extra data operations by type',
-  labelNames: ['operation'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// 7. Business — MPI
-// ---------------------------------------------------------------------------
-
-const mpiOpsTotal = new client.Counter({
-  name: 'mpi_operations_total',
-  help: 'MPI record operations',
-  labelNames: ['operation'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// 8. Business — Cambio Medico
-// ---------------------------------------------------------------------------
-
-const cambioMedicoTotal = new client.Counter({
-  name: 'cambio_medico_lookup_total',
-  help: 'Doctor change lookups',
-  labelNames: ['operation'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// 9. Business — Forms
-// ---------------------------------------------------------------------------
-
-const formSubmissionsTotal = new client.Counter({
-  name: 'form_submissions_total',
-  help: 'Form submission outcomes',
-  labelNames: ['result'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// 10. Business — Geo jobs
-// ---------------------------------------------------------------------------
-
-const geoJobsTotal = new client.Counter({
-  name: 'geo_jobs_total',
-  help: 'Geolocation batch job outcomes',
-  labelNames: ['status'],
-  registers: [registry],
-});
-
-// ---------------------------------------------------------------------------
-// Error type mapping: internal ERROR_TYPES -> Prometheus label
-// ---------------------------------------------------------------------------
-
-const ERROR_TYPE_MAP = {
-  BAD_REQUEST: 'validation',
-  NON_AUTORIZZATO: 'auth',
-  TOKEN_NON_VALIDO: 'auth',
-  TOKEN_SCADUTO: 'auth',
-  NOT_FOUND: 'not_found',
-  ALREADY_EXISTS: 'validation',
-  ERRORE_GENERICO: 'internal',
-  ERRORE_DEL_SERVER: 'internal',
-  SERVIZIO_NON_DISPONIBILE: 'service_unavailable',
-  TIMEOUT: 'timeout',
-  MULTIPLE_ERRORS: 'internal',
+const TAG_TO_MPI_OP = {
+  MPI_CREATE: 'create',
+  MPI_LINK: 'link',
+  MPI_ANNULLA: 'annulla',
+  MPI_UPDATE: 'update',
 };
+
+// ---------------------------------------------------------------------------
+// Query and refresh metrics from Log table
+// ---------------------------------------------------------------------------
+
+async function refreshMetricsFromDb() {
+  const now = Date.now();
+  if (cachedMetrics && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    return; // cache still valid
+  }
+
+  try {
+    const db = sails.models.log.getDatastore();
+
+    // 1. Requests by action + tag (OK/KO) with statusCode from context
+    const requestsResult = await db.sendNativeQuery(`
+      SELECT action, tag,
+             JSON_UNQUOTE(JSON_EXTRACT(context, '$.statusCode')) as status_code,
+             COUNT(*) as cnt
+      FROM log
+      WHERE tag IN ('API_RESPONSE_OK', 'API_RESPONSE_KO')
+      GROUP BY action, tag, status_code
+    `);
+    apiRequestsTotal.reset();
+    for (const row of requestsResult.rows) {
+      apiRequestsTotal.set(
+        { action: row.action || '__unknown', tag: row.tag, status: row.status_code || 'unknown' },
+        Number(row.cnt)
+      );
+    }
+
+    // 2. Requests by ambito
+    const ambitoResult = await db.sendNativeQuery(`
+      SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.ambito')) as ambito, tag, COUNT(*) as cnt
+      FROM log
+      WHERE tag IN ('API_RESPONSE_OK', 'API_RESPONSE_KO')
+        AND JSON_EXTRACT(context, '$.ambito') IS NOT NULL
+      GROUP BY ambito, tag
+    `);
+    apiRequestsByAmbito.reset();
+    for (const row of ambitoResult.rows) {
+      if (row.ambito && row.ambito !== 'null') {
+        apiRequestsByAmbito.set({ ambito: row.ambito, tag: row.tag }, Number(row.cnt));
+      }
+    }
+
+    // 3. Requests by scope — flatten the scopi array
+    const scopiResult = await db.sendNativeQuery(`
+      SELECT scope.scope as scope_name, COUNT(*) as cnt
+      FROM log,
+           JSON_TABLE(context, '$.scopi[*]' COLUMNS (scope VARCHAR(100) PATH '$')) as scope
+      WHERE tag IN ('API_RESPONSE_OK', 'API_RESPONSE_KO')
+        AND JSON_EXTRACT(context, '$.scopi') IS NOT NULL
+      GROUP BY scope.scope
+    `);
+    apiRequestsByScope.reset();
+    for (const row of scopiResult.rows) {
+      if (row.scope_name) {
+        apiRequestsByScope.set({ scope: row.scope_name }, Number(row.cnt));
+      }
+    }
+
+    // 4. JWT auth results
+    const jwtResult = await db.sendNativeQuery(`
+      SELECT tag, COUNT(*) as cnt
+      FROM log
+      WHERE tag IN ('TOKEN_VERIFY_OK', 'TOKEN_VERIFY_KO')
+      GROUP BY tag
+    `);
+    jwtAuthTotal.reset();
+    for (const row of jwtResult.rows) {
+      const result = row.tag === 'TOKEN_VERIFY_OK' ? 'valid' : 'invalid';
+      jwtAuthTotal.set({ result }, Number(row.cnt));
+    }
+
+    // 5. MPI operations
+    const mpiResult = await db.sendNativeQuery(`
+      SELECT tag, COUNT(*) as cnt
+      FROM log
+      WHERE tag IN ('MPI_CREATE', 'MPI_LINK', 'MPI_ANNULLA', 'MPI_UPDATE')
+      GROUP BY tag
+    `);
+    mpiOpsTotal.reset();
+    for (const row of mpiResult.rows) {
+      const op = TAG_TO_MPI_OP[row.tag] || row.tag;
+      mpiOpsTotal.set({ operation: op }, Number(row.cnt));
+    }
+
+    // 6. Form submissions
+    const formsResult = await db.sendNativeQuery(`
+      SELECT tag, COUNT(*) as cnt
+      FROM log
+      WHERE tag IN ('FORM_SUBMISSION', 'FORM_SUBMISSION_ERROR')
+      GROUP BY tag
+    `);
+    formSubmissionsTotal.reset();
+    for (const row of formsResult.rows) {
+      const result = row.tag === 'FORM_SUBMISSION' ? 'success' : 'error';
+      formSubmissionsTotal.set({ result }, Number(row.cnt));
+    }
+
+    cacheTimestamp = now;
+    cachedMetrics = true;
+    apiUp.set(1);
+  } catch (err) {
+    sails.log.error('[metrics] Error querying log table:', err.message);
+    apiUp.set(0);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Health check — runs every 30s, tests SELECT 1 on each datastore
@@ -214,27 +240,8 @@ function stopHealthCheck() {
 
 module.exports = {
   registry,
-
-  // Metrics objects (for direct use in middleware/hooks)
-  httpRequestsTotal,
-  httpRequestDuration,
-  httpRequestsInFlight,
-  apiErrorsTotal,
   apiUp,
-  jwtAuthTotal,
-  loginAttemptsTotal,
-  anagraficaRicercaTotal,
-  anagraficaUpsertTotal,
-  extraDataOpsTotal,
-  mpiOpsTotal,
-  cambioMedicoTotal,
-  formSubmissionsTotal,
-  geoJobsTotal,
-
-  // Error type mapping
-  ERROR_TYPE_MAP,
-
-  // Health check lifecycle
+  refreshMetricsFromDb,
   startHealthCheck,
   stopHealthCheck,
 };

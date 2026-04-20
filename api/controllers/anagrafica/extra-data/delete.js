@@ -7,8 +7,6 @@
  */
 
 const {ERROR_TYPES} = require('../../../responses/ApiResponse');
-const MetricsService = require('../../../services/MetricsService');
-
 module.exports = {
   friendlyName: 'Delete extra data assistito',
   description: 'Elimina uno o più dati extra di un assistito per una categoria, identificato tramite codice fiscale.',
@@ -68,7 +66,6 @@ module.exports = {
         });
       }
 
-      MetricsService.extraDataOpsTotal.inc({ operation: 'delete' });
       const risultati = [];
 
       for (const chiave of inputs.chiavi) {

@@ -43,8 +43,6 @@
  *   });
  */
 const {TAGS} = require('../models/Log');
-const MetricsService = require('../services/MetricsService');
-
 async function ApiResponse(data) {
   // Recupera req e res dal contesto della response
   const req = this.req;
@@ -104,13 +102,6 @@ async function ApiResponse(data) {
 
   res.status(statusCode);
 
-  // Prometheus: track application errors
-  if (data.errType) {
-    const action = (req.options && req.options.action) || 'unknown';
-    const errorType = MetricsService.ERROR_TYPE_MAP[data.errType] || 'internal';
-    MetricsService.apiErrorsTotal.inc({ action, error_type: errorType });
-  }
-
   let logData = {
     level: data.errType ? 'error' : 'info',
     tag: data.errType ? TAGS.API_RESPONSE_KO : TAGS.API_RESPONSE_OK,
@@ -118,6 +109,9 @@ async function ApiResponse(data) {
     action: req.options.action,
     ipAddress: req.ip,
     context: {
+      statusCode,
+      ambito: (req.tokenData && req.tokenData.ambito) || null,
+      scopi: (req.tokenData && req.tokenData.scopi) || null,
       params: req.allParams(),
       error: data.errType ? {code: data.errType, msg: data.errMsg} : null,
     }

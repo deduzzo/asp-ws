@@ -1,7 +1,6 @@
 const {verifyToken} = require('../services/JwtService');
 const {ERROR_TYPES} = require('../responses/ApiResponse');
 const {TAGS} = require('../models/Log');
-const MetricsService = require('../services/MetricsService');
 
 module.exports = async function (req, res, proceed) {
   try {
@@ -28,8 +27,6 @@ module.exports = async function (req, res, proceed) {
       }
     });
     if (!tokenData.valid) {
-      const jwtResult = tokenData.error && tokenData.error.name === 'TokenExpiredError' ? 'expired' : 'invalid';
-      MetricsService.jwtAuthTotal.inc({ result: jwtResult });
       // log
       await sails.helpers.log.with({
         level: "warn",
@@ -53,7 +50,6 @@ module.exports = async function (req, res, proceed) {
         });
     }
     else {
-      MetricsService.jwtAuthTotal.inc({ result: 'valid' });
       req.user = tokenData.decoded.username;
       req.tokenData = tokenData.decoded;
     }
@@ -74,7 +70,6 @@ module.exports = async function (req, res, proceed) {
         }
       }
     });
-    MetricsService.jwtAuthTotal.inc({ result: 'error' });
     return res.ApiResponse(
       {
         errType: ERROR_TYPES.TOKEN_NON_VALIDO,

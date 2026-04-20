@@ -11,7 +11,6 @@
 
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
 const crypto = require('crypto');
-const MetricsService = require('../../services/MetricsService');
 
 module.exports = {
   friendlyName: 'MPI Create',
@@ -121,8 +120,6 @@ module.exports = {
       }
 
       const record = await Anagrafica_MpiRecord.create(recordData).fetch();
-      MetricsService.mpiOpsTotal.inc({ operation: 'create' });
-
       // Storico
       await Anagrafica_MpiRecordStorico.create({
         mpiRecord: record.id,

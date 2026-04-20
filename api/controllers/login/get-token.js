@@ -14,7 +14,6 @@ const {ERROR_TYPES} = require('../../responses/ApiResponse');
 const moment = require('moment');
 const {sendMail} = require('../../services/MailService');
 const {utils} = require("aziendasanitaria-utils/src/Utils");
-const MetricsService = require('../../services/MetricsService');
 const OTP_MIN_OTHER_REQUEST= 2;
 const OTP_EXPIRE_MINUTES = 10;
 
@@ -116,7 +115,6 @@ module.exports = {
       }
 
       // Verifica la password
-      const loginMethod = domain ? 'domain' : 'local';
       if (!domain) {
         await sails.helpers.passwords.checkPassword(inputs.password, utente.hash_password);
       } else {
@@ -126,7 +124,6 @@ module.exports = {
           domain: domain
         });
         if (!verificaDominio) {
-          MetricsService.loginAttemptsTotal.inc({ method: loginMethod, result: 'failed' });
           return res.ApiResponse({
             errType: ERROR_TYPES.NON_AUTORIZZATO,
             errMsg: 'Utente non abilitato o password errata nel dominio'
@@ -294,7 +291,6 @@ module.exports = {
       }
 
       // Genera il token
-      MetricsService.loginAttemptsTotal.inc({ method: loginMethod, result: 'success' });
       const token = generateToken({
         username: utente.username,
         scopi: scopi,
@@ -317,7 +313,6 @@ module.exports = {
       (err) {
       // if is incorrect
       if (err.code === 'incorrect' && err.exit === 'incorrect') {
-        MetricsService.loginAttemptsTotal.inc({ method: 'local', result: 'failed' });
         return res.ApiResponse({
           errType: ERROR_TYPES.NON_AUTORIZZATO,
           errMsg: 'Password errata'
