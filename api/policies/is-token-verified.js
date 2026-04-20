@@ -27,6 +27,8 @@ module.exports = async function (req, res, proceed) {
       }
     });
     if (!tokenData.valid) {
+      const jwtResult = tokenData.error && tokenData.error.name === 'TokenExpiredError' ? 'expired' : 'invalid';
+      sails.helpers.metricsInc.with({ metric: 'jwt_auth', label1Name: 'result', label1Value: jwtResult });
       // log
       await sails.helpers.log.with({
         level: "warn",
@@ -50,6 +52,7 @@ module.exports = async function (req, res, proceed) {
         });
     }
     else {
+      sails.helpers.metricsInc.with({ metric: 'jwt_auth', label1Name: 'result', label1Value: 'valid' });
       req.user = tokenData.decoded.username;
       req.tokenData = tokenData.decoded;
     }
@@ -70,6 +73,7 @@ module.exports = async function (req, res, proceed) {
         }
       }
     });
+    sails.helpers.metricsInc.with({ metric: 'jwt_auth', label1Name: 'result', label1Value: 'error' });
     return res.ApiResponse(
       {
         errType: ERROR_TYPES.TOKEN_NON_VALIDO,

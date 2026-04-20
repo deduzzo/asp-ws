@@ -120,6 +120,26 @@ async function ApiResponse(data) {
     logData.user = req.user;
   }
   await sails.helpers.log.with(logData);
+
+  // Metrics: increment counters (fire-and-forget)
+  const action = req.options.action || '__unknown';
+  const tag = data.errType ? 'API_RESPONSE_KO' : 'API_RESPONSE_OK';
+  const ambito = (req.tokenData && req.tokenData.ambito) || '__public';
+  // api_requests by action + status
+  sails.helpers.metricsInc.with({ metric: 'api_requests', label1Name: 'action', label1Value: action, label2Name: 'status', label2Value: String(statusCode) });
+  // api_requests by ambito
+  sails.helpers.metricsInc.with({ metric: 'api_requests_by_ambito', label1Name: 'ambito', label1Value: ambito, label2Name: 'tag', label2Value: tag });
+  // api_requests by scope (one increment per scope)
+  if (req.tokenData && req.tokenData.scopi) {
+    for (const scope of req.tokenData.scopi) {
+      sails.helpers.metricsInc.with({ metric: 'api_requests_by_scope', label1Name: 'scope', label1Value: scope });
+    }
+  }
+  // api_errors by action + error_type
+  if (data.errType) {
+    sails.helpers.metricsInc.with({ metric: 'api_errors', label1Name: 'action', label1Value: action, label2Name: 'error_type', label2Value: data.errType });
+  }
+
   // Costruisce e restituisce l'oggetto di risposta
   if (data.errType) {
     return res.json({

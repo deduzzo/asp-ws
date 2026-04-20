@@ -1,10 +1,10 @@
 /**
  * MetricsService
  *
- * Prometheus metrics from the Log database table.
- * On each /metrics scrape, runs aggregate queries on the Log table
- * and caches the results for 15 seconds.
- * No in-memory counters, no middleware — all data comes from the DB.
+ * Prometheus metrics from the metrics_counters table.
+ * Counters are atomically incremented via the metrics-inc helper
+ * (INSERT ON DUPLICATE KEY UPDATE). On each /metrics scrape,
+ * a simple SELECT * reads all rows (cached 15s).
  */
 
 const client = require('prom-client');
@@ -17,51 +17,41 @@ registry.setDefaultLabels({ app: 'asp-ws' });
 client.collectDefaultMetrics({ register: registry });
 
 // ---------------------------------------------------------------------------
-// Gauges — set from DB queries on each scrape (not counters, because the
-// values come from COUNT(*) which is already a running total)
+// Gauges — populated from metrics_counters rows on each scrape
 // ---------------------------------------------------------------------------
 
-const apiRequestsTotal = new client.Gauge({
-  name: 'api_requests_total',
-  help: 'Total API requests from log (by action, status, tag)',
-  labelNames: ['action', 'tag', 'status'],
-  registers: [registry],
-});
-
-const apiRequestsByAmbito = new client.Gauge({
-  name: 'api_requests_by_ambito_total',
-  help: 'Total API requests by ambito (domain)',
-  labelNames: ['ambito', 'tag'],
-  registers: [registry],
-});
-
-const apiRequestsByScope = new client.Gauge({
-  name: 'api_requests_by_scope_total',
-  help: 'Total API requests by scope',
-  labelNames: ['scope'],
-  registers: [registry],
-});
-
-const jwtAuthTotal = new client.Gauge({
-  name: 'jwt_auth_total',
-  help: 'JWT token validations by result',
-  labelNames: ['result'],
-  registers: [registry],
-});
-
-const mpiOpsTotal = new client.Gauge({
-  name: 'mpi_operations_total',
-  help: 'MPI record operations by type',
-  labelNames: ['operation'],
-  registers: [registry],
-});
-
-const formSubmissionsTotal = new client.Gauge({
-  name: 'form_submissions_total',
-  help: 'Form submissions by result',
-  labelNames: ['result'],
-  registers: [registry],
-});
+const metrics = {
+  api_requests: new client.Gauge({
+    name: 'api_requests_total',
+    help: 'Total API requests by action and HTTP status',
+    labelNames: ['action', 'status'],
+    registers: [registry],
+  }),
+  api_requests_by_ambito: new client.Gauge({
+    name: 'api_requests_by_ambito_total',
+    help: 'Total API requests by ambito (domain) and result',
+    labelNames: ['ambito', 'tag'],
+    registers: [registry],
+  }),
+  api_requests_by_scope: new client.Gauge({
+    name: 'api_requests_by_scope_total',
+    help: 'Total API requests by scope',
+    labelNames: ['scope'],
+    registers: [registry],
+  }),
+  api_errors: new client.Gauge({
+    name: 'api_errors_total',
+    help: 'Application errors by action and error type',
+    labelNames: ['action', 'error_type'],
+    registers: [registry],
+  }),
+  jwt_auth: new client.Gauge({
+    name: 'jwt_auth_total',
+    help: 'JWT token validations by result',
+    labelNames: ['result'],
+    registers: [registry],
+  }),
+};
 
 const apiUp = new client.Gauge({
   name: 'api_up',
@@ -74,126 +64,46 @@ apiUp.set(1);
 // Cache
 // ---------------------------------------------------------------------------
 
-let cachedMetrics = null;
 let cacheTimestamp = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 15000;
 
 // ---------------------------------------------------------------------------
-// Tag -> metric mapping
-// ---------------------------------------------------------------------------
-
-const TAG_TO_MPI_OP = {
-  MPI_CREATE: 'create',
-  MPI_LINK: 'link',
-  MPI_ANNULLA: 'annulla',
-  MPI_UPDATE: 'update',
-};
-
-// ---------------------------------------------------------------------------
-// Query and refresh metrics from Log table
+// Refresh metrics from metrics_counters table
 // ---------------------------------------------------------------------------
 
 async function refreshMetricsFromDb() {
   const now = Date.now();
-  if (cachedMetrics && (now - cacheTimestamp) < CACHE_TTL_MS) {
-    return; // cache still valid
+  if ((now - cacheTimestamp) < CACHE_TTL_MS) {
+    return;
   }
 
   try {
-    const db = sails.models.log.getDatastore();
+    const db = Log.getDatastore();
+    const result = await db.sendNativeQuery(
+      'SELECT metric, label1_name, label1_value, label2_name, label2_value, cnt FROM metrics_counters'
+    );
 
-    // 1. Requests by action + tag (OK/KO) with statusCode from context
-    const requestsResult = await db.sendNativeQuery(`
-      SELECT action, tag,
-             JSON_UNQUOTE(JSON_EXTRACT(context, '$.statusCode')) as status_code,
-             COUNT(*) as cnt
-      FROM log
-      WHERE tag IN ('API_RESPONSE_OK', 'API_RESPONSE_KO')
-      GROUP BY action, tag, status_code
-    `);
-    apiRequestsTotal.reset();
-    for (const row of requestsResult.rows) {
-      apiRequestsTotal.set(
-        { action: row.action || '__unknown', tag: row.tag, status: row.status_code || 'unknown' },
-        Number(row.cnt)
-      );
+    // Reset all gauges
+    for (const gauge of Object.values(metrics)) {
+      gauge.reset();
     }
 
-    // 2. Requests by ambito
-    const ambitoResult = await db.sendNativeQuery(`
-      SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.ambito')) as ambito, tag, COUNT(*) as cnt
-      FROM log
-      WHERE tag IN ('API_RESPONSE_OK', 'API_RESPONSE_KO')
-        AND JSON_EXTRACT(context, '$.ambito') IS NOT NULL
-      GROUP BY ambito, tag
-    `);
-    apiRequestsByAmbito.reset();
-    for (const row of ambitoResult.rows) {
-      if (row.ambito && row.ambito !== 'null') {
-        apiRequestsByAmbito.set({ ambito: row.ambito, tag: row.tag }, Number(row.cnt));
-      }
-    }
+    // Populate from rows
+    for (const row of result.rows) {
+      const gauge = metrics[row.metric];
+      if (!gauge) continue;
 
-    // 3. Requests by scope — flatten the scopi array
-    const scopiResult = await db.sendNativeQuery(`
-      SELECT scope.scope as scope_name, COUNT(*) as cnt
-      FROM log,
-           JSON_TABLE(context, '$.scopi[*]' COLUMNS (scope VARCHAR(100) PATH '$')) as scope
-      WHERE tag IN ('API_RESPONSE_OK', 'API_RESPONSE_KO')
-        AND JSON_EXTRACT(context, '$.scopi') IS NOT NULL
-      GROUP BY scope.scope
-    `);
-    apiRequestsByScope.reset();
-    for (const row of scopiResult.rows) {
-      if (row.scope_name) {
-        apiRequestsByScope.set({ scope: row.scope_name }, Number(row.cnt));
-      }
-    }
+      const labels = {};
+      if (row.label1_name) labels[row.label1_name] = row.label1_value;
+      if (row.label2_name) labels[row.label2_name] = row.label2_value;
 
-    // 4. JWT auth results
-    const jwtResult = await db.sendNativeQuery(`
-      SELECT tag, COUNT(*) as cnt
-      FROM log
-      WHERE tag IN ('TOKEN_VERIFY_OK', 'TOKEN_VERIFY_KO')
-      GROUP BY tag
-    `);
-    jwtAuthTotal.reset();
-    for (const row of jwtResult.rows) {
-      const result = row.tag === 'TOKEN_VERIFY_OK' ? 'valid' : 'invalid';
-      jwtAuthTotal.set({ result }, Number(row.cnt));
-    }
-
-    // 5. MPI operations
-    const mpiResult = await db.sendNativeQuery(`
-      SELECT tag, COUNT(*) as cnt
-      FROM log
-      WHERE tag IN ('MPI_CREATE', 'MPI_LINK', 'MPI_ANNULLA', 'MPI_UPDATE')
-      GROUP BY tag
-    `);
-    mpiOpsTotal.reset();
-    for (const row of mpiResult.rows) {
-      const op = TAG_TO_MPI_OP[row.tag] || row.tag;
-      mpiOpsTotal.set({ operation: op }, Number(row.cnt));
-    }
-
-    // 6. Form submissions
-    const formsResult = await db.sendNativeQuery(`
-      SELECT tag, COUNT(*) as cnt
-      FROM log
-      WHERE tag IN ('FORM_SUBMISSION', 'FORM_SUBMISSION_ERROR')
-      GROUP BY tag
-    `);
-    formSubmissionsTotal.reset();
-    for (const row of formsResult.rows) {
-      const result = row.tag === 'FORM_SUBMISSION' ? 'success' : 'error';
-      formSubmissionsTotal.set({ result }, Number(row.cnt));
+      gauge.set(labels, Number(row.cnt));
     }
 
     cacheTimestamp = now;
-    cachedMetrics = true;
     apiUp.set(1);
   } catch (err) {
-    sails.log.error('[metrics] Error querying log table:', err.message);
+    sails.log.error('[metrics] Error reading metrics_counters:', err.message);
     apiUp.set(0);
   }
 }
