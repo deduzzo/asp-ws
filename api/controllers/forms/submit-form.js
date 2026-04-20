@@ -1,3 +1,5 @@
+const MetricsService = require('../../services/MetricsService');
+
 module.exports = {
 
 
@@ -60,8 +62,13 @@ module.exports = {
         ipAddress: ipAddress,
         formId: formId,
         recaptchaToken: inputs.recaptchaToken
-      }).intercept('rateLimitExceeded', 'rateLimitExceeded')
-        .intercept('recaptchaFailed', 'recaptchaFailed');
+      }).intercept('rateLimitExceeded', () => {
+        MetricsService.formSubmissionsTotal.inc({ result: 'rate_limited' });
+        return 'rateLimitExceeded';
+      }).intercept('recaptchaFailed', () => {
+        MetricsService.formSubmissionsTotal.inc({ result: 'captcha_failed' });
+        return 'recaptchaFailed';
+      });
 
       sails.log.info('Rate limit check passed:', {
         ip: ipAddress,
@@ -85,6 +92,7 @@ module.exports = {
       // Valida i campi required
       const validationErrors = validateFormData(inputs.formValues, formDefinition);
       if (validationErrors.length > 0) {
+        MetricsService.formSubmissionsTotal.inc({ result: 'validation_error' });
         return exits.badRequest({
           error: 'Validation failed',
           errors: validationErrors
@@ -162,6 +170,7 @@ module.exports = {
         }
       }
 
+      MetricsService.formSubmissionsTotal.inc({ result: 'success' });
       return exits.success({
         success: true,
         message: formDefinition.messages?.success || 'Grazie! Il modulo è stato inviato con successo.',

@@ -43,6 +43,7 @@
  *   });
  */
 const {TAGS} = require('../models/Log');
+const MetricsService = require('../services/MetricsService');
 
 async function ApiResponse(data) {
   // Recupera req e res dal contesto della response
@@ -103,6 +104,12 @@ async function ApiResponse(data) {
 
   res.status(statusCode);
 
+  // Prometheus: track application errors
+  if (data.errType) {
+    const action = (req.options && req.options.action) || 'unknown';
+    const errorType = MetricsService.ERROR_TYPE_MAP[data.errType] || 'internal';
+    MetricsService.apiErrorsTotal.inc({ action, error_type: errorType });
+  }
 
   let logData = {
     level: data.errType ? 'error' : 'info',

@@ -7,6 +7,7 @@
  */
 
 const {ERROR_TYPES} = require('../../../responses/ApiResponse');
+const MetricsService = require('../../../services/MetricsService');
 
 module.exports = {
   friendlyName: 'Delete extra data assistito',
@@ -67,6 +68,7 @@ module.exports = {
         });
       }
 
+      MetricsService.extraDataOpsTotal.inc({ operation: 'delete' });
       const risultati = [];
 
       for (const chiave of inputs.chiavi) {

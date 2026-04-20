@@ -47,5 +47,8 @@
 - **Mail**
   - [SMTP Relay](mail/smtp-relay.md)
 
+- **Monitoring**
+  - [Metriche Prometheus](monitoring/metrics.md)
+
 - **Roadmap**
   - [Funzionalita Future](roadmap.md)

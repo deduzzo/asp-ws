@@ -10,6 +10,7 @@
  */
 
 const {ERROR_TYPES} = require('../../../responses/ApiResponse');
+const MetricsService = require('../../../services/MetricsService');
 
 module.exports = {
   friendlyName: 'Get extra data assistito',
@@ -33,6 +34,7 @@ module.exports = {
         });
       }
 
+      MetricsService.extraDataOpsTotal.inc({ operation: 'get' });
       const extraData = await sails.helpers.getExtraDataForAssistiti.with({
         assistitoIds: [assistito.id],
         userScopi

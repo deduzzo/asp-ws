@@ -7,6 +7,7 @@
  */
 
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
+const MetricsService = require('../../services/MetricsService');
 
 module.exports = {
   friendlyName: 'MPI Link',
@@ -65,6 +66,7 @@ module.exports = {
       }
 
       // Effettua il link
+      MetricsService.mpiOpsTotal.inc({ operation: 'link' });
       await Anagrafica_MpiRecord.updateOne({id: record.id}).set({
         assistito: assistito.id,
         stato: 'identificato',

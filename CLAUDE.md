@@ -339,6 +339,19 @@ The repository has two remotes. Always push to both:
 git push origin && git push gitlab
 ```
 
+### Prometheus Metrics
+
+The application exposes a `/metrics` endpoint in Prometheus text exposition format, protected by HTTP basic auth.
+
+**Key files:**
+- `api/services/MetricsService.js` — Registry, metric definitions, health check
+- `api/hooks/metrics.js` — Hook that registers `GET /metrics` on Express with basic auth
+- `config/http.js` — `prometheusMiddleware` collects HTTP metrics before routing
+
+**Env vars:** `METRICS_ENABLED` (default: true), `METRICS_USER` (default: metrics), `METRICS_PASS` (required)
+
+**Adding metrics to new features:** When implementing new controllers or business operations, add counter increments using `MetricsService.<counter>.inc({ label: 'value' })`. See existing controllers for examples.
+
 ## Dependencies
 
 - **Sails.js 1.5.14**: MVC framework
@@ -350,6 +363,7 @@ git push origin && git push gitlab
 - **Moment.js**: Date/time handling
 - **@turf/turf**: Geospatial operations
 - **Swagger**: API documentation
+- **prom-client**: Prometheus metrics client
 
 ## Node Version
 

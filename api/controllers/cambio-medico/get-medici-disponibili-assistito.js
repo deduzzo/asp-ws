@@ -7,6 +7,7 @@
  */
 const MediciService = require('../../services/MediciService');
 const {Nar2} = require('aziendasanitaria-utils/src/narTsServices/Nar2');
+const MetricsService = require('../../services/MetricsService');
 
 module.exports = {
 
@@ -39,7 +40,7 @@ module.exports = {
 
   fn: async function (inputs) {
     try {
-
+      MetricsService.cambioMedicoTotal.inc({ operation: 'disponibili' });
       const ambiti = await MediciService.getAmbitiDomicilioAssistito(inputs.cfAssistito);
 
       if (ambiti.ok) {

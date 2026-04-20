@@ -10,6 +10,8 @@ graph LR
     API --> LOG[(log<br/>MySQL)]
     API --> MS[Meilisearch]
     API --> TS[SistemaTS<br/>MEF]
+    PROM[Prometheus] -->|scrape /metrics| API
+    PROM --> GRAF[Grafana]
 ```
 
 ## Multi-Database
@@ -79,3 +81,16 @@ Ogni richiesta API viene automaticamente loggata nel database `log` tramite `api
 | utente | Username autenticato |
 | parametri | Parametri della richiesta (sanitizzati) |
 | contesto | Dettagli aggiuntivi |
+
+## Monitoring
+
+L'applicazione espone un endpoint `/metrics` in formato Prometheus text exposition, protetto da basic auth HTTP.
+
+- **Metriche HTTP**: richieste, latenza, in-flight — raccolte automaticamente via middleware
+- **Errori applicativi**: conteggiati per tipo (`auth`, `validation`, `not_found`, ecc.)
+- **Auth JWT**: validazioni token con esito (`valid`, `expired`, `invalid`)
+- **Business**: login, ricerche anagrafica, operazioni MPI, extra data, cambio medico, form, geocoding
+- **Health check**: `api_up` gauge aggiornato ogni 30s con test connessione ai 3 database
+- **Runtime Node.js**: CPU, memoria, event loop, GC (via `prom-client` default metrics)
+
+Per dettagli completi, query PromQL e configurazione Prometheus: [Metriche Prometheus](monitoring/metrics.md)

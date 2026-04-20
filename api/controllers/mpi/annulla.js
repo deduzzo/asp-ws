@@ -7,6 +7,7 @@
  */
 
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
+const MetricsService = require('../../services/MetricsService');
 
 module.exports = {
   friendlyName: 'MPI Annulla',
@@ -38,6 +39,7 @@ module.exports = {
         return res.ApiResponse({errType: ERROR_TYPES.NON_AUTORIZZATO, errMsg: 'Non hai i permessi di scrittura per questa applicazione MPI'});
       }
 
+      MetricsService.mpiOpsTotal.inc({ operation: 'annulla' });
       await Anagrafica_MpiRecord.updateOne({id: record.id}).set({stato: 'annullato'});
 
       await Anagrafica_MpiRecordStorico.create({

@@ -8,6 +8,7 @@
 const {createJob, updateJob} = require('../../services/JobManager');
 const {getGeoAssistito} = require('../../services/AssistitoService');
 const {utils} = require('aziendasanitaria-utils/src/Utils');
+const MetricsService = require('../../services/MetricsService');
 module.exports = {
   friendlyName: 'Aggiorna in background i dati geografici per comune di residenza',
   description: 'Aggiorna in background i dati geografici degli assistiti per comune di residenza',
@@ -44,6 +45,7 @@ module.exports = {
 
 
     // Crea un job asincrono per l'aggiornamento delle geolocalizzazioni
+    MetricsService.geoJobsTotal.inc({ status: 'started' });
     const jobId = createJob('geoloc', data.length);
 
     // Avvia il processo in background
@@ -86,12 +88,14 @@ module.exports = {
         }
 
         const cleanedData = data.map(item => _.omit(item, ['createdAt', 'updatedAt']));
+        MetricsService.geoJobsTotal.inc({ status: 'completed' });
         updateJob(jobId, {
           status: 'completed',
           result: cleanedData
         });
       } catch (error) {
         sails.log.error('Errore nel job di geolocalizzazione:', error);
+        MetricsService.geoJobsTotal.inc({ status: 'failed' });
         updateJob(jobId, {
           status: 'error',
           error: error.message

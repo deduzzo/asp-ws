@@ -8,6 +8,7 @@
 
 
 const MediciService = require('../../services/MediciService');
+const MetricsService = require('../../services/MetricsService');
 module.exports = {
 
 
@@ -37,6 +38,7 @@ module.exports = {
 
 
   fn: async function (inputs) {
+    MetricsService.cambioMedicoTotal.inc({ operation: 'situazioni' });
     const result = await MediciService.getSituazioniAssistenzialiAssistito(inputs.codiceFiscale, inputs.includeFullData);
     if (result && result.ok) {
       return this.res.ApiResponse({data: result.data});

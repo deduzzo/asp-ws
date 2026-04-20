@@ -1,6 +1,7 @@
 const MediciService = require('../../services/MediciService');
 const {ERROR_TYPES} = require('../../responses/ApiResponse');
 const {utils} = require("aziendasanitaria-utils/src/Utils");
+const MetricsService = require('../../services/MetricsService');
 
 /**
  * @swagger
@@ -86,6 +87,7 @@ module.exports = {
   fn: async function (inputs) {
     const res = this.res;
     try {
+      MetricsService.cambioMedicoTotal.inc({ operation: 'get_medici' });
       // Genera la chiave di cache basata sui parametri
       const cacheKey = generateCacheKey({
         tipoMedico: inputs.tipoMedico,
