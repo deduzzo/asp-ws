@@ -4,29 +4,30 @@
  * Registers GET /metrics on the underlying Express app with HTTP basic auth.
  * Completely bypasses Sails routing and policies.
  *
- * Env vars:
- *   METRICS_ENABLED  — "true" (default) or "false"
- *   METRICS_USER     — basic auth username (default: "metrics")
- *   METRICS_PASS     — basic auth password (required, no default)
+ * Config: sails.config.custom.metrics (from config/custom/private_metrics_config.json)
+ *   enabled  — true (default) or false
+ *   user     — basic auth username (default: "metrics")
+ *   pass     — basic auth password (required)
  */
 
 module.exports = function defineMetricsHook(sails) {
   return {
     initialize: async function () {
       sails.after('hook:http:loaded', () => {
-        const enabled = (process.env.METRICS_ENABLED || 'true') === 'true';
+        const config = sails.config.custom.metrics || {};
+        const enabled = config.enabled !== false;
         if (!enabled) {
-          sails.log.info('[metrics] Metrics endpoint disabled via METRICS_ENABLED=false');
+          sails.log.info('[metrics] Metrics endpoint disabled via config');
           return;
         }
 
-        const metricsUser = process.env.METRICS_USER || 'metrics';
-        const metricsPass = process.env.METRICS_PASS;
+        const metricsUser = config.user || 'metrics';
+        const metricsPass = config.pass;
 
         const app = sails.hooks.http.app;
 
         app.get('/metrics', async (req, res) => {
-          // If METRICS_PASS is not configured, return 503
+          // If pass is not configured, return 503
           if (!metricsPass) {
             res.status(503).set('Content-Type', 'text/plain').end('Metrics not configured\n');
             return;

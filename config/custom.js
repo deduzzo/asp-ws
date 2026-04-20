@@ -23,6 +23,15 @@ try {
   };
 }
 
+// Load metrics config, with fallback
+let metricsConfig;
+try {
+  metricsConfig = require('./custom/private_metrics_config.json');
+} catch (error) {
+  console.warn('Warning: private_metrics_config.json not found, metrics endpoint disabled');
+  metricsConfig = { METRICS_ENABLED: false, METRICS_USER: 'metrics', METRICS_PASS: null };
+}
+
 module.exports.custom = {
   baseUrl: 'http://localhost:1337',
   jwtSecret: jwtConfig.JWT_SECRET,
@@ -32,6 +41,11 @@ module.exports.custom = {
   recaptcha: {
     siteKey: recaptchaConfig.RECAPTCHA_SITE_KEY,
     secretKey: recaptchaConfig.RECAPTCHA_SECRET_KEY
+  },
+  metrics: {
+    enabled: metricsConfig.METRICS_ENABLED,
+    user: metricsConfig.METRICS_USER,
+    pass: metricsConfig.METRICS_PASS,
   },
   /***************************************************************************
   *                                                                          *

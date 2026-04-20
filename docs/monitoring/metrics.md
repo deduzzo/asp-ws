@@ -4,13 +4,25 @@
 
 L'endpoint `/metrics` espone metriche in formato Prometheus text exposition.
 
-### Variabili d'ambiente
+### File di configurazione
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
+Crea `config/custom/private_metrics_config.json` (vedi `example_private_metrics_config.json`):
+
+```json
+{
+  "METRICS_ENABLED": true,
+  "METRICS_USER": "metrics",
+  "METRICS_PASS": "la-tua-password"
+}
+```
+
+| Campo | Default | Descrizione |
+|-------|---------|-------------|
 | `METRICS_ENABLED` | `true` | Abilita/disabilita l'endpoint |
 | `METRICS_USER` | `metrics` | Username per basic auth |
 | `METRICS_PASS` | *(obbligatoria)* | Password per basic auth. Se non impostata, l'endpoint risponde 503 |
+
+Se il file non esiste, l'endpoint viene disabilitato automaticamente.
 
 ### Accesso
 

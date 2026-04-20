@@ -1,0 +1,5 @@
+{
+  "METRICS_ENABLED": true,
+  "METRICS_USER": "metrics",
+  "METRICS_PASS": "change-me"
+}

@@ -348,7 +348,7 @@ The application exposes a `/metrics` endpoint in Prometheus text exposition form
 - `api/hooks/metrics.js` — Hook that registers `GET /metrics` on Express with basic auth
 - `config/http.js` — `prometheusMiddleware` collects HTTP metrics before routing
 
-**Env vars:** `METRICS_ENABLED` (default: true), `METRICS_USER` (default: metrics), `METRICS_PASS` (required)
+**Config:** `config/custom/private_metrics_config.json` (see example file for format)
 
 **Adding metrics to new features (MANDATORY):**
 Every new controller, endpoint, or business operation MUST be evaluated for metrics. Follow this checklist:
