@@ -28,7 +28,8 @@ module.exports = async function (req, res, proceed) {
     });
     if (!tokenData.valid) {
       const jwtResult = tokenData.error && tokenData.error.name === 'TokenExpiredError' ? 'expired' : 'invalid';
-      sails.helpers.metricsInc.with({ metric: 'jwt_auth', label1Name: 'result', label1Value: jwtResult }).tolerate(() => {});
+      const mSql = 'INSERT INTO metrics_counters (metric, label1_name, label1_value, cnt) VALUES ($1, $2, $3, 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1';
+      Log.getDatastore().sendNativeQuery(mSql, ['jwt_auth', 'result', jwtResult]).catch(() => {});
       // log
       await sails.helpers.log.with({
         level: "warn",
@@ -52,7 +53,7 @@ module.exports = async function (req, res, proceed) {
         });
     }
     else {
-      sails.helpers.metricsInc.with({ metric: 'jwt_auth', label1Name: 'result', label1Value: 'valid' }).tolerate(() => {});
+      Log.getDatastore().sendNativeQuery('INSERT INTO metrics_counters (metric, label1_name, label1_value, cnt) VALUES ($1, $2, $3, 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1', ['jwt_auth', 'result', 'valid']).catch(() => {});
       req.user = tokenData.decoded.username;
       req.tokenData = tokenData.decoded;
     }
@@ -73,7 +74,7 @@ module.exports = async function (req, res, proceed) {
         }
       }
     });
-    sails.helpers.metricsInc.with({ metric: 'jwt_auth', label1Name: 'result', label1Value: 'error' }).tolerate(() => {});
+    Log.getDatastore().sendNativeQuery('INSERT INTO metrics_counters (metric, label1_name, label1_value, cnt) VALUES ($1, $2, $3, 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1', ['jwt_auth', 'result', 'error']).catch(() => {});
     return res.ApiResponse(
       {
         errType: ERROR_TYPES.TOKEN_NON_VALIDO,

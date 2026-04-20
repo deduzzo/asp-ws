@@ -121,19 +121,22 @@ async function ApiResponse(data) {
   }
   await sails.helpers.log.with(logData);
 
-  // Metrics: increment counters (fire-and-forget)
-  const action = req.options.action || '__unknown';
-  const tag = data.errType ? 'API_RESPONSE_KO' : 'API_RESPONSE_OK';
-  const ambito = (req.tokenData && req.tokenData.ambito) || '__public';
-  sails.helpers.metricsInc.with({ metric: 'api_requests', label1Name: 'action', label1Value: action, label2Name: 'status', label2Value: String(statusCode) }).tolerate(() => {});
-  sails.helpers.metricsInc.with({ metric: 'api_requests_by_ambito', label1Name: 'ambito', label1Value: ambito, label2Name: 'tag', label2Value: tag }).tolerate(() => {});
+  // Metrics: increment counters (fire-and-forget, plain Promises)
+  const mAction = req.options.action || '__unknown';
+  const mTag = data.errType ? 'API_RESPONSE_KO' : 'API_RESPONSE_OK';
+  const mAmbito = (req.tokenData && req.tokenData.ambito) || '__public';
+  const mDb = Log.getDatastore();
+  const mSql = `INSERT INTO metrics_counters (metric, label1_name, label1_value, label2_name, label2_value, cnt)
+    VALUES ($1, $2, $3, $4, $5, 1) ON DUPLICATE KEY UPDATE cnt = cnt + 1`;
+  mDb.sendNativeQuery(mSql, ['api_requests', 'action', mAction, 'status', String(statusCode)]).catch(() => {});
+  mDb.sendNativeQuery(mSql, ['api_requests_by_ambito', 'ambito', mAmbito, 'tag', mTag]).catch(() => {});
   if (req.tokenData && req.tokenData.scopi) {
     for (const scope of req.tokenData.scopi) {
-      sails.helpers.metricsInc.with({ metric: 'api_requests_by_scope', label1Name: 'scope', label1Value: scope }).tolerate(() => {});
+      mDb.sendNativeQuery(mSql, ['api_requests_by_scope', 'scope', scope, '', '']).catch(() => {});
     }
   }
   if (data.errType) {
-    sails.helpers.metricsInc.with({ metric: 'api_errors', label1Name: 'action', label1Value: action, label2Name: 'error_type', label2Value: data.errType }).tolerate(() => {});
+    mDb.sendNativeQuery(mSql, ['api_errors', 'action', mAction, 'error_type', data.errType]).catch(() => {});
   }
 
   // Costruisce e restituisce l'oggetto di risposta
