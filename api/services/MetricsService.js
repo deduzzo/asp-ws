@@ -209,68 +209,6 @@ function stopHealthCheck() {
 }
 
 // ---------------------------------------------------------------------------
-// Initialize all counters so they appear in /metrics output from boot
-// (Grafana shows "No data" for counters that have never been incremented)
-// ---------------------------------------------------------------------------
-
-function initCounters() {
-  // JWT auth
-  jwtAuthTotal.inc({ result: 'valid' }, 0);
-  jwtAuthTotal.inc({ result: 'expired' }, 0);
-  jwtAuthTotal.inc({ result: 'invalid' }, 0);
-  jwtAuthTotal.inc({ result: 'error' }, 0);
-
-  // Login
-  loginAttemptsTotal.inc({ method: 'local', result: 'success' }, 0);
-  loginAttemptsTotal.inc({ method: 'local', result: 'failed' }, 0);
-  loginAttemptsTotal.inc({ method: 'domain', result: 'success' }, 0);
-  loginAttemptsTotal.inc({ method: 'domain', result: 'failed' }, 0);
-
-  // Anagrafica
-  anagraficaRicercaTotal.inc({ source: 'local' }, 0);
-  anagraficaRicercaTotal.inc({ source: 'nar2' }, 0);
-  anagraficaRicercaTotal.inc({ source: 'sistema_ts' }, 0);
-  anagraficaUpsertTotal.inc({ operation: 'create' }, 0);
-  anagraficaUpsertTotal.inc({ operation: 'update' }, 0);
-
-  // Extra data
-  extraDataOpsTotal.inc({ operation: 'get' }, 0);
-  extraDataOpsTotal.inc({ operation: 'set' }, 0);
-  extraDataOpsTotal.inc({ operation: 'delete' }, 0);
-
-  // MPI
-  mpiOpsTotal.inc({ operation: 'create' }, 0);
-  mpiOpsTotal.inc({ operation: 'link' }, 0);
-  mpiOpsTotal.inc({ operation: 'annulla' }, 0);
-
-  // Cambio medico
-  cambioMedicoTotal.inc({ operation: 'get_medici' }, 0);
-  cambioMedicoTotal.inc({ operation: 'disponibili' }, 0);
-  cambioMedicoTotal.inc({ operation: 'situazioni' }, 0);
-
-  // Forms
-  formSubmissionsTotal.inc({ result: 'success' }, 0);
-  formSubmissionsTotal.inc({ result: 'rate_limited' }, 0);
-  formSubmissionsTotal.inc({ result: 'captcha_failed' }, 0);
-  formSubmissionsTotal.inc({ result: 'validation_error' }, 0);
-
-  // Geo jobs
-  geoJobsTotal.inc({ status: 'started' }, 0);
-  geoJobsTotal.inc({ status: 'completed' }, 0);
-  geoJobsTotal.inc({ status: 'failed' }, 0);
-
-  // API errors
-  apiErrorsTotal.inc({ action: '__init', error_type: 'validation' }, 0);
-  apiErrorsTotal.inc({ action: '__init', error_type: 'auth' }, 0);
-  apiErrorsTotal.inc({ action: '__init', error_type: 'not_found' }, 0);
-  apiErrorsTotal.inc({ action: '__init', error_type: 'internal' }, 0);
-  apiErrorsTotal.inc({ action: '__init', error_type: 'timeout' }, 0);
-  apiErrorsTotal.inc({ action: '__init', error_type: 'service_unavailable' }, 0);
-}
-
-initCounters();
-
-// ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 

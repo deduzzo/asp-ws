@@ -29,13 +29,34 @@ module.exports.http = {
     *                                                                          *
     ***************************************************************************/
     swaggerUi: require('express').static('node_modules/swagger-ui-dist'),
-    // HTTP metrics middleware is registered at Express level via api/hooks/metrics.js
+    prometheusMiddleware: (function () {
+      const MetricsService = require('../api/services/MetricsService');
+      return function prometheusMiddleware(req, res, next) {
+        const start = process.hrtime.bigint();
+        MetricsService.httpRequestsInFlight.inc();
+
+        res.on('finish', () => {
+          MetricsService.httpRequestsInFlight.dec();
+          const action = (req.options && req.options.action) || 'unknown';
+          const method = req.method;
+          const status = String(res.statusCode);
+          const durationSec = Number(process.hrtime.bigint() - start) / 1e9;
+
+          MetricsService.httpRequestsTotal.inc({ method, action, status });
+          MetricsService.httpRequestDuration.observe({ method, action }, durationSec);
+        });
+
+        next();
+      };
+    })(),
+
     order: [
       'cookieParser',
       'session',
       'bodyParser',
       'compress',
       'poweredBy',
+      'prometheusMiddleware',
       'router',
       'www',
       'favicon',
