@@ -350,7 +350,12 @@ The application exposes a `/metrics` endpoint in Prometheus text exposition form
 
 **Env vars:** `METRICS_ENABLED` (default: true), `METRICS_USER` (default: metrics), `METRICS_PASS` (required)
 
-**Adding metrics to new features:** When implementing new controllers or business operations, add counter increments using `MetricsService.<counter>.inc({ label: 'value' })`. See existing controllers for examples.
+**Adding metrics to new features (MANDATORY):**
+Every new controller, endpoint, or business operation MUST be evaluated for metrics. Follow this checklist:
+1. Does it involve CRUD, workflows, external calls, or auth? → Add a counter in `MetricsService.js`
+2. Add `MetricsService.<counter>.inc({ label: 'value' })` calls in the controller at success/failure points
+3. Update `docs/monitoring/metrics.md` with the new metric (table + PromQL example)
+4. After implementation, provide the user a prompt for the Grafana/Prometheus instance to update the dashboard
 
 ## Dependencies
 
