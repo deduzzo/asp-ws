@@ -32,13 +32,17 @@ curl -u metrics:LA_TUA_PASSWORD http://localhost:1337/metrics
 
 ## Architettura
 
-Le metriche sono derivate dalla **tabella Log** del database. Ad ogni scrape Prometheus, l'endpoint esegue query aggregate sulla tabella e cacha i risultati per 15 secondi. Non ci sono counter in-memory ne middleware — tutti i dati vengono dal database dove gia logghiamo ogni richiesta API.
+Le metriche sono derivate dalla tabella **`metrics_counters`** del database `log` (counter atomici incrementati via `INSERT ... ON DUPLICATE KEY UPDATE`). Ad ogni scrape Prometheus, l'endpoint esegue una `SELECT *` sulla tabella e cacha i risultati per 15 secondi.
+
+I counter vengono incrementati:
+- automaticamente nel response handler `ApiResponse.js` per ogni risposta API (action, ambito, scope, errori)
+- automaticamente nel policy `is-token-verified` per le validazioni JWT
+- direttamente nei controller per metriche di business specifiche (es. `cambio_medico_*` in `api/controllers/cambio-medico/effettua-cambio.js` e `verifica.js`)
 
 **Vantaggi:**
-- Nessun middleware nell'hot path delle richieste
+- Nessun middleware nell'hot path delle richieste (solo INSERT atomico fire-and-forget)
 - Dati persistenti (sopravvivono ai restart)
-- Nessuna instrumentazione nei controller (il Log c'era gia)
-- Ambito e scopi gia disponibili nei dati
+- Ambito e scopi gia disponibili nei dati di richiesta
 
 ## Metriche esposte
 
@@ -69,6 +73,18 @@ Le metriche sono derivate dalla **tabella Log** del database. Ad ogni scrape Pro
 | Metrica | Tipo | Label | Descrizione |
 |---------|------|-------|-------------|
 | `form_submissions_total` | gauge | `result` | Form submissions (`success`, `error`) |
+
+### Cambio Medico (da metrics_counters)
+
+| Metrica | Tipo | Label | Descrizione |
+|---------|------|-------|-------------|
+| `cambio_medico_submit_total` | gauge | `esito` | Submit cambio medico verso NAR2: `ok` (POST riuscita), `ko` (POST fallita), `dry_run` (solo payload generato) |
+| `cambio_medico_verifica_total` | gauge | `esito` | Verifica medico assegnato su NAR2 e TS: `coerenti` (NAR2 e TS allineati), `divergenti` (medici diversi), `ts_non_aggiornato` (TS non ha medico, NAR2 si), `nar2_non_aggiornato` (NAR2 non ha medico, TS si), `errore` (entrambi i sistemi inaccessibili) |
+
+**Allerte consigliate:**
+- `rate(cambio_medico_submit_total{esito="ko"}[5m]) > 0` → submit cambio medico falliti
+- `rate(cambio_medico_verifica_total{esito="divergenti"}[1h]) > 0` → divergenze persistenti NAR2 vs TS (trigger NAR2→TS non funziona o overridden)
+- `rate(cambio_medico_verifica_total{esito="ts_non_aggiornato"}[1h]) / rate(cambio_medico_verifica_total[1h]) > 0.1` → trigger NAR2→TS lento
 
 ### Health
 
@@ -110,6 +126,22 @@ topk(10, api_requests_by_scope_total)
 ### JWT falliti
 ```promql
 jwt_auth_total{result="invalid"}
+```
+
+### Cambi medico effettuati con successo (non dry-run)
+```promql
+cambio_medico_submit_total{esito="ok"}
+```
+
+### Divergenze NAR2 vs TS persistenti
+```promql
+cambio_medico_verifica_total{esito="divergenti"}
+```
+
+### Tasso di sincronia TS dopo cambio medico
+```promql
+cambio_medico_verifica_total{esito="coerenti"} /
+  ignoring(esito) sum without(esito)(cambio_medico_verifica_total)
 ```
 
 ### Operazioni MPI per tipo

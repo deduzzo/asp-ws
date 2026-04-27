@@ -51,6 +51,18 @@ const metrics = {
     labelNames: ['result'],
     registers: [registry],
   }),
+  cambio_medico_submit: new client.Gauge({
+    name: 'cambio_medico_submit_total',
+    help: 'Submit cambio medico per esito (ok|ko|dry_run)',
+    labelNames: ['esito'],
+    registers: [registry],
+  }),
+  cambio_medico_verifica: new client.Gauge({
+    name: 'cambio_medico_verifica_total',
+    help: 'Verifica medico assistito su NAR2/TS per esito',
+    labelNames: ['esito'],
+    registers: [registry],
+  }),
 };
 
 const apiUp = new client.Gauge({

@@ -222,6 +222,42 @@ let routes = {
     ambito: 'api',
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
+  'POST /api/v1/cambio-medico/get-situazioni-ammesse': {
+    action: 'cambio-medico/get-situazioni-ammesse',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/cambio-medico/get-categorie-cittadino': {
+    action: 'cambio-medico/get-categorie-cittadino',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/cambio-medico/search-ambiti': {
+    action: 'cambio-medico/search-ambiti',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/cambio-medico/search-medici': {
+    action: 'cambio-medico/search-medici',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/cambio-medico/effettua-cambio': {
+    action: 'cambio-medico/effettua-cambio',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
+  'POST /api/v1/cambio-medico/verifica': {
+    action: 'cambio-medico/verifica',
+    scopi: ['cambio-medico'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.user
+  },
 
   'GET /api/v1/stats/info': {
     action: 'stats/info',
