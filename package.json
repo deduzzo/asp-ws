@@ -75,7 +75,6 @@
     "json-schema": "^0.4.0",
     "mkdirp": "^1.0.4",
     "path-parse": "^1.0.7",
-    "path-to-regexp": "^0.1.13",
     "picomatch": "^4.0.4",
     "protobufjs": "^7.5.5",
     "websocket-extensions": "^0.1.4",
