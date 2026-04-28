@@ -141,8 +141,9 @@ module.exports = {
       return res.redirect(302, buildRedirectWithError(redirectUri, code));
     }
 
-    // 4) Estrazione CF
-    const cf = await SpidOidcService.extractFiscalNumber(tokenSet);
+    // 4) Estrazione CF dall'identita' SPID/CIE
+    const identity = await SpidOidcService.extractIdentity(tokenSet);
+    const cf = identity.cf;
     if (!cf) {
       incrementSpidMetric('cf_missing');
       await sails.helpers.log.with({
@@ -204,14 +205,18 @@ module.exports = {
       return res.redirect(302, buildRedirectWithError(redirectUri, 'scope_unauthorized'));
     }
 
-    // 8) Genera JWT proprietario
+    // 8) Genera JWT proprietario — payload allineato al flow /get-token,
+    //    con l'aggiunta del claim auth_method per tracciabilita'.
+    //    Email: prima quella da SPID (id_token claim "email"), in fallback
+    //    quella dell'account locale (Auth_Utenti.mail).
     const tokenObj = JwtService.generateToken({
       username: utente.username,
       scopi: scopiRichiesti,
       ambito: utente.ambito.ambito,
       id_ambito: utente.ambito.id,
       livello: utente.livello,
-      auth_method: 'spid-cie'
+      auth_method: 'spid-cie',
+      email: identity.email || utente.mail || null,
     });
     if (!tokenObj || !tokenObj.token) {
       incrementSpidMetric('jwt_error');

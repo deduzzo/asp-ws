@@ -126,54 +126,57 @@ const SpidOidcService = {
     return cf || null;
   },
 
+  _decodeJwtPayload: (jwtStr) => {
+    if (!jwtStr || typeof jwtStr !== 'string') {return null;}
+    const parts = jwtStr.split('.');
+    if (parts.length !== 3) {return null;}
+    try {
+      const buf = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+      return JSON.parse(buf.toString('utf8'));
+    } catch (unused) { return null; }
+  },
+
   /**
-   * Estrae il codice fiscale dal tokenSet, in cascata:
+   * Estrae l'identita' SPID/CIE dal tokenSet (codice fiscale + dati anagrafici
+   * standard quando disponibili). Combina in cascata:
    *  1) claims() del id_token
-   *  2) decode dell'access_token (best-effort)
+   *  2) decode dell'access_token (best-effort, se JWT)
    *  3) chiamata a /userinfo come fallback finale
    *
-   * Il valore restituito e' gia' normalizzato (uppercase, trimmed, prefissi
-   * AGID rimossi) e direttamente confrontabile con Auth_Utenti.username.
+   * Per ogni claim si prende il primo valore non-null disponibile. Il CF e'
+   * gia' normalizzato (uppercase, trimmed, prefissi AGID rimossi).
    *
    * @param {TokenSet} tokenSet
-   * @returns {Promise<string|null>}
+   * @returns {Promise<{cf: string|null, nome: string|null, cognome: string|null, email: string|null}>}
    */
-  extractFiscalNumber: async (tokenSet) => {
+  extractIdentity: async (tokenSet) => {
     const cfg = getConfig();
-    const claimName = cfg.fiscalNumberClaim || 'fiscalNumber';
+    const cfClaim = cfg.fiscalNumberClaim || 'fiscalNumber';
 
-    // 1) id_token claims
-    try {
-      const claims = tokenSet.claims();
-      if (claims && claims[claimName]) {
-        return SpidOidcService._normalizeCf(claims[claimName]);
-      }
-    } catch (unusedClaim) { /* fallback al prossimo metodo */ }
+    const trim = (v) => (v == null ? null : String(v).trim() || null);
 
-    // 2) access_token decode (best-effort, non critico se non e' un JWT)
-    try {
-      if (tokenSet.access_token) {
-        const parts = tokenSet.access_token.split('.');
-        if (parts.length === 3) {
-          const buf = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-          const decoded = JSON.parse(buf.toString('utf8'));
-          if (decoded[claimName]) {
-            return SpidOidcService._normalizeCf(decoded[claimName]);
-          }
-        }
-      }
-    } catch (unusedClaim) { /* fallback al prossimo metodo */ }
+    let idClaims = {};
+    try { idClaims = tokenSet.claims() || {}; } catch (unused) { idClaims = {}; }
+    const accessClaims = SpidOidcService._decodeJwtPayload(tokenSet.access_token) || {};
 
-    // 3) userinfo
-    try {
-      const client = await SpidOidcService.getClient();
-      const info = await client.userinfo(tokenSet);
-      if (info && info[claimName]) {
-        return SpidOidcService._normalizeCf(info[claimName]);
-      }
-    } catch (unusedClaim) { /* fallback al prossimo metodo */ }
+    let cf = SpidOidcService._normalizeCf(idClaims[cfClaim] || accessClaims[cfClaim]);
+    let nome = trim(idClaims.given_name) || trim(accessClaims.given_name);
+    let cognome = trim(idClaims.family_name) || trim(accessClaims.family_name);
+    let email = trim(idClaims.email) || trim(accessClaims.email);
 
-    return null;
+    // Fallback userinfo solo se manca qualcosa
+    if (!cf || !nome || !cognome || !email) {
+      try {
+        const client = await SpidOidcService.getClient();
+        const info = await client.userinfo(tokenSet) || {};
+        if (!cf) {cf = SpidOidcService._normalizeCf(info[cfClaim]);}
+        if (!nome) {nome = trim(info.given_name);}
+        if (!cognome) {cognome = trim(info.family_name);}
+        if (!email) {email = trim(info.email);}
+      } catch (unusedUserinfo) { /* non critico */ }
+    }
+
+    return {cf, nome, cognome, email};
   },
 
   /**

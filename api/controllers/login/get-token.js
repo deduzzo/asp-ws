@@ -296,7 +296,8 @@ module.exports = {
         scopi: scopi,
         ambito: utente.ambito.ambito,
         id_ambito: utente.ambito.id,
-        livello: utente.livello
+        livello: utente.livello,
+        email: utente.mail || null,
       });
       if (!token) {
         return res.ApiResponse({

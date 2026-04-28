@@ -60,13 +60,19 @@ module.exports = {
             livello: decoded.livello,
             iat: decoded.iat,
             exp: decoded.exp,
-            expireDate: utils.convertUnixTimestamp(decoded.exp, 'Europe/Rome', 'DD/MM/YYYY HH:mm:ss')
+            expireDate: utils.convertUnixTimestamp(decoded.exp, 'Europe/Rome', 'DD/MM/YYYY HH:mm:ss'),
+            // Claim opzionali presenti nei JWT emessi dal flow SPID/CIE.
+            // Per i JWT del flow tradizionale /get-token questi sono assenti
+            // (e lo spread li omette).
+            ...(decoded.auth_method ? {auth_method: decoded.auth_method} : {}),
+            ...(decoded.email ? {email: decoded.email} : {}),
           },
           utente: utente ? {
             username: utente.username,
             attivo: utente.attivo,
             ambito: ambitoUtente,
             livello: utente.livello,
+            mail: utente.mail || null,
             scopiAbilitati: scopiAbilitati
           } : null
         }
