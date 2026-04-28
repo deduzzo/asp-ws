@@ -13,7 +13,7 @@ module.exports = {
   attributes: {
     nome: {type: 'string', columnType: 'varchar(100)', required: true},
     redirect_uri: {type: 'string', columnType: 'varchar(500)', required: true, unique: true},
-    ambito: {model: 'auth_ambiti', allowNull: true},
+    ambito: {model: 'auth_ambiti'},
     attivo: {type: 'boolean', defaultsTo: true},
     note: {type: 'string', columnType: 'varchar(500)', allowNull: true},
   },
