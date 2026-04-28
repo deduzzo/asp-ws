@@ -205,10 +205,9 @@ module.exports = {
       return res.redirect(302, buildRedirectWithError(redirectUri, 'scope_unauthorized'));
     }
 
-    // 8) Genera JWT proprietario — payload allineato al flow /get-token,
-    //    con l'aggiunta del claim auth_method per tracciabilita'.
-    //    Email: prima quella da SPID (id_token claim "email"), in fallback
-    //    quella dell'account locale (Auth_Utenti.mail).
+    // 8) Genera JWT proprietario.
+    //    Email: prima quella da SPID (id_token), fallback Auth_Utenti.mail.
+    //    Nome/cognome: solo da SPID (la tabella utenti non ha quei campi).
     const tokenObj = JwtService.generateToken({
       username: utente.username,
       scopi: scopiRichiesti,
@@ -217,6 +216,8 @@ module.exports = {
       livello: utente.livello,
       auth_method: 'spid-cie',
       email: identity.email || utente.mail || null,
+      nome: identity.nome || null,
+      cognome: identity.cognome || null,
     });
     if (!tokenObj || !tokenObj.token) {
       incrementSpidMetric('jwt_error');

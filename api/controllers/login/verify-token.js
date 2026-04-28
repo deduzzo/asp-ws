@@ -66,6 +66,8 @@ module.exports = {
             // (e lo spread li omette).
             ...(decoded.auth_method ? {auth_method: decoded.auth_method} : {}),
             ...(decoded.email ? {email: decoded.email} : {}),
+            ...(decoded.nome ? {nome: decoded.nome} : {}),
+            ...(decoded.cognome ? {cognome: decoded.cognome} : {}),
           },
           utente: utente ? {
             username: utente.username,

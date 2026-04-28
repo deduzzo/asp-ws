@@ -36,6 +36,8 @@ const JwtService = {
       id_ambito: userData.id_ambito,
       ...(userData.auth_method ? {auth_method: userData.auth_method} : {}),
       ...(userData.email ? {email: userData.email} : {}),
+      ...(userData.nome ? {nome: userData.nome} : {}),
+      ...(userData.cognome ? {cognome: userData.cognome} : {}),
     };
     try {
       const token = jwt.sign(payload, JwtService.getSecret(), {expiresIn: JwtService.getTokenExpiry()});
