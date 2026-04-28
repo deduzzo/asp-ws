@@ -63,6 +63,12 @@ const metrics = {
     labelNames: ['esito'],
     registers: [registry],
   }),
+  asp_spid_login: new client.Gauge({
+    name: 'asp_spid_login_total',
+    help: 'Login SPID/CIE server-side per esito (ok | state_invalid | kc_token_exchange_failed | kc_id_token_invalid | cf_missing | ambito_invalid | user_not_found | user_inactive | scope_unauthorized | spid_user_error | jwt_error | config_missing)',
+    labelNames: ['outcome'],
+    registers: [registry],
+  }),
 };
 
 const apiUp = new client.Gauge({

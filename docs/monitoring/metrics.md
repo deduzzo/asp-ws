@@ -86,6 +86,31 @@ I counter vengono incrementati:
 - `rate(cambio_medico_verifica_total{esito="divergenti"}[1h]) > 0` → divergenze persistenti NAR2 vs TS (trigger NAR2→TS non funziona o overridden)
 - `rate(cambio_medico_verifica_total{esito="ts_non_aggiornato"}[1h]) / rate(cambio_medico_verifica_total[1h]) > 0.1` → trigger NAR2→TS lento
 
+### SPID/CIE Login (da metrics_counters)
+
+| Metrica | Tipo | Label | Descrizione |
+|---------|------|-------|-------------|
+| `asp_spid_login_total` | gauge | `outcome` | Login SPID/CIE server-side per esito |
+
+**Valori di `outcome`:**
+- `ok` — login completato, JWT proprietario emesso
+- `state_invalid` — state mancante/scaduto/firma errata (callback)
+- `kc_token_exchange_failed` — scambio code → token con Keycloak fallito
+- `kc_id_token_invalid` — firma/iss/aud/exp del id_token non valide
+- `cf_missing` — id_token senza claim `fiscalNumber`
+- `ambito_invalid` — ambito richiesto inesistente
+- `user_not_found` — nessun `Auth_Utenti` con username = CF
+- `user_inactive` — utente disattivato
+- `scope_unauthorized` — scopi richiesti non assegnati all'utente
+- `spid_user_error` — errore lato utente/IdP (codici AGID 19-25 e 8-30 collassati per evitare alta cardinalita')
+- `jwt_error` — errore generazione JWT proprietario
+- `config_missing` — `private_spid_login.json` non caricato
+- `invalid_request` — querystring callback malformata
+
+**Allerte consigliate:**
+- `rate(asp_spid_login_total{outcome="kc_token_exchange_failed"}[5m]) > 0` → Keycloak irraggiungibile o secret errato
+- `rate(asp_spid_login_total{outcome="user_not_found"}[1h]) / rate(asp_spid_login_total[1h]) > 0.3` → tanti utenti SPID senza account: forse manca onboarding
+
 ### Health
 
 | Metrica | Tipo | Label | Descrizione |

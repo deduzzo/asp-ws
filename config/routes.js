@@ -144,6 +144,18 @@ let routes = {
     action: 'login/otp/switch',
     minAuthLevel: JwtService.LOGIN_LEVEL.user
   },
+
+  // SPID/CIE login server-side via Keycloak (vedi docs/PROMPT_SPID_LOGIN.md)
+  'GET /api/v1/login/spid/start': {
+    action: 'login/spid/start',
+  },
+  'GET /api/v1/login/spid/callback': {
+    action: 'login/spid/callback',
+  },
+  'GET /api/v1/login/spid/debug': {
+    action: 'login/spid/debug',
+  },
+
   'POST /api/v1/anagrafica/ricerca': {
     action: 'anagrafica/ricerca',
     scopi: ['asp5-anagrafica'],

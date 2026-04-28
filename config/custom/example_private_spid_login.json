@@ -1,0 +1,17 @@
+{
+  "_comment": "Configurazione del flow SPID server-side. Copiare in private_spid_login.json (gitignored) e popolare 'kcClientSecret' con il secret del client Keycloak 'asp-ws-spid' (tab Credentials). Generare un nuovo 'stateSecret' di almeno 32 caratteri casuali.",
+  "kcIssuer": "https://login.asp.messina.it/realms/asp",
+  "kcClientId": "asp-ws-spid",
+  "kcClientSecret": "<INCOLLA_QUI_IL_CLIENT_SECRET>",
+  "kcScopes": "openid profile email spid-cie-attributes",
+  "wsBaseUrl": "https://ws1.asp.messina.it/api/v1",
+  "callbackPath": "/login/spid/callback",
+  "stateSecret": "GENERA_NUOVO_VALORE_RANDOM_DI_ALMENO_32_CARATTERI",
+  "stateTtlSeconds": 600,
+  "allowedRedirectUris": [
+    "https://ws1.asp.messina.it/api/v1/login/spid/debug"
+  ],
+  "defaultAmbito": "api",
+  "tokenQueryParamName": "asp_token",
+  "fiscalNumberClaim": "fiscalNumber"
+}

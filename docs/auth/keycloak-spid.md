@@ -759,3 +759,33 @@ L'endpoint `POST /api/v1/login/get-token` resta invariato e funzionante. I due e
 - `/login/get-token-spid` → JWT Keycloak — per chi passa da Keycloak
 
 Nessuna migrazione forzata. Si possono usare entrambi contemporaneamente.
+
+---
+
+## Flow server-side (questa iterazione)
+
+> **Nota**: il design originario di questo documento e' **frontend-driven** (il browser riceve il JWT Keycloak e lo passa a `POST /get-token-spid`). L'iterazione effettivamente implementata e' invece **backend-driven**: asp-ws gestisce direttamente il flow OIDC con Keycloak (Authorization Code), nessun token Keycloak transita per il browser. Vedere [PROMPT_SPID_LOGIN.md](../PROMPT_SPID_LOGIN.md) per il prompt di implementazione completo.
+
+### Endpoint disponibili
+
+| Endpoint | Descrizione |
+|---|---|
+| `GET /api/v1/login/spid/start?scopi=...&ambito=...&redirect_uri=...&idp=...` | Avvia il flow: valida la `redirect_uri` (whitelist), costruisce uno state HMAC firmato e redirige il browser sull'authorize endpoint Keycloak |
+| `GET /api/v1/login/spid/callback?code=...&state=...` | Callback OIDC: scambia il code, verifica id_token, fa il match utente per CF, emette il JWT proprietario e redirige alla `redirect_uri` con `?asp_token=<JWT>&expireDate=<...>` |
+| `GET /api/v1/login/spid/debug` | Endpoint di test che mostra il payload decodificato del JWT ricevuto via querystring. Da rimuovere/restringere in produzione (whitelistato di default). |
+
+### Match utente
+
+`username = codice_fiscale.toUpperCase().trim()`. L'utente deve essere creato manualmente nel pannello admin con il CF in maiuscolo come username, prima del primo login.
+
+### Errori
+
+Quando lo state e' decodificabile, qualunque errore (incluso scope_unauthorized, user_not_found, errori SPID) ritorna un `302` alla `redirect_uri` con `?error=<code>&error_description=<msg>`. Il consumer deve sempre controllare la presenza di `error` PRIMA di `asp_token`. Tabella codici in [PROMPT_SPID_LOGIN.md §3](../PROMPT_SPID_LOGIN.md#3-flow-funzionale-end-to-end).
+
+### Configurazione
+
+File `config/custom/private_spid_login.json` (gitignored), con `kcClientSecret` da incollare manualmente dal pannello Keycloak (client `asp-ws-spid`, tab Credentials). Il `stateSecret` e' un random di almeno 32 caratteri. La whitelist `allowedRedirectUris` accetta solo strict-equal (no wildcards).
+
+### SPID e CIE
+
+Le due modalita' usano lo stesso client Keycloak (`asp-ws-spid`) e gli stessi mapper (scope `spid-cie-attributes` con claim `fiscalNumber` in camelCase). Sono trasparenti dal punto di vista del backend: il flow OIDC e' identico. Il claim `auth_method: 'spid'` nel JWT proprietario indica che l'utente si e' autenticato via Keycloak (vale anche per CIE).

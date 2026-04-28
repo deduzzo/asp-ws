@@ -32,6 +32,14 @@ try {
   metricsConfig = { METRICS_ENABLED: false, METRICS_USER: 'metrics', METRICS_PASS: null };
 }
 
+// Load SPID/CIE login config (Keycloak OIDC), gitignored — endpoint disabilitato se assente
+let spidLoginConfig = null;
+try {
+  spidLoginConfig = require('./custom/private_spid_login.json');
+} catch (error) {
+  console.warn('Warning: private_spid_login.json not found, SPID/CIE login endpoints disabled');
+}
+
 module.exports.custom = {
   baseUrl: 'http://localhost:1337',
   jwtSecret: jwtConfig.JWT_SECRET,
@@ -47,6 +55,7 @@ module.exports.custom = {
     user: metricsConfig.METRICS_USER,
     pass: metricsConfig.METRICS_PASS,
   },
+  spidLogin: spidLoginConfig,
   /***************************************************************************
   *                                                                          *
   * Any other custom config this Sails app should use during development.    *

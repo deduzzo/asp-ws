@@ -31,6 +31,7 @@
   - [Login e OTP](auth/login-otp.md)
   - [User Vault](auth/vault.md)
   - [Keycloak SPID/CIE](auth/keycloak-spid.md)
+  - [SPID/CIE login server-side](PROMPT_SPID_LOGIN.md)
   - [Setup Keycloak](auth/keycloak-setup.md)
 
 - **Amministrazione**
