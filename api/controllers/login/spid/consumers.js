@@ -19,7 +19,7 @@ module.exports = {
   fn: async function () {
     const res = this.res;
     try {
-      const rows = await Auth_SpidConsumers.find({attivo: true, sort: 'nome ASC'}).populate('ambito');
+      const rows = await Auth_SpidConsumers.find({where: {attivo: true}, sort: 'nome ASC'}).populate('ambito');
       const consumers = rows.map(c => ({
         slug: c.slug,
         nome: c.nome,
