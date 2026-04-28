@@ -111,13 +111,32 @@ const SpidOidcService = {
   },
 
   /**
+   * Normalizza un valore CF proveniente da SPID/CIE:
+   *  - uppercase + trim
+   *  - rimuove prefissi NameQualifier AGID (es. "TINIT-") che SPID antepone
+   *    al codice fiscale nel claim fiscalNumber
+   *
+   * Lista prefissi documentata: TINIT (Tax ID Number Italy, SPID),
+   * eventuali aggiunte future per CIE/CNS vanno qui.
+   */
+  _normalizeCf: (raw) => {
+    if (!raw) {return null;}
+    let cf = String(raw).toUpperCase().trim();
+    cf = cf.replace(/^TINIT-/, '');
+    return cf || null;
+  },
+
+  /**
    * Estrae il codice fiscale dal tokenSet, in cascata:
    *  1) claims() del id_token
    *  2) decode dell'access_token (best-effort)
    *  3) chiamata a /userinfo come fallback finale
    *
+   * Il valore restituito e' gia' normalizzato (uppercase, trimmed, prefissi
+   * AGID rimossi) e direttamente confrontabile con Auth_Utenti.username.
+   *
    * @param {TokenSet} tokenSet
-   * @returns {Promise<string|null>} CF normalizzato (uppercase, trimmed) o null
+   * @returns {Promise<string|null>}
    */
   extractFiscalNumber: async (tokenSet) => {
     const cfg = getConfig();
@@ -127,7 +146,7 @@ const SpidOidcService = {
     try {
       const claims = tokenSet.claims();
       if (claims && claims[claimName]) {
-        return String(claims[claimName]).toUpperCase().trim();
+        return SpidOidcService._normalizeCf(claims[claimName]);
       }
     } catch (unusedClaim) { /* fallback al prossimo metodo */ }
 
@@ -139,7 +158,7 @@ const SpidOidcService = {
           const buf = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
           const decoded = JSON.parse(buf.toString('utf8'));
           if (decoded[claimName]) {
-            return String(decoded[claimName]).toUpperCase().trim();
+            return SpidOidcService._normalizeCf(decoded[claimName]);
           }
         }
       }
@@ -150,7 +169,7 @@ const SpidOidcService = {
       const client = await SpidOidcService.getClient();
       const info = await client.userinfo(tokenSet);
       if (info && info[claimName]) {
-        return String(info[claimName]).toUpperCase().trim();
+        return SpidOidcService._normalizeCf(info[claimName]);
       }
     } catch (unusedClaim) { /* fallback al prossimo metodo */ }
 
