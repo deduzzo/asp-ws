@@ -1478,6 +1478,31 @@ function _spidConsumerBadge(text, kind) {
   return span;
 }
 
+function _spidSlugify(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-_]+|[-_]+$/g, '')
+    .slice(0, 50);
+}
+
+function _spidStartLoginUrl(slug) {
+  const origin = window.location.origin;
+  return `${origin}/api/v1/login/spid/start?consumer=${encodeURIComponent(slug)}&scopi=`;
+}
+
+async function _spidCopyLoginUrl(slug) {
+  const url = _spidStartLoginUrl(slug);
+  try {
+    await navigator.clipboard.writeText(url);
+    adminPanel.showToast('Copiato', `URL login copiato. Aggiungi gli scopi dopo "scopi=".`, 'success');
+  } catch (e) {
+    window.prompt('Copia l\'URL di login (aggiungi scopi=...):', url);
+  }
+}
+
 async function loadSpidConsumers() {
   const loading = document.getElementById('spid-consumers-loading');
   const tbody = document.getElementById('spid-consumers-tbody');
@@ -1493,6 +1518,12 @@ async function loadSpidConsumers() {
       strong.textContent = c.nome;
       tdNome.appendChild(strong);
       tr.appendChild(tdNome);
+
+      const tdSlug = document.createElement('td');
+      const codeSlug = document.createElement('code');
+      codeSlug.textContent = c.slug || '';
+      tdSlug.appendChild(codeSlug);
+      tr.appendChild(tdSlug);
 
       const tdUri = document.createElement('td');
       const code = document.createElement('code');
@@ -1524,10 +1555,13 @@ async function loadSpidConsumers() {
       const tdAzioni = document.createElement('td');
       const group = document.createElement('div');
       group.className = 'btn-group btn-group-sm';
+      const btnCopy = _spidConsumerActionBtn('Copia URL login', 'bi-clipboard', 'success', 'Copia URL login');
+      btnCopy.addEventListener('click', () => _spidCopyLoginUrl(c.slug));
       const btnEdit = _spidConsumerActionBtn('Modifica', 'bi-pencil', 'primary', 'Modifica');
       btnEdit.addEventListener('click', () => editSpidConsumer(c.id));
       const btnDel = _spidConsumerActionBtn('Elimina', 'bi-trash', 'danger', 'Elimina');
       btnDel.addEventListener('click', () => deleteSpidConsumer(c.id, c.nome));
+      group.appendChild(btnCopy);
       group.appendChild(btnEdit);
       group.appendChild(btnDel);
       tdAzioni.appendChild(group);
@@ -1566,12 +1600,28 @@ async function fillSpidConsumerAmbitoSelect(selectedId) {
   }
 }
 
+function _spidWireSlugAutosuggest() {
+  const nomeEl = document.getElementById('spidConsumerNome');
+  const slugEl = document.getElementById('spidConsumerSlug');
+  if (!nomeEl || !slugEl) {return;}
+  // Una sola registrazione del listener: marker su slugEl
+  if (slugEl.dataset.autosuggestWired === '1') {return;}
+  slugEl.dataset.autosuggestWired = '1';
+  let touchedBySlugUser = false;
+  slugEl.addEventListener('input', () => { touchedBySlugUser = true; });
+  nomeEl.addEventListener('input', () => {
+    if (!touchedBySlugUser) {slugEl.value = _spidSlugify(nomeEl.value);}
+  });
+}
+
 async function showCreateSpidConsumerModal() {
   document.getElementById('spidConsumerModalTitle').textContent = 'Nuovo Consumer SPID';
   document.getElementById('spidConsumerForm').reset();
   document.getElementById('spidConsumerId').value = '';
   document.getElementById('spidConsumerAttivo').checked = true;
+  document.getElementById('spidConsumerSlug').dataset.autosuggestWired = '';
   await fillSpidConsumerAmbitoSelect(null);
+  _spidWireSlugAutosuggest();
   new bootstrap.Modal(document.getElementById('spidConsumerModal')).show();
 }
 
@@ -1586,6 +1636,10 @@ async function editSpidConsumer(id) {
     document.getElementById('spidConsumerModalTitle').textContent = 'Modifica Consumer SPID';
     document.getElementById('spidConsumerId').value = c.id;
     document.getElementById('spidConsumerNome').value = c.nome;
+    const slugEl = document.getElementById('spidConsumerSlug');
+    slugEl.value = c.slug || '';
+    // In modifica disabilitiamo l'auto-suggest dal nome (lo slug e' gia' in uso da consumer reali)
+    slugEl.dataset.autosuggestWired = '1';
     document.getElementById('spidConsumerRedirectUri').value = c.redirect_uri;
     document.getElementById('spidConsumerAttivo').checked = !!c.attivo;
     document.getElementById('spidConsumerNote').value = c.note || '';
@@ -1599,15 +1653,21 @@ async function editSpidConsumer(id) {
 async function saveSpidConsumer() {
   const id = document.getElementById('spidConsumerId').value;
   const ambitoVal = document.getElementById('spidConsumerAmbito').value;
+  const slugRaw = document.getElementById('spidConsumerSlug').value.trim().toLowerCase();
   const payload = {
     nome: document.getElementById('spidConsumerNome').value.trim(),
+    slug: slugRaw,
     redirect_uri: document.getElementById('spidConsumerRedirectUri').value.trim(),
     ambito: ambitoVal ? parseInt(ambitoVal, 10) : null,
     attivo: document.getElementById('spidConsumerAttivo').checked,
     note: document.getElementById('spidConsumerNote').value.trim() || null,
   };
-  if (!payload.nome || !payload.redirect_uri) {
-    adminPanel.showToast('Errore', 'Nome e redirect_uri sono obbligatori', 'danger');
+  if (!payload.nome || !payload.slug || !payload.redirect_uri) {
+    adminPanel.showToast('Errore', 'Nome, slug e redirect_uri sono obbligatori', 'danger');
+    return;
+  }
+  if (!/^[a-z0-9][a-z0-9_-]{1,49}$/.test(payload.slug)) {
+    adminPanel.showToast('Errore', 'Slug non valido: usa lowercase, cifre, trattino, underscore', 'danger');
     return;
   }
   try {

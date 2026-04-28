@@ -18,9 +18,14 @@ const SpidOidcService = require('../../../services/SpidOidcService');
 module.exports = {
   friendlyName: 'SpidLoginStart',
 
-  description: 'Avvia il flow di login SPID/CIE server-side. Genera lo state firmato e redireziona il browser sul authorize endpoint di Keycloak. Al termine del login, asp-ws redirezionera la redirect_uri (whitelistata) con un JWT proprietario in querystring.',
+  description: 'Avvia il flow di login SPID/CIE server-side. Identifica il consumer tramite slug (auth.spid_consumers); recupera la redirect_uri associata; genera state HMAC firmato; redireziona il browser sul authorize endpoint di Keycloak. Al termine del login asp-ws redireziona alla redirect_uri del consumer con JWT proprietario in querystring (asp_token).',
 
   inputs: {
+    consumer: {
+      type: 'string',
+      required: true,
+      description: 'Slug univoco del consumer registrato in auth.spid_consumers (es. "cambiomedico-mobile").'
+    },
     scopi: {
       type: 'string',
       required: true,
@@ -29,17 +34,12 @@ module.exports = {
     ambito: {
       type: 'string',
       required: false,
-      description: 'Ambito d\'utenza del token. Default: configurazione spidLogin.defaultAmbito.'
-    },
-    redirect_uri: {
-      type: 'string',
-      required: true,
-      description: 'URL di destinazione dove asp-ws redirigera con asp_token. Deve essere strict-equal ad un valore in spidLogin.allowedRedirectUris.'
+      description: 'Ambito d\'utenza del token. Default: ambito associato al consumer (se presente), altrimenti spidLogin.defaultAmbito.'
     },
     idp: {
       type: 'string',
       required: false,
-      description: 'kc_idp_hint opzionale per saltare la pagina di scelta IdP di Keycloak (es. nome del provider SPID/CIE).'
+      description: 'kc_idp_hint opzionale per saltare la pagina di scelta IdP di Keycloak.'
     }
   },
 
@@ -57,26 +57,27 @@ module.exports = {
       });
     }
 
-    // Whitelist gestita su tabella auth.spid_consumers (CRUD da pannello admin).
-    const consumer = await Auth_SpidConsumers.findOne({redirect_uri: inputs.redirect_uri, attivo: true})
-      .populate('ambito');
+    // Lookup consumer per slug (gestione da pannello admin).
+    const slug = (inputs.consumer || '').trim().toLowerCase();
+    const consumer = await Auth_SpidConsumers.findOne({slug, attivo: true}).populate('ambito');
     if (!consumer) {
       await sails.helpers.log.with({
         level: 'warn',
         tag: TAGS.LOGIN_SPID_KO,
-        message: 'redirect_uri non whitelistata',
+        message: 'consumer slug non valido',
         action: req.options.action,
         ipAddress: req.ip,
-        context: {error: 'invalid_redirect_uri', redirect_uri: inputs.redirect_uri}
+        context: {error: 'invalid_consumer', slug}
       });
       return res.ApiResponse({
         errType: ERROR_TYPES.BAD_REQUEST,
-        errMsg: 'redirect_uri non valida'
+        errMsg: 'consumer non valido o disattivato'
       });
     }
 
-    // Ambito: se il consumer ne ha uno associato (preferito), si usa quello;
-    // altrimenti l'utente puo' passarne uno via input; altrimenti default config.
+    const redirectUri = consumer.redirect_uri;
+
+    // Ambito: il consumer ne ha uno associato? -> wins; altrimenti input; altrimenti default config.
     const ambito = (consumer.ambito && consumer.ambito.ambito) || inputs.ambito || cfg.defaultAmbito;
     const scopi = inputs.scopi.split(' ').map(s => s.trim()).filter(Boolean);
     if (scopi.length === 0) {
@@ -92,7 +93,7 @@ module.exports = {
       state = SpidStateService.encode({
         scopi,
         ambito,
-        redirect_uri: inputs.redirect_uri,
+        redirect_uri: redirectUri,
         idp: inputs.idp || null
       });
       authorizeUrl = await SpidOidcService.buildAuthorizeUrl({state, idp: inputs.idp});
@@ -118,7 +119,7 @@ module.exports = {
       message: 'Avvio flow SPID/CIE',
       action: req.options.action,
       ipAddress: req.ip,
-      context: {scopi, ambito, redirect_uri: inputs.redirect_uri, idp: inputs.idp || null}
+      context: {consumer: slug, scopi, ambito, redirect_uri: redirectUri, idp: inputs.idp || null}
     });
 
     return res.redirect(302, authorizeUrl);

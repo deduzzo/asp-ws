@@ -100,7 +100,7 @@ Codici di errore (sempre HTTP 302 verso `redirect_uri`, mai 5xx visibili al citt
 
 | `error` | Significato | HTTP interno log |
 |---|---|---|
-| `invalid_redirect_uri` | redirect_uri non in whitelist (tabella `auth.spid_consumers`, gestita da pannello admin) | 400 |
+| `invalid_consumer` | parametro `consumer=<slug>` non corrisponde a un record attivo in `auth.spid_consumers` | 400 |
 | `invalid_request` | querystring malformata | 400 |
 | `state_invalid` | state mancante/scaduto/firma errata | 400 |
 | `kc_token_exchange_failed` | scambio code→token con KC fallito | 502 |

@@ -12,6 +12,7 @@ module.exports = {
   tableName: 'spid_consumers',
   attributes: {
     nome: {type: 'string', columnType: 'varchar(100)', required: true},
+    slug: {type: 'string', columnType: 'varchar(50)', required: true, unique: true},
     redirect_uri: {type: 'string', columnType: 'varchar(500)', required: true, unique: true},
     ambito: {model: 'auth_ambiti'},
     attivo: {type: 'boolean', defaultsTo: true},

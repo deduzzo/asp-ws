@@ -768,11 +768,12 @@ Nessuna migrazione forzata. Si possono usare entrambi contemporaneamente.
 
 ### Endpoint disponibili
 
-| Endpoint | Descrizione |
-|---|---|
-| `GET /api/v1/login/spid/start?scopi=...&ambito=...&redirect_uri=...&idp=...` | Avvia il flow: valida la `redirect_uri` (whitelist), costruisce uno state HMAC firmato e redirige il browser sull'authorize endpoint Keycloak |
-| `GET /api/v1/login/spid/callback?code=...&state=...` | Callback OIDC: scambia il code, verifica id_token, fa il match utente per CF, emette il JWT proprietario e redirige alla `redirect_uri` con `?asp_token=<JWT>&expireDate=<...>` |
-| `GET /api/v1/login/spid/debug` | Endpoint di test che mostra il payload decodificato del JWT ricevuto via querystring. Da rimuovere/restringere in produzione (whitelistato di default). |
+| Endpoint | Auth | Descrizione |
+|---|---|---|
+| `GET /api/v1/login/spid/start?consumer=<slug>&scopi=...&ambito=...&idp=...` | public | Avvia il flow: risolve il consumer dal slug (tabella `auth.spid_consumers`, gestita dal pannello admin), recupera la sua `redirect_uri`, costruisce uno state HMAC firmato e redirige il browser sull'authorize endpoint Keycloak |
+| `GET /api/v1/login/spid/callback?code=...&state=...` | public | Callback OIDC: scambia il code, verifica id_token, fa il match utente per CF, emette il JWT proprietario e redirige alla `redirect_uri` del consumer con `?asp_token=<JWT>&expireDate=<...>` |
+| `GET /api/v1/login/spid/consumers` | public | Lista dei consumer SPID/CIE attivi (slug + nome + ambito). NON espone la `redirect_uri`. Usato dalle app per scoprire l'identificativo da passare a `start` |
+| `GET /api/v1/login/spid/debug` | public | Endpoint di test che mostra il payload decodificato del JWT ricevuto via querystring. Da rimuovere/restringere in produzione (whitelistato come consumer `spid-debug`). |
 
 ### Match utente
 
@@ -786,7 +787,9 @@ Quando lo state e' decodificabile, qualunque errore (incluso scope_unauthorized,
 
 File `config/custom/private_spid_login.json` (gitignored), con `kcClientSecret` da incollare manualmente dal pannello Keycloak (client `asp-ws-spid`, tab Credentials). Il `stateSecret` e' un random di almeno 32 caratteri.
 
-La **whitelist delle redirect_uri** (consumer app integranti) e' invece gestita su DB nella tabella `auth.spid_consumers`, modificabile dal pannello admin -> sezione "Consumer SPID". Cosi' aggiungere/disabilitare app non richiede di toccare file sul server. Il match resta strict-equal (case-sensitive, no wildcard).
+La **whitelist delle redirect_uri** (consumer app integranti) e' invece gestita su DB nella tabella `auth.spid_consumers`, modificabile dal pannello admin -> sezione "Consumer SPID". Cosi' aggiungere/disabilitare app non richiede di toccare file sul server.
+
+Ogni consumer ha uno **slug univoco** (es. `cambiomedico-mobile`) che l'app usa come `?consumer=<slug>` nella chiamata a `start`. asp-ws risolve internamente la `redirect_uri` associata: l'app non deve piu' (e non puo') passare la URL completa in querystring, eliminando un'intera classe di errori da typo. Il match per slug e per redirect_uri resta strict-equal.
 
 ### SPID e CIE
 

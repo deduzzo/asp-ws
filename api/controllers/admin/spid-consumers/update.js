@@ -6,6 +6,7 @@ module.exports = {
   inputs: {
     id: {type: 'number', required: true},
     nome: {type: 'string', maxLength: 100},
+    slug: {type: 'string', maxLength: 50, regex: /^[a-z0-9][a-z0-9_-]{1,49}$/},
     redirect_uri: {type: 'string', maxLength: 500},
     ambito: {type: 'number', allowNull: true},
     attivo: {type: 'boolean'},
@@ -18,6 +19,14 @@ module.exports = {
 
       const updateData = {};
       if (inputs.nome !== undefined) {updateData.nome = inputs.nome.trim();}
+      if (inputs.slug !== undefined) {
+        const slug = inputs.slug.trim().toLowerCase();
+        if (slug !== existing.slug) {
+          const dup = await Auth_SpidConsumers.findOne({slug});
+          if (dup) {return this.res.ApiResponse({errType: 'ALREADY_EXISTS', errMsg: 'slug gia in uso'});}
+        }
+        updateData.slug = slug;
+      }
       if (inputs.redirect_uri !== undefined) {
         const url = inputs.redirect_uri.trim();
         if (!/^https?:\/\//i.test(url)) {

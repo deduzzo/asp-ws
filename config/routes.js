@@ -155,6 +155,9 @@ let routes = {
   'GET /api/v1/login/spid/debug': {
     action: 'login/spid/debug',
   },
+  'GET /api/v1/login/spid/consumers': {
+    action: 'login/spid/consumers',
+  },
 
   // Admin: gestione whitelist consumer SPID/CIE (redirect_uri delle app integranti)
   'GET /api/v1/admin/spid-consumers': {

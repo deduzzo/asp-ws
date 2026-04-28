@@ -557,6 +557,7 @@
                                         <thead>
                                             <tr>
                                                 <th>Nome</th>
+                                                <th>Slug</th>
                                                 <th>Redirect URI</th>
                                                 <th>Ambito</th>
                                                 <th>Stato</th>
@@ -586,6 +587,11 @@
                                 <label class="form-label">Nome <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="spidConsumerNome" name="nome" required maxlength="100" placeholder="es. App Cambio Medico Mobile">
                                 <div class="form-text">Nome leggibile per identificare l'app consumer.</div>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Slug <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="spidConsumerSlug" name="slug" required maxlength="50" pattern="[a-z0-9][a-z0-9_\-]{1,49}" placeholder="es. cambiomedico-mobile">
+                                <div class="form-text">Identificativo univoco lowercase (a-z, 0-9, trattino, underscore). Verra' usato dall'app come <code>?consumer=&lt;slug&gt;</code> nella chiamata a <code>/login/spid/start</code>. Auto-generato dal nome ma modificabile.</div>
                               </div>
                               <div class="mb-3">
                                 <label class="form-label">Redirect URI <span class="text-danger">*</span></label>

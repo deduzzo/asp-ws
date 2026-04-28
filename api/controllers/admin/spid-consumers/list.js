@@ -12,6 +12,7 @@ module.exports = {
           consumers: consumers.map(c => ({
             id: c.id,
             nome: c.nome,
+            slug: c.slug,
             redirect_uri: c.redirect_uri,
             ambito: c.ambito ? {id: c.ambito.id, ambito: c.ambito.ambito} : null,
             attivo: c.attivo,
