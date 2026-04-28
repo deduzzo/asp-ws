@@ -49,6 +49,12 @@ const SpidOidcService = {
     const cfg = getConfig();
     cachedClientPromise = (async () => {
       const issuer = await Issuer.discover(cfg.kcIssuer);
+      // RFC 9207 (Authorization Server Issuer Identification): se il well-known
+      // di Keycloak dichiara di supportarlo ma poi non aggiunge "iss" al
+      // redirect, openid-client rifiuta con "iss missing from the response".
+      // Lo disattiviamo perche' il nostro state HMAC-firmato gia' lega la
+      // redirect_uri al flow (anti mix-up sufficiente con un solo IdP).
+      issuer.metadata.authorization_response_iss_parameter_supported = false;
       const client = new issuer.Client({
         client_id: cfg.kcClientId,
         client_secret: cfg.kcClientSecret,
