@@ -784,7 +784,9 @@ Quando lo state e' decodificabile, qualunque errore (incluso scope_unauthorized,
 
 ### Configurazione
 
-File `config/custom/private_spid_login.json` (gitignored), con `kcClientSecret` da incollare manualmente dal pannello Keycloak (client `asp-ws-spid`, tab Credentials). Il `stateSecret` e' un random di almeno 32 caratteri. La whitelist `allowedRedirectUris` accetta solo strict-equal (no wildcards).
+File `config/custom/private_spid_login.json` (gitignored), con `kcClientSecret` da incollare manualmente dal pannello Keycloak (client `asp-ws-spid`, tab Credentials). Il `stateSecret` e' un random di almeno 32 caratteri.
+
+La **whitelist delle redirect_uri** (consumer app integranti) e' invece gestita su DB nella tabella `auth.spid_consumers`, modificabile dal pannello admin -> sezione "Consumer SPID". Cosi' aggiungere/disabilitare app non richiede di toccare file sul server. Il match resta strict-equal (case-sensitive, no wildcard).
 
 ### SPID e CIE
 

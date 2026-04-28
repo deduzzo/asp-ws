@@ -57,8 +57,10 @@ module.exports = {
       });
     }
 
-    const allowed = Array.isArray(cfg.allowedRedirectUris) ? cfg.allowedRedirectUris : [];
-    if (!allowed.includes(inputs.redirect_uri)) {
+    // Whitelist gestita su tabella auth.spid_consumers (CRUD da pannello admin).
+    const consumer = await Auth_SpidConsumers.findOne({redirect_uri: inputs.redirect_uri, attivo: true})
+      .populate('ambito');
+    if (!consumer) {
       await sails.helpers.log.with({
         level: 'warn',
         tag: TAGS.LOGIN_SPID_KO,
@@ -73,7 +75,9 @@ module.exports = {
       });
     }
 
-    const ambito = inputs.ambito || cfg.defaultAmbito;
+    // Ambito: se il consumer ne ha uno associato (preferito), si usa quello;
+    // altrimenti l'utente puo' passarne uno via input; altrimenti default config.
+    const ambito = (consumer.ambito && consumer.ambito.ambito) || inputs.ambito || cfg.defaultAmbito;
     const scopi = inputs.scopi.split(' ').map(s => s.trim()).filter(Boolean);
     if (scopi.length === 0) {
       return res.ApiResponse({

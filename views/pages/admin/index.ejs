@@ -249,6 +249,10 @@
                             <i class="bi bi-collection me-2"></i>
                             Extra Data
                         </a>
+                        <a class="nav-link" href="#" data-section="spid-consumers">
+                            <i class="bi bi-shield-check me-2"></i>
+                            Consumer SPID
+                        </a>
                         <hr class="opacity-25 my-2">
                         <small class="text-white-50 px-3 mb-1 d-block">MPI</small>
                         <a class="nav-link" href="#" data-section="mpi-apps">
@@ -516,6 +520,103 @@
                             </div>
                         </div>
                     </div>
+                    <!-- SPID Consumers Section -->
+                    <div id="spid-consumers-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-shield-check me-2 text-primary"></i>Consumer SPID/CIE</h2>
+                            <button class="btn btn-primary" onclick="showCreateSpidConsumerModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Nuovo Consumer
+                            </button>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Cosa sono i consumer SPID</strong></p>
+                                <p class="mb-1 small text-muted">
+                                  Le app web/mobile che integrano il login SPID/CIE devono essere registrate qui con la loro <code>redirect_uri</code> (URL su cui ricevono il JWT proprietario al termine del flow). Solo le redirect_uri presenti e attive in questa lista vengono accettate da <code>/api/v1/login/spid/start</code>.
+                                </p>
+                                <p class="mb-0 small text-muted">
+                                  Esempio: app a <code>https://cambiomedicomobile.asp.messina.it/</code> -&gt; redirect_uri <code>https://cambiomedicomobile.asp.messina.it/auth/callback</code>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Whitelist redirect_uri</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="loading" id="spid-consumers-loading">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Caricamento...</span>
+                                    </div>
+                                    <p class="mt-2">Caricamento consumer...</p>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="spid-consumers-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Redirect URI</th>
+                                                <th>Ambito</th>
+                                                <th>Stato</th>
+                                                <th>Note</th>
+                                                <th>Azioni</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="spid-consumers-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal: Consumer SPID -->
+                    <div class="modal fade" id="spidConsumerModal" tabindex="-1">
+                      <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="spidConsumerModalTitle">Nuovo Consumer SPID</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                            <form id="spidConsumerForm">
+                              <input type="hidden" id="spidConsumerId" name="id">
+                              <div class="mb-3">
+                                <label class="form-label">Nome <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="spidConsumerNome" name="nome" required maxlength="100" placeholder="es. App Cambio Medico Mobile">
+                                <div class="form-text">Nome leggibile per identificare l'app consumer.</div>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Redirect URI <span class="text-danger">*</span></label>
+                                <input type="url" class="form-control" id="spidConsumerRedirectUri" name="redirect_uri" required maxlength="500" placeholder="https://cambiomedicomobile.asp.messina.it/auth/callback">
+                                <div class="form-text">URL completo dove asp-ws redirezionera con asp_token. Match strict-equal: case-sensitive, no trailing slash flessibile. In produzione deve essere HTTPS.</div>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Ambito (opzionale)</label>
+                                <select class="form-select" id="spidConsumerAmbito" name="ambito">
+                                  <option value="">— Nessuno (default config) —</option>
+                                </select>
+                                <div class="form-text">Se impostato, il flow useSPID userà sempre questo ambito per i token emessi a questo consumer.</div>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label">Note</label>
+                                <textarea class="form-control" id="spidConsumerNote" name="note" maxlength="500" rows="2" placeholder="Note interne, contatto referente, ecc."></textarea>
+                              </div>
+                              <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="spidConsumerAttivo" name="attivo" checked>
+                                <label class="form-check-label" for="spidConsumerAttivo">Attivo</label>
+                              </div>
+                            </form>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                            <button type="button" class="btn btn-primary" onclick="saveSpidConsumer()">Salva</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- Extra Data Section -->
                     <div id="extra-data-section" class="content-section">
                         <div class="d-flex justify-content-between align-items-center mb-4">

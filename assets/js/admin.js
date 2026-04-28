@@ -284,6 +284,9 @@ class AdminPanel {
         loadMpiAppSelect();
         searchMpiRecords();
         break;
+      case 'spid-consumers':
+        loadSpidConsumers();
+        break;
     }
   }
 
@@ -1452,6 +1455,187 @@ function showCreateDomainModal() {
 
   const modal = new bootstrap.Modal(document.getElementById('domainModal'));
   modal.show();
+}
+
+// ===== SPID CONSUMERS =====
+
+function _spidConsumerActionBtn(label, iconCls, btnCls, title) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = `btn btn-outline-${btnCls}`;
+  btn.title = title;
+  btn.setAttribute('aria-label', label);
+  const icon = document.createElement('i');
+  icon.className = `bi ${iconCls}`;
+  btn.appendChild(icon);
+  return btn;
+}
+
+function _spidConsumerBadge(text, kind) {
+  const span = document.createElement('span');
+  span.className = `badge bg-${kind}`;
+  span.textContent = text;
+  return span;
+}
+
+async function loadSpidConsumers() {
+  const loading = document.getElementById('spid-consumers-loading');
+  const tbody = document.getElementById('spid-consumers-tbody');
+  loading.style.display = 'block';
+  tbody.replaceChildren();
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/spid-consumers');
+    (data.consumers || []).forEach(c => {
+      const tr = document.createElement('tr');
+
+      const tdNome = document.createElement('td');
+      const strong = document.createElement('strong');
+      strong.textContent = c.nome;
+      tdNome.appendChild(strong);
+      tr.appendChild(tdNome);
+
+      const tdUri = document.createElement('td');
+      const code = document.createElement('code');
+      code.style.wordBreak = 'break-all';
+      code.textContent = c.redirect_uri;
+      tdUri.appendChild(code);
+      tr.appendChild(tdUri);
+
+      const tdAmbito = document.createElement('td');
+      if (c.ambito) {
+        tdAmbito.appendChild(_spidConsumerBadge(c.ambito.ambito, 'info'));
+      } else {
+        const muted = document.createElement('span');
+        muted.className = 'text-muted small';
+        muted.textContent = '—';
+        tdAmbito.appendChild(muted);
+      }
+      tr.appendChild(tdAmbito);
+
+      const tdStato = document.createElement('td');
+      tdStato.appendChild(_spidConsumerBadge(c.attivo ? 'Attivo' : 'Disattivato', c.attivo ? 'success' : 'secondary'));
+      tr.appendChild(tdStato);
+
+      const tdNote = document.createElement('td');
+      tdNote.className = 'small text-muted';
+      tdNote.textContent = c.note || '';
+      tr.appendChild(tdNote);
+
+      const tdAzioni = document.createElement('td');
+      const group = document.createElement('div');
+      group.className = 'btn-group btn-group-sm';
+      const btnEdit = _spidConsumerActionBtn('Modifica', 'bi-pencil', 'primary', 'Modifica');
+      btnEdit.addEventListener('click', () => editSpidConsumer(c.id));
+      const btnDel = _spidConsumerActionBtn('Elimina', 'bi-trash', 'danger', 'Elimina');
+      btnDel.addEventListener('click', () => deleteSpidConsumer(c.id, c.nome));
+      group.appendChild(btnEdit);
+      group.appendChild(btnDel);
+      tdAzioni.appendChild(group);
+      tr.appendChild(tdAzioni);
+
+      tbody.appendChild(tr);
+    });
+    if (typeof adminPanel.initTableSortFilter === 'function') {
+      adminPanel.initTableSortFilter('spid-consumers-table', 0);
+    }
+  } catch (error) {
+    console.error('Error loading spid consumers:', error);
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+async function fillSpidConsumerAmbitoSelect(selectedId) {
+  const sel = document.getElementById('spidConsumerAmbito');
+  sel.replaceChildren();
+  const optEmpty = document.createElement('option');
+  optEmpty.value = '';
+  optEmpty.textContent = '— Nessuno (default config) —';
+  sel.appendChild(optEmpty);
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/domains');
+    (data.domains || []).forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = String(a.id);
+      opt.textContent = a.ambito;
+      if (selectedId && Number(selectedId) === a.id) {opt.selected = true;}
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Error loading ambiti for SPID consumer modal:', e);
+  }
+}
+
+async function showCreateSpidConsumerModal() {
+  document.getElementById('spidConsumerModalTitle').textContent = 'Nuovo Consumer SPID';
+  document.getElementById('spidConsumerForm').reset();
+  document.getElementById('spidConsumerId').value = '';
+  document.getElementById('spidConsumerAttivo').checked = true;
+  await fillSpidConsumerAmbitoSelect(null);
+  new bootstrap.Modal(document.getElementById('spidConsumerModal')).show();
+}
+
+async function editSpidConsumer(id) {
+  try {
+    const data = await adminPanel.apiCall('/api/v1/admin/spid-consumers');
+    const c = (data.consumers || []).find(x => x.id === id);
+    if (!c) {
+      adminPanel.showToast('Errore', 'Consumer non trovato', 'danger');
+      return;
+    }
+    document.getElementById('spidConsumerModalTitle').textContent = 'Modifica Consumer SPID';
+    document.getElementById('spidConsumerId').value = c.id;
+    document.getElementById('spidConsumerNome').value = c.nome;
+    document.getElementById('spidConsumerRedirectUri').value = c.redirect_uri;
+    document.getElementById('spidConsumerAttivo').checked = !!c.attivo;
+    document.getElementById('spidConsumerNote').value = c.note || '';
+    await fillSpidConsumerAmbitoSelect(c.ambito ? c.ambito.id : null);
+    new bootstrap.Modal(document.getElementById('spidConsumerModal')).show();
+  } catch (error) {
+    console.error('Error editing spid consumer:', error);
+  }
+}
+
+async function saveSpidConsumer() {
+  const id = document.getElementById('spidConsumerId').value;
+  const ambitoVal = document.getElementById('spidConsumerAmbito').value;
+  const payload = {
+    nome: document.getElementById('spidConsumerNome').value.trim(),
+    redirect_uri: document.getElementById('spidConsumerRedirectUri').value.trim(),
+    ambito: ambitoVal ? parseInt(ambitoVal, 10) : null,
+    attivo: document.getElementById('spidConsumerAttivo').checked,
+    note: document.getElementById('spidConsumerNote').value.trim() || null,
+  };
+  if (!payload.nome || !payload.redirect_uri) {
+    adminPanel.showToast('Errore', 'Nome e redirect_uri sono obbligatori', 'danger');
+    return;
+  }
+  try {
+    if (id) {
+      await adminPanel.apiCall(`/api/v1/admin/spid-consumers/${id}`, 'PUT', payload);
+      adminPanel.showToast('Successo', 'Consumer aggiornato', 'success');
+    } else {
+      await adminPanel.apiCall('/api/v1/admin/spid-consumers', 'POST', payload);
+      adminPanel.showToast('Successo', 'Consumer creato', 'success');
+    }
+    bootstrap.Modal.getInstance(document.getElementById('spidConsumerModal')).hide();
+    loadSpidConsumers();
+  } catch (error) {
+    console.error('Error saving spid consumer:', error);
+  }
+}
+
+async function deleteSpidConsumer(id, nome) {
+  if (!confirm(`Eliminare il consumer "${nome}"?\n\nLe app che usano la sua redirect_uri non potranno piu' completare il login SPID/CIE.`)) {
+    return;
+  }
+  try {
+    await adminPanel.apiCall(`/api/v1/admin/spid-consumers/${id}`, 'DELETE');
+    adminPanel.showToast('Successo', 'Consumer eliminato', 'success');
+    loadSpidConsumers();
+  } catch (error) {
+    console.error('Error deleting spid consumer:', error);
+  }
 }
 
 // ===== MPI APPLICAZIONI =====

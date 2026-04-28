@@ -156,6 +156,32 @@ let routes = {
     action: 'login/spid/debug',
   },
 
+  // Admin: gestione whitelist consumer SPID/CIE (redirect_uri delle app integranti)
+  'GET /api/v1/admin/spid-consumers': {
+    action: 'admin/spid-consumers/list',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'POST /api/v1/admin/spid-consumers': {
+    action: 'admin/spid-consumers/create',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'PUT /api/v1/admin/spid-consumers/:id': {
+    action: 'admin/spid-consumers/update',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+  'DELETE /api/v1/admin/spid-consumers/:id': {
+    action: 'admin/spid-consumers/delete',
+    scopi: ['admin-manage'],
+    ambito: 'api',
+    minAuthLevel: JwtService.LOGIN_LEVEL.superAdmin
+  },
+
   'POST /api/v1/anagrafica/ricerca': {
     action: 'anagrafica/ricerca',
     scopi: ['asp5-anagrafica'],
