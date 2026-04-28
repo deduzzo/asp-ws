@@ -211,7 +211,7 @@ module.exports = {
       ambito: utente.ambito.ambito,
       id_ambito: utente.ambito.id,
       livello: utente.livello,
-      auth_method: 'spid'
+      auth_method: 'spid-cie'
     });
     if (!tokenObj || !tokenObj.token) {
       incrementSpidMetric('jwt_error');

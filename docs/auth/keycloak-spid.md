@@ -788,4 +788,4 @@ File `config/custom/private_spid_login.json` (gitignored), con `kcClientSecret` 
 
 ### SPID e CIE
 
-Le due modalita' usano lo stesso client Keycloak (`asp-ws-spid`) e gli stessi mapper (scope `spid-cie-attributes` con claim `fiscalNumber` in camelCase). Sono trasparenti dal punto di vista del backend: il flow OIDC e' identico. Il claim `auth_method: 'spid'` nel JWT proprietario indica che l'utente si e' autenticato via Keycloak (vale anche per CIE).
+Le due modalita' usano lo stesso client Keycloak (`asp-ws-spid`) e gli stessi mapper (scope `spid-cie-attributes` con claim `fiscalNumber` in camelCase). Sono trasparenti dal punto di vista del backend: il flow OIDC e' identico. Il JWT proprietario emesso dal callback contiene `auth_method: 'spid-cie'` — un solo valore copre entrambe le modalita', dato che backend e mapper non differenziano.
