@@ -49,12 +49,6 @@ const SpidOidcService = {
     const cfg = getConfig();
     cachedClientPromise = (async () => {
       const issuer = await Issuer.discover(cfg.kcIssuer);
-      // RFC 9207 (Authorization Server Issuer Identification): se il well-known
-      // di Keycloak dichiara di supportarlo ma poi non aggiunge "iss" al
-      // redirect, openid-client rifiuta con "iss missing from the response".
-      // Lo disattiviamo perche' il nostro state HMAC-firmato gia' lega la
-      // redirect_uri al flow (anti mix-up sufficiente con un solo IdP).
-      issuer.metadata.authorization_response_iss_parameter_supported = false;
       const client = new issuer.Client({
         client_id: cfg.kcClientId,
         client_secret: cfg.kcClientSecret,
@@ -93,6 +87,16 @@ const SpidOidcService = {
   /**
    * Scambia il "code" ricevuto da Keycloak con un tokenSet (id_token, access_token).
    * openid-client verifica firma, iss, aud, exp del id_token automaticamente.
+   *
+   * Nota RFC 9207: openid-client v5 richiede il parametro "iss" nel redirect
+   * di authorization se il well-known di Keycloak dichiara
+   * "authorization_response_iss_parameter_supported": true. Alcune build/config
+   * di Keycloak dichiarano il supporto ma non emettono effettivamente il
+   * parametro, generando "iss missing from the response". Lo iniettiamo
+   * manualmente con il valore del nostro issuer configurato: il check di
+   * openid-client diventa "params.iss === this.issuer.issuer", che combacia
+   * sempre dato che cfg.kcIssuer e' lo stesso usato per la discovery.
+   *
    * @param {{code: string, state: string}} opts
    * @returns {Promise<TokenSet>}
    */
@@ -101,7 +105,7 @@ const SpidOidcService = {
     const client = await SpidOidcService.getClient();
     return client.callback(
       getRedirectUri(cfg),
-      {code, state},
+      {code, state, iss: cfg.kcIssuer},
       {state}
     );
   },
